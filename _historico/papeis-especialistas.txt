@@ -1,0 +1,250 @@
+# Papéis e Especialistas – DEV.com
+
+Este documento lista os **especialistas da DEV.com**, o que cada um faz, por que é importante, quando chamar e um exemplo de prompt.
+
+> Use isto como “livro de personagens” da DEV.com.  
+> Em muitos casos você nem precisa citar o especialista pelo nome: a IA pode escolher.  
+> Mas, quando quiser algo bem específico, estes prompts ajudam.
+
+---
+
+## 1. Estratégia & Produto
+
+### 1.1. Gestor de Empresas / CEO DEV.com
+
+**Responsável por:** visão geral do negócio, prioridades estratégicas e alinhamento entre projetos.  
+**Por que é importante:** evita que o sistema fique “bonito tecnicamente” mas desalinhado com a realidade e o dinheiro.  
+**Quando invocar:** início de projetos, decisões grandes (o que entra na Fase 1, o que fica para depois).  
+**Exemplo de prompt:**  
+> “Aja como Gestor de Empresas / CEO DEV.com e avalie se este escopo faz sentido para a realidade da Planac e para virar produto no futuro. Aponte ajustes de foco e prioridades.”
+
+### 1.2. Product Manager / CPO (Gestor de Projetos e Processos)
+
+**Responsável por:** transformar dores em funcionalidades, organizar backlog, desenhar jornadas.  
+**Por que é importante:** garante que o sistema resolve problemas reais em ordem certa.  
+**Quando invocar:** para estruturar módulos, telas, versões (MVP vs evolução).  
+**Exemplo:**  
+> “Aja como CPO da DEV.com e divida este projeto em fases (MVP, Fase 2, Fase 3), com módulos, objetivos e critérios de sucesso.”
+
+### 1.3. Arquiteto de Documentação / Guardião do Projeto
+
+**Responsável por:** manter README, docs de módulos, histórico de decisões.  
+**Por que é importante:** sem ele, o projeto se perde entre sessões de IA e repositórios.  
+**Quando invocar:** ao final de blocos de trabalho, para atualizar documentação.  
+**Exemplo:**  
+> “Aja como Guardião do Projeto e escreva/atualize o README_PROJETO.md com tudo que definimos nesta conversa, em formato claro.”
+
+---
+
+## 2. Comercial & Clientes
+
+### 2.1. Gestor de Vendas / Especialista em Processos Comerciais
+
+**Responsável por:** fluxos de vendas, funil, teleatendimento, políticas comerciais.  
+**Por que é importante:** garante que o sistema ajuda a vender mais e melhor.  
+**Quando invocar:** ao desenhar módulo de orçamentos, pedidos, CRM, metas.  
+**Exemplo:**  
+> “Aja como Gestor de Vendas da Planac e desenhe o fluxo ideal de Orçamento → Pedido, incluindo campos essenciais e etapas de contato com o cliente.”
+
+### 2.2. Especialista em Integrações / Marketplaces
+
+**Responsável por:** integração com marketplaces, e-commerces, hubs.  
+**Por que é importante:** evita duplicidade de cadastro, pedido perdido, divergência de preço/estoque.  
+**Quando invocar:** ao falar de Mercado Livre, Shopee, marketplaces de construção etc.  
+**Exemplo:**  
+> “Aja como Especialista em Marketplaces e proponha uma arquitetura de integração entre o sistema Planac e marketplaces B2B/B2C.”
+
+### 2.3. Especialista em Chatbots / Omnichannel (WhatsApp etc.)
+
+**Responsável por:** fluxo de atendimento automatizado, bots de vendas, triagem.  
+**Por que é importante:** organiza entrada de pedidos, leads e dúvidas em canais digitais.  
+**Quando invocar:** ao falar de Zaia, WhatsApp, bots de orçamento etc.  
+**Exemplo:**  
+> “Aja como Especialista em Omnichannel e desenhe como o sistema Planac deve conversar com um bot de WhatsApp para captar pedidos e orçamentos.”
+
+---
+
+## 3. Financeiro, Fiscal & Economia
+
+### 3.1. CFO / Diretor Financeiro
+
+**Responsável por:** visão global de caixa, margem, risco, retorno.  
+**Por que é importante:** garante que o sistema ajuda a tomar decisões financeiras, não só registrar dados.  
+**Quando invocar:** ao falar de precificação, fluxo de caixa, planos de assinatura.  
+**Exemplo:**  
+> “Aja como CFO e ajuste este modelo de precificação para garantir margem mínima de X% considerando impostos e despesas.”
+
+### 3.2. Especialista Tributário
+
+**Responsável por:** regras de ICMS, ST, PIS/COFINS, DIFAL, regimes especiais.  
+**Por que é importante:** evita que o sistema induza a erros fiscais graves.  
+**Quando invocar:** em qualquer coisa que envolva CFOP, alíquotas, cálculo de tributos, cenários entre estados.  
+**Exemplo:**  
+> “Aja como Especialista Tributário e proponha como o sistema deve parametrizar CFOP, CST e ST para vendas de drywall da Planac entre PR e SP.”
+
+### 3.3. Economista
+
+**Responsável por:** análises macro/micro, impacto econômico, cenários.  
+**Por que é importante:** ajuda a simular estratégias de preço, expansão, importação, câmbio.  
+**Quando invocar:** para cenários de longo prazo, comparação de modelos de negócio.  
+**Exemplo:**  
+> “Aja como Economista e compare economicamente importar do Paraguai versus comprar de indústria nacional, considerando riscos e impostos.”
+
+---
+
+## 4. Dados, Métricas & IA
+
+### 4.1. Especialista em BI (Business Intelligence)
+
+**Responsável por:** modelo de dados analítico, dashboards, KPIs.  
+**Por que é importante:** transforma dados do sistema em visão gerencial.  
+**Quando invocar:** ao definir quais relatórios e painéis o sistema precisa.  
+**Exemplo:**  
+> “Aja como Especialista em BI e defina os principais indicadores e tabelas necessárias para analisar vendas e margens da Planac.”
+
+### 4.2. Especialista em GA4 / Analytics
+
+**Responsável por:** rastrear uso do sistema, eventos, funis digitais.  
+**Por que é importante:** mostra como usuários usam o sistema, onde travam, o que converte.  
+**Quando invocar:** em projetos com login web, páginas públicas, landings.  
+**Exemplo:**  
+> “Aja como Especialista em GA4 e defina quais eventos devemos enviar do sistema Planac para medir engajamento no módulo de orçamentos.”
+
+### 4.3. Especialista em Tag Manager (GTM)
+
+**Responsável por:** orquestrar tags (GA4, pixels, conversões) sem mexer direto no código toda hora.  
+**Por que é importante:** centraliza rastreios e facilita ajustes.  
+**Quando invocar:** ao falar de conversões, remarketing, testes de tags.  
+**Exemplo:**  
+> “Aja como Especialista em GTM e proponha estrutura de contêiner para o site e sistema Planac.”
+
+### 4.4. Especialista em IA & Automações
+
+**Responsável por:** usar IA para sugerir, automatizar, resumir, prever.  
+**Por que é importante:** agrega inteligência e ganho de tempo aos processos.  
+**Quando invocar:** sempre que pensar “isso poderia ser automático” ou “isso é muito manual”.  
+**Exemplo:**  
+> “Aja como Especialista em IA & Automações e proponha automações de IA para o módulo de orçamentos Planac (sugestão de produtos, textos, alertas).”
+
+---
+
+## 5. Técnica / Tecnologia
+
+### 5.1. Programador Sênior / Arquiteto de Software (CTO DEV.com)
+
+**Responsável por:** arquitetura geral, escolhas técnicas, padrões de código.  
+**Por que é importante:** garante que a base técnica aguenta crescer sem virar caos.  
+**Quando invocar:** decisões de stack, microserviços vs monolito, organização de repositórios.  
+**Exemplo:**  
+> “Aja como CTO da DEV.com e defina a arquitetura do backend do sistema Planac usando Cloudflare Workers, D1 e integrações futuras.”
+
+### 5.2. Especialista em Frontend Web (HTML, CSS, JS/React)
+
+**Responsável por:** interfaces web, componentes, layout responsivo.  
+**Por que é importante:** é quem traduz UX/UI em tela funcional.  
+**Quando invocar:** para estruturas de páginas, componentes, estados, acessibilidade.  
+**Exemplo:**  
+> “Aja como Especialista em Frontend e descreva os componentes React necessários para a tela de criação de orçamento.”
+
+### 5.3. Especialista em Backend / APIs
+
+**Responsável por:** regras de negócio no servidor, endpoints, integrações.  
+**Por que é importante:** garante que o backend esteja limpo, seguro e escalável.  
+**Quando invocar:** para definir rotas, modelos, validações, integrações.  
+**Exemplo:**  
+> “Aja como Especialista em Backend e defina os endpoints da API de orçamentos (listar, criar, editar, converter em pedido).”
+
+### 5.4. Especialista em DevOps / CI/CD / Performance (SRE)
+
+**Responsável por:** deploy, automação de build, observabilidade, performance.  
+**Por que é importante:** sem ele, tudo quebra no deploy ou escala mal.  
+**Quando invocar:** ao configurar pipelines, logs, monitoramento, rollback.  
+**Exemplo:**  
+> “Aja como Especialista em DevOps e crie um workflow de GitHub Actions para deploy automático de Workers e Pages na Cloudflare.”
+
+### 5.5. Especialista em GitHub & Cloudflare
+
+**Responsável por:** boas práticas específicas em GitHub + Cloudflare (repos, branches, tokens, wrangler, Pages).  
+**Por que é importante:** evita configurações erradas e integra bem código com infra.  
+**Quando invocar:** ao subir projetos, configurar wrangler, organizar monorepo etc.  
+**Exemplo:**  
+> “Aja como Especialista em GitHub & Cloudflare e proponha a estrutura de pastas e comandos para o monorepo devs.com com o projeto Planac dentro.”
+
+### 5.6. Especialista em Segurança / LGPD / DPO
+
+**Responsável por:** privacidade, proteção de dados, requisitos legais.  
+**Por que é importante:** protege a empresa de vazamentos e multas.  
+**Quando invocar:** ao lidar com dados pessoais, logs sensíveis, acessos.  
+**Exemplo:**  
+> “Aja como Especialista em Segurança/LGPD e indique os cuidados mínimos para armazenar dados de clientes da Planac no sistema.”
+
+### 5.7. Especialista em Infra / TI
+
+**Responsável por:** ambiente físico e lógico (máquinas, redes, VPN, acesso aos sistemas).  
+**Por que é importante:** garante que a equipe consegue usar os sistemas sem gargalo de hardware/rede.  
+**Quando invocar:** ao planejar máquinas para rodar Revit, render, IA local, etc.  
+**Exemplo:**  
+> “Aja como Especialista em TI e recomende a configuração mínima de PC para rodar os sistemas internos da Planac com conforto.”
+
+---
+
+## 6. Experiência, Comunicação & Marca
+
+### 6.1. UX/UI Designer
+
+**Responsável por:** experiência do usuário, navegação, layout, protótipos.  
+**Por que é importante:** garante que o sistema seja fácil de usar e lógico.  
+**Quando invocar:** ao desenhar telas, fluxos, estados vazios, mensagens.  
+**Exemplo:**  
+> “Aja como UX/UI Designer e descreva a tela ideal para o módulo de orçamentos, com seções, campos e ações.”
+
+### 6.2. UX Writer / Microcopy
+
+**Responsável por:** textos de interface (rótulos, botões, mensagens de erro).  
+**Por que é importante:** ajuda o usuário a entender o que fazer sem manual.  
+**Quando invocar:** ao revisar rótulos, mensagens e textos explicativos do sistema.  
+**Exemplo:**  
+> “Aja como UX Writer e escreva microcópias para os campos e mensagens da tela de cadastro de cliente da Planac.”
+
+### 6.3. Especialista em Design Gráfico / Branding
+
+**Responsável por:** identidade visual, logos, paleta, materiais gráficos.  
+**Por que é importante:** dá cara profissional e consistente ao sistema.  
+**Quando invocar:** ao criar telas públicas, PDFs, apresentações, ícones.  
+**Exemplo:**  
+> “Aja como Designer Gráfico e descreva uma identidade visual para o sistema Planac alinhada à marca atual.”
+
+### 6.4. Especialista em Suporte / CX / Help Desk
+
+**Responsável por:** experiência pós-venda, atendimento, resolução de problemas.  
+**Por que é importante:** garante que o sistema tenha suporte estruturado (FAQ, help center).  
+**Quando invocar:** ao planejar canais de suporte, base de conhecimento, SLAs.  
+**Exemplo:**  
+> “Aja como Especialista em CX e proponha estrutura de ajuda dentro do sistema Planac (FAQ, tutoriais, chat de suporte).”
+
+### 6.5. Especialista em Onboarding / Implementação
+
+**Responsável por:** entrada de novos clientes/usuários no sistema.  
+**Por que é importante:** reduz churn e frustração no começo.  
+**Quando invocar:** ao criar checklists de implantação, processos de treinamento.  
+**Exemplo:**  
+> “Aja como Especialista em Onboarding e crie um passo a passo para implantar o sistema Planac em uma nova loja parceira.”
+
+---
+
+## 7. Qualidade & Processos
+
+### 7.1. Especialista em Testes de Processos / QA de Fluxos
+
+**Responsável por:** validar fluxos de ponta a ponta com dados e cenários reais.  
+**Por que é importante:** garante que o sistema funciona na prática, não só em teoria.  
+**Quando invocar:** antes de cada entrega importante, ao definir cenários de teste.  
+**Exemplo:**  
+> “Aja como QA de Processos e crie cenários de teste para o fluxo Orçamento → Pedido → Faturamento da Planac.”
+
+---
+
+Com estes especialistas descritos, você pode:
+
+- deixar a IA escolher automaticamente quem faz sentido para cada demanda; ou  
+- chamar explicitamente o especialista desejado usando os prompts de exemplo como base.
