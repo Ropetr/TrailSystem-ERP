@@ -1,0 +1,84 @@
+# =============================================
+# 🚀 PLANAC ERP - Cloudflare Workers Config
+# =============================================
+
+name = "planac-erp-api"
+main = "packages/api/src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Ambiente de desenvolvimento
+[env.development]
+name = "planac-erp-api-dev"
+vars = { ENVIRONMENT = "development" }
+
+# Ambiente de staging
+[env.staging]
+name = "planac-erp-api-staging"
+vars = { ENVIRONMENT = "staging" }
+
+# Ambiente de produção
+[env.production]
+name = "planac-erp-api"
+vars = { ENVIRONMENT = "production" }
+
+# =============================================
+# 🗄️ DATABASE - Cloudflare D1
+# =============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "planac-db"
+database_id = "TO_BE_CREATED"
+
+# Migrations
+migrations_dir = "packages/api/migrations"
+
+# =============================================
+# 📦 KV NAMESPACES
+# =============================================
+[[kv_namespaces]]
+binding = "CACHE"
+id = "TO_BE_CREATED"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "TO_BE_CREATED"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "TO_BE_CREATED"
+
+# =============================================
+# 🗂️ R2 STORAGE
+# =============================================
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "planac-files"
+
+# =============================================
+# 🔐 SECRETS (Configurar via wrangler secret put)
+# =============================================
+# JWT_SECRET
+# ENCRYPTION_KEY
+# CERTIFICADO_DIGITAL_SENHA
+# WEBHOOK_SECRET
+
+# =============================================
+# 🌐 ROUTES
+# =============================================
+# routes = [
+#   { pattern = "api.planac.com.br/*", zone_name = "planac.com.br" }
+# ]
+
+# =============================================
+# 📊 OBSERVABILITY
+# =============================================
+[observability]
+enabled = true
+
+# =============================================
+# ⚡ BUILD
+# =============================================
+[build]
+command = "npm run build"
+cwd = "packages/api"
+watch_dir = "packages/api/src"
