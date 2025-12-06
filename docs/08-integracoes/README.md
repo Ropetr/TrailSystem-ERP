@@ -2,21 +2,23 @@
 
 Documentação completa das integrações externas do sistema.
 
-**Status: 🟡 Em desenvolvimento**
+**Status: ✅ Completo**  
+**Última Atualização:** 06/12/2025  
+**Total de Integrações:** 7
 
 ---
 
 ## Índice
 
-| Integração | Tipo | Status | Prioridade |
-|------------|------|--------|------------|
-| [1. Nuvem Fiscal](#1-nuvem-fiscal) | Fiscal | ✅ Configurado | Alta |
-| [2. Outras Fiscais](#2-outras-integrações-fiscais) | Fiscal | ⏳ Pendente | Alta |
-| [3. Bancárias](#3-integrações-bancárias) | Financeiro | ⏳ Pendente | Alta |
-| [4. Pagamentos](#4-integrações-de-pagamentos) | Financeiro | ⏳ Pendente | Média |
-| [5. Marketing](#5-integrações-de-marketing) | Marketing | ⏳ Pendente | Baixa |
-| [6. E-commerce](#6-integrações-e-commerce) | Comercial | ⏳ Pendente | Média |
-| [7. Consultas](#7-apis-de-consulta) | Utilitário | ⏳ Pendente | Média |
+| # | Integração | Tipo | Status | Prioridade |
+|---|------------|------|--------|------------|
+| 1 | [Nuvem Fiscal](#1-nuvem-fiscal) | Fiscal | ✅ Configurado | Alta |
+| 2 | [Baselinker](#2-baselinker) | Hub e-Commerce | ✅ Documentado | Alta |
+| 3 | [CPF.CNPJ](#3-cpfcnpj) | Validação Docs | ✅ Documentado | Alta |
+| 4 | [CNPJá](#4-cnpjá) | Consulta CNPJ | ✅ Documentado | Média |
+| 5 | [SERPRO Integra Contador](#5-serpro-integra-contador) | Dados Fiscais | ✅ Documentado | Média |
+| 6 | [SERPRO Consulta Renda](#6-serpro-consulta-renda) | Análise Crédito | ✅ Documentado | Baixa |
+| 7 | [SERPRO Consulta Faturamento](#7-serpro-consulta-faturamento) | Análise Crédito | ✅ Documentado | Baixa |
 
 ---
 
@@ -49,286 +51,404 @@ Documentação completa das integrações externas do sistema.
 
 ## 1.4 Serviços Utilizados
 
-### NF-e (Nota Fiscal Eletrônica)
-
-| Operação | Endpoint | Método | Descrição |
-|----------|----------|--------|-----------|
-| Emitir | `/nfe` | POST | Emite nova NF-e |
-| Consultar | `/nfe/{id}` | GET | Consulta NF-e por ID |
-| Cancelar | `/nfe/{id}/cancelamento` | POST | Cancela NF-e |
-| Carta Correção | `/nfe/{id}/carta-correcao` | POST | Emite CC-e |
-| Inutilizar | `/nfe/inutilizacao` | POST | Inutiliza numeração |
-| Download XML | `/nfe/{id}/xml` | GET | Baixa XML da NF-e |
-| Download PDF | `/nfe/{id}/pdf` | GET | Baixa DANFE em PDF |
-
-### NFC-e (Nota Fiscal de Consumidor)
-
-| Operação | Endpoint | Método | Descrição |
-|----------|----------|--------|-----------|
-| Emitir | `/nfce` | POST | Emite nova NFC-e |
-| Consultar | `/nfce/{id}` | GET | Consulta NFC-e |
-| Cancelar | `/nfce/{id}/cancelamento` | POST | Cancela NFC-e |
-| Inutilizar | `/nfce/inutilizacao` | POST | Inutiliza numeração |
-
-### NFS-e (Nota Fiscal de Serviço)
-
-| Operação | Endpoint | Método | Descrição |
-|----------|----------|--------|-----------|
-| Emitir | `/nfse` | POST | Emite nova NFS-e |
-| Consultar | `/nfse/{id}` | GET | Consulta NFS-e |
-| Cancelar | `/nfse/{id}/cancelamento` | POST | Cancela NFS-e |
-
-### CT-e (Conhecimento de Transporte)
-
-| Operação | Endpoint | Método | Descrição |
-|----------|----------|--------|-----------|
-| Emitir | `/cte` | POST | Emite novo CT-e |
-| Consultar | `/cte/{id}` | GET | Consulta CT-e |
-| Cancelar | `/cte/{id}/cancelamento` | POST | Cancela CT-e |
-
-### MDF-e (Manifesto de Documentos Fiscais)
-
-| Operação | Endpoint | Método | Descrição |
-|----------|----------|--------|-----------|
-| Emitir | `/mdfe` | POST | Emite novo MDF-e |
-| Consultar | `/mdfe/{id}` | GET | Consulta MDF-e |
-| Encerrar | `/mdfe/{id}/encerramento` | POST | Encerra MDF-e |
-| Cancelar | `/mdfe/{id}/cancelamento` | POST | Cancela MDF-e |
+| Serviço | Descrição | Uso no Planac |
+|---------|-----------|---------------|
+| **NF-e** | Nota Fiscal Eletrônica | Vendas B2B |
+| **NFC-e** | Nota Fiscal Consumidor | PDV / Varejo |
+| **NFS-e** | Nota Fiscal de Serviço | Serviços |
+| **CT-e** | Conhecimento de Transporte | Frete próprio |
+| **MDF-e** | Manifesto de Documentos | Expedição |
 
 ## 1.5 Fluxo de Autenticação
 
-```mermaid
-sequenceDiagram
-    participant ERP as Planac ERP
-    participant NF as Nuvem Fiscal API
-    
-    ERP->>NF: POST /oauth/token
-    Note right of ERP: client_id + client_secret
-    NF-->>ERP: access_token (JWT)
-    Note left of NF: Válido por 1 hora
-    
-    ERP->>NF: POST /nfe
-    Note right of ERP: Authorization: Bearer {token}
-    NF-->>ERP: NF-e criada (status: processando)
-    
-    loop Polling ou Webhook
-        ERP->>NF: GET /nfe/{id}
-        NF-->>ERP: Status atualizado
-    end
+```bash
+# Obter token de acesso
+curl -X POST "https://api.nuvemfiscal.com.br/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=AJReDlHes8aBNlTzTF9X" \
+  -d "client_secret=3yMYNk2hzBLQihujZf0jfFyAKDRc403v4D1SBDFL"
 ```
 
-## 1.6 Exemplo de Código
+## 1.6 Módulos do Planac que Utilizam
 
-```typescript
-// src/packages/api/src/integrations/nuvemfiscal.ts
+- **Faturamento** - Emissão de NF-e e NFC-e
+- **PDV** - Emissão de NFC-e
+- **Serviços** - Emissão de NFS-e
+- **Expedição** - Emissão de CT-e e MDF-e
 
-interface NuvemFiscalConfig {
-  clientId: string;
-  clientSecret: string;
-  baseUrl: string;
-}
+---
 
-export class NuvemFiscalClient {
-  private config: NuvemFiscalConfig;
-  private accessToken: string | null = null;
-  private tokenExpiry: Date | null = null;
+# 2. BASELINKER
 
-  constructor(config: NuvemFiscalConfig) {
-    this.config = config;
-  }
+## 2.1 Visão Geral
 
-  private async authenticate(): Promise<string> {
-    // Verifica se token ainda é válido
-    if (this.accessToken && this.tokenExpiry && this.tokenExpiry > new Date()) {
-      return this.accessToken;
-    }
+| Item | Descrição |
+|------|-----------|
+| **Fornecedor** | Baselinker (BASE.COM) |
+| **Site** | https://baselinker.com |
+| **Documentação** | https://api.baselinker.com |
+| **Tipo** | API REST |
+| **Autenticação** | Token Bearer |
 
-    const response = await fetch(`${this.config.baseUrl}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        grant_type: 'client_credentials',
-        client_id: this.config.clientId,
-        client_secret: this.config.clientSecret,
-        scope: 'cep cnpj nfse nfe nfce mdfe cte empresa',
-      }),
-    });
+## 2.2 Credenciais de Acesso
 
-    if (!response.ok) {
-      throw new Error(`Erro de autenticação Nuvem Fiscal: ${response.status}`);
-    }
+| Item | Valor |
+|------|-------|
+| **Token** | `8003146-8033898-532H6155RLJVRTS9GX0RKTKI8IO74JQ9PPAL391UOJZ9VGTP8QAT5N42HZMPC5IQ` |
 
-    const data = await response.json();
-    this.accessToken = data.access_token;
-    this.tokenExpiry = new Date(Date.now() + (data.expires_in - 60) * 1000);
+## 2.3 Endpoint Base
 
-    return this.accessToken;
-  }
-
-  async emitirNFe(nfe: NFeDados): Promise<NFeResponse> {
-    const token = await this.authenticate();
-
-    const response = await fetch(`${this.config.baseUrl}/nfe`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(nfe),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Erro ao emitir NF-e: ${error.message}`);
-    }
-
-    return response.json();
-  }
-
-  async consultarNFe(id: string): Promise<NFe> {
-    const token = await this.authenticate();
-
-    const response = await fetch(`${this.config.baseUrl}/nfe/${id}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    return response.json();
-  }
-
-  async cancelarNFe(id: string, justificativa: string): Promise<void> {
-    const token = await this.authenticate();
-
-    await fetch(`${this.config.baseUrl}/nfe/${id}/cancelamento`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ justificativa }),
-    });
-  }
-
-  // ... outros métodos
-}
-
-// Factory function para criar cliente
-export function createNuvemFiscalClient(env: Env): NuvemFiscalClient {
-  return new NuvemFiscalClient({
-    clientId: env.NUVEM_FISCAL_CLIENT_ID,
-    clientSecret: env.NUVEM_FISCAL_CLIENT_SECRET,
-    baseUrl: env.NUVEM_FISCAL_URL || 'https://api.nuvemfiscal.com.br',
-  });
-}
+```
+https://api.baselinker.com/connector.php
 ```
 
-## 1.7 Configuração no Cloudflare Workers
+## 2.4 Funcionalidades Principais
 
-### Secrets a configurar (via wrangler):
+| Método | Descrição | Uso no Planac |
+|--------|-----------|---------------|
+| `getOrders` | Lista pedidos de marketplaces | Importação de vendas |
+| `getOrderStatusList` | Status disponíveis | Sincronização |
+| `setOrderStatus` | Atualiza status | Atualização de status |
+| `getInventoryProductsList` | Lista produtos | Sincronização de catálogo |
+| `updateInventoryProductsStock` | Atualiza estoque | Sincronização de estoque |
+| `getInventoryProductsPrices` | Lista preços | Sincronização de preços |
+
+## 2.5 Marketplaces Suportados
+
+| Marketplace | Código |
+|-------------|--------|
+| Mercado Livre | `ml` |
+| Amazon | `amazon` |
+| Shopee | `shopee` |
+| Magazine Luiza | `magalu` |
+| Americanas | `americanas` |
+| Via Varejo | `viavarejo` |
+| B2W | `b2w` |
+
+## 2.6 Exemplo de Requisição
 
 ```bash
-# Configurar secrets de produção
+curl -X POST "https://api.baselinker.com/connector.php" \
+  -H "X-BLToken: 8003146-8033898-532H6155RLJVRTS9GX0RKTKI8IO74JQ9PPAL391UOJZ9VGTP8QAT5N42HZMPC5IQ" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "method=getOrders" \
+  -d "parameters={\"date_from\": 1700000000}"
+```
+
+## 2.7 Módulos do Planac que Utilizam
+
+- **E-commerce** - Importação de pedidos
+- **Estoque** - Sincronização de quantidades
+- **Produtos** - Sincronização de catálogo
+- **Preços** - Sincronização de tabelas
+
+---
+
+# 3. CPF.CNPJ
+
+## 3.1 Visão Geral
+
+| Item | Descrição |
+|------|-----------|
+| **Fornecedor** | CPF.CNPJ |
+| **Site** | https://www.cpfcnpj.com.br |
+| **Documentação** | https://www.cpfcnpj.com.br/dev/ |
+| **Tipo** | API REST |
+| **Autenticação** | ID + Token |
+
+## 3.2 Credenciais de Acesso
+
+| Item | Valor |
+|------|-------|
+| **ID** | `JWXN` |
+| **Token** | `fb2868083821ff14de07e91ebac9e959` |
+
+## 3.3 Endpoints Disponíveis
+
+| Endpoint | Descrição |
+|----------|-----------|
+| `/cpf/{cpf}` | Consulta dados de CPF |
+| `/cnpj/{cnpj}` | Consulta dados de CNPJ |
+| `/cep/{cep}` | Consulta endereço por CEP |
+
+## 3.4 Exemplo de Requisição
+
+```bash
+# Consulta CNPJ
+curl "https://www.cpfcnpj.com.br/api/cnpj/12345678000190" \
+  -H "Authorization: Basic SldYTjpmYjI4NjgwODM4MjFmZjE0ZGUwN2U5MWViYWM5ZTk1OQ=="
+```
+
+## 3.5 Campos Retornados (CNPJ)
+
+| Campo | Descrição |
+|-------|-----------|
+| `razao_social` | Razão social |
+| `nome_fantasia` | Nome fantasia |
+| `cnpj` | CNPJ formatado |
+| `situacao` | Situação cadastral |
+| `data_abertura` | Data de abertura |
+| `endereco` | Endereço completo |
+| `telefone` | Telefone |
+| `email` | E-mail |
+| `atividade_principal` | CNAE principal |
+
+## 3.6 Módulos do Planac que Utilizam
+
+- **Clientes** - Validação e preenchimento automático de cadastro PJ
+- **Fornecedores** - Validação de CNPJ
+- **Fiscal** - Validação antes de emissão de NF-e
+
+---
+
+# 4. CNPJá
+
+## 4.1 Visão Geral
+
+| Item | Descrição |
+|------|-----------|
+| **Fornecedor** | CNPJá |
+| **Site** | https://cnpja.com |
+| **Documentação** | https://cnpja.com/docs |
+| **Tipo** | API REST |
+| **Autenticação** | API Key |
+
+## 4.2 Credenciais de Acesso
+
+| Item | Valor |
+|------|-------|
+| **API Key** | `35f092ea-0922-4231-bc05-181aa4062731-11a1649b-2933-44ca-9d30-9c862a03ebb3` |
+
+## 4.3 Endpoint Base
+
+```
+https://api.cnpja.com
+```
+
+## 4.4 Endpoints Disponíveis
+
+| Endpoint | Descrição |
+|----------|-----------|
+| `GET /office/{cnpj}` | Consulta completa de CNPJ |
+| `GET /office/{cnpj}/simples` | Consulta Simples Nacional |
+| `GET /office/{cnpj}/sintegra/{uf}` | Consulta SINTEGRA |
+| `GET /office/{cnpj}/suframa` | Consulta SUFRAMA |
+
+## 4.5 Exemplo de Requisição
+
+```bash
+curl "https://api.cnpja.com/office/12345678000190" \
+  -H "Authorization: 35f092ea-0922-4231-bc05-181aa4062731-11a1649b-2933-44ca-9d30-9c862a03ebb3"
+```
+
+## 4.6 Dados Enriquecidos Disponíveis
+
+| Categoria | Campos |
+|-----------|--------|
+| **Básico** | Razão social, fantasia, CNPJ, situação |
+| **Endereço** | Logradouro, número, bairro, cidade, UF, CEP |
+| **Contato** | Telefones, e-mails |
+| **Fiscal** | Simples Nacional, MEI, IE, IM |
+| **Sócios** | Nome, CPF, qualificação, participação |
+| **CNAE** | Principal e secundárias |
+| **Capital** | Capital social |
+
+## 4.7 Módulos do Planac que Utilizam
+
+- **Clientes** - Cadastro enriquecido de PJ
+- **Crédito** - Análise de cliente
+- **Fiscal** - Validação de IE e regime tributário
+
+---
+
+# 5. SERPRO INTEGRA CONTADOR
+
+## 5.1 Visão Geral
+
+| Item | Descrição |
+|------|-----------|
+| **Fornecedor** | SERPRO |
+| **Site** | https://servicos.serpro.gov.br |
+| **Documentação** | https://apicenter.estaleiro.serpro.gov.br |
+| **Tipo** | API REST |
+| **Autenticação** | OAuth 2.0 (Client Credentials) |
+
+## 5.2 Credenciais de Acesso
+
+| Item | Valor |
+|------|-------|
+| **Consumer Key** | `xulEzvzZKabUXeTQXNYPu9OZwkEa` |
+| **Consumer Secret** | `tbquSwPldBI4A5fCv0ftqFmo_3Ma` |
+| **Contrato** | `229986` |
+
+## 5.3 Obter Token de Acesso
+
+```bash
+curl -X POST "https://gateway.apiserpro.serpro.gov.br/token" \
+  -H "Authorization: Basic eHVsRXp2elpLYWJVWGVUUVhOWVB1OU9ad2tFYTp0YnF1U3dQbGRCSTRBNWZDdjBmdHFGbW9fM01h" \
+  -d "grant_type=client_credentials"
+```
+
+## 5.4 Funcionalidades
+
+| Serviço | Descrição |
+|---------|-----------|
+| **Consulta CNPJ** | Dados cadastrais da empresa |
+| **Consulta CPF** | Validação de pessoa física |
+| **Consulta INSS** | Situação previdenciária |
+| **Consulta FGTS** | Regularidade do FGTS |
+
+## 5.5 Módulos do Planac que Utilizam
+
+- **Fornecedores** - Validação fiscal
+- **Contabilidade** - Consultas para contador
+
+---
+
+# 6. SERPRO CONSULTA RENDA
+
+## 6.1 Visão Geral
+
+| Item | Descrição |
+|------|-----------|
+| **Fornecedor** | SERPRO |
+| **Tipo** | API REST |
+| **Autenticação** | OAuth 2.0 |
+| **Finalidade** | Análise de crédito pessoa física |
+
+## 6.2 Credenciais de Acesso
+
+| Item | Valor |
+|------|-------|
+| **Consumer Key** | `xulEzvzZKabUXeTQXNYPu9OZwkEa` |
+| **Consumer Secret** | `tbquSwPldBI4A5fCv0ftqFmo_3Ma` |
+| **Contrato** | `261076` |
+
+## 6.3 Obter Token de Acesso
+
+```bash
+curl -X POST "https://gateway.apiserpro.serpro.gov.br/token" \
+  -H "Authorization: Basic eHVsRXp2elpLYWJVWGVUUVhOWVB1OU9ad2tFYTp0YnF1U3dQbGRCSTRBNWZDdjBmdHFGbW9fM01h" \
+  -d "grant_type=client_credentials"
+```
+
+## 6.4 Dados Disponíveis
+
+| Dado | Descrição |
+|------|-----------|
+| **Renda declarada** | Valor declarado no IR |
+| **Faixa de renda** | Classificação por faixa |
+| **Ano base** | Exercício fiscal |
+
+## 6.5 Módulos do Planac que Utilizam
+
+- **Crédito** - Análise de limite para pessoa física
+- **Financeiro** - Score de risco
+
+---
+
+# 7. SERPRO CONSULTA FATURAMENTO
+
+## 7.1 Visão Geral
+
+| Item | Descrição |
+|------|-----------|
+| **Fornecedor** | SERPRO |
+| **Tipo** | API REST |
+| **Autenticação** | OAuth 2.0 |
+| **Finalidade** | Análise de crédito pessoa jurídica |
+
+## 7.2 Credenciais de Acesso
+
+| Item | Valor |
+|------|-------|
+| **Consumer Key** | `xulEzvzZKabUXeTQXNYPu9OZwkEa` |
+| **Consumer Secret** | `tbquSwPldBI4A5fCv0ftqFmo_3Ma` |
+| **Contrato** | `261077` |
+
+## 7.3 Obter Token de Acesso
+
+```bash
+curl -X POST "https://gateway.apiserpro.serpro.gov.br/token" \
+  -H "Authorization: Basic eHVsRXp2elpLYWJVWGVUUVhOWVB1OU9ad2tFYTp0YnF1U3dQbGRCSTRBNWZDdjBmdHFGbW9fM01h" \
+  -d "grant_type=client_credentials"
+```
+
+## 7.4 Dados Disponíveis
+
+| Dado | Descrição |
+|------|-----------|
+| **Faturamento presumido** | Valor estimado de faturamento |
+| **Porte da empresa** | MEI, ME, EPP, Normal |
+| **Ano base** | Exercício fiscal |
+
+## 7.5 Módulos do Planac que Utilizam
+
+- **Crédito** - Análise de limite para pessoa jurídica
+- **Comercial** - Classificação de clientes
+
+---
+
+# 8. CONFIGURAÇÃO NO CLOUDFLARE
+
+## 8.1 Variáveis de Ambiente (.env)
+
+```bash
+# NUVEM FISCAL
+NUVEM_FISCAL_CLIENT_ID=AJReDlHes8aBNlTzTF9X
+NUVEM_FISCAL_CLIENT_SECRET=3yMYNk2hzBLQihujZf0jfFyAKDRc403v4D1SBDFL
+NUVEM_FISCAL_URL=https://api.nuvemfiscal.com.br
+
+# BASELINKER
+BASELINKER_TOKEN=8003146-8033898-532H6155RLJVRTS9GX0RKTKI8IO74JQ9PPAL391UOJZ9VGTP8QAT5N42HZMPC5IQ
+
+# CPF.CNPJ
+CPFCNPJ_ID=JWXN
+CPFCNPJ_TOKEN=fb2868083821ff14de07e91ebac9e959
+
+# CNPJá
+CNPJA_API_KEY=35f092ea-0922-4231-bc05-181aa4062731-11a1649b-2933-44ca-9d30-9c862a03ebb3
+
+# SERPRO
+SERPRO_CONSUMER_KEY=xulEzvzZKabUXeTQXNYPu9OZwkEa
+SERPRO_CONSUMER_SECRET=tbquSwPldBI4A5fCv0ftqFmo_3Ma
+SERPRO_CONTRATO_INTEGRA=229986
+SERPRO_CONTRATO_RENDA=261076
+SERPRO_CONTRATO_FATURAMENTO=261077
+```
+
+## 8.2 Configurar Secrets no Cloudflare
+
+```bash
+# Nuvem Fiscal
 wrangler secret put NUVEM_FISCAL_CLIENT_ID
-# Inserir: AJReDlHes8aBNlTzTF9X
-
 wrangler secret put NUVEM_FISCAL_CLIENT_SECRET
-# Inserir: 3yMYNk2hzBLQihujZf0jfFyAKDRc403v4D1SBDFL
-```
 
-### Variáveis de ambiente (wrangler.toml):
+# Baselinker
+wrangler secret put BASELINKER_TOKEN
 
-```toml
-[vars]
-NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br"
+# CPF.CNPJ
+wrangler secret put CPFCNPJ_ID
+wrangler secret put CPFCNPJ_TOKEN
 
-[env.development.vars]
-NUVEM_FISCAL_URL = "https://api.sandbox.nuvemfiscal.com.br"
-```
+# CNPJá
+wrangler secret put CNPJA_API_KEY
 
-## 1.8 Webhooks
-
-O Nuvem Fiscal suporta webhooks para notificação de eventos:
-
-| Evento | Descrição |
-|--------|-----------|
-| `nfe.autorizada` | NF-e foi autorizada pela SEFAZ |
-| `nfe.rejeitada` | NF-e foi rejeitada |
-| `nfe.cancelada` | NF-e foi cancelada |
-| `nfce.autorizada` | NFC-e foi autorizada |
-
-**URL do Webhook no Planac:**
-```
-https://api.planac.com.br/webhooks/nuvemfiscal
+# SERPRO
+wrangler secret put SERPRO_CONSUMER_KEY
+wrangler secret put SERPRO_CONSUMER_SECRET
 ```
 
 ---
 
-# 2. OUTRAS INTEGRAÇÕES FISCAIS
+## 📝 Histórico de Atualizações
 
-| Serviço | Uso | Status |
-|---------|-----|--------|
-| SEFAZ (direto) | Contingência | ⏳ Pendente |
-| IBPT | Tabela de impostos | ⏳ Pendente |
-
----
-
-# 3. INTEGRAÇÕES BANCÁRIAS
-
-| Banco | Tipo | Status |
-|-------|------|--------|
-| CNAB 240/400 | Remessa/Retorno | ⏳ Pendente |
-| PIX | Cobrança | ⏳ Pendente |
-| Open Banking | Saldo/Extrato | ⏳ Pendente |
-| Boletos | Emissão | ⏳ Pendente |
+| Data | Alteração |
+|------|-----------|
+| 06/12/2025 | Adicionadas 6 novas integrações (Baselinker, CPF.CNPJ, CNPJá, SERPRO x3) |
+| 06/12/2025 | Documentação inicial Nuvem Fiscal |
 
 ---
 
-# 4. INTEGRAÇÕES DE PAGAMENTOS
-
-| Gateway | Tipo | Status |
-|---------|------|--------|
-| TEF | Cartões | ⏳ Pendente |
-| PagSeguro | Gateway | ⏳ Pendente |
-| Mercado Pago | Gateway | ⏳ Pendente |
-| Stone | Adquirente | ⏳ Pendente |
-
----
-
-# 5. INTEGRAÇÕES DE MARKETING
-
-| Serviço | Uso | Status |
-|---------|-----|--------|
-| WhatsApp Business API | Atendimento | ⏳ Pendente |
-| Google Analytics 4 | Tracking | ⏳ Pendente |
-| Meta Ads | Remarketing | ⏳ Pendente |
-| RD Station | CRM Marketing | ⏳ Pendente |
-
----
-
-# 6. INTEGRAÇÕES E-COMMERCE
-
-| Plataforma | Tipo | Status |
-|------------|------|--------|
-| Mercado Livre | Marketplace | ⏳ Pendente |
-| Shopee | Marketplace | ⏳ Pendente |
-| Amazon | Marketplace | ⏳ Pendente |
-| VTEX | E-commerce | ⏳ Pendente |
-| WooCommerce | E-commerce | ⏳ Pendente |
-
----
-
-# 7. APIS DE CONSULTA
-
-| API | Uso | Status |
-|-----|-----|--------|
-| ViaCEP | Consulta CEP | ⏳ Pendente |
-| ReceitaWS | Consulta CNPJ | ⏳ Pendente |
-| IBGE | Cidades/Estados | ⏳ Pendente |
-
----
-
-**Documento atualizado em:** 06/12/2025  
-**Responsável:** 🔗 Especialista em Integrações / DEV.com
+*Documentação mantida por 🏢 DEV.com - Mesa de Especialistas*
