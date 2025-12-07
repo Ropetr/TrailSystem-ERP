@@ -2,8 +2,8 @@
 
 ## Status Geral do Projeto
 
-**Última Atualização:** 06/12/2025  
-**Versão:** 5.0  
+**Última Atualização:** 07/12/2025  
+**Versão:** 6.0  
 **Fase Atual:** FASE 0 - Preparação (Completa)
 
 ---
@@ -27,18 +27,18 @@
 | Item | Status | Quantidade | Data |
 |------|--------|------------|------|
 | ✅ 01-sumario | **COMPLETO** | 1.851 linhas / 28 capítulos | 03/12/2025 |
-| ✅ 02-regras-negocio | **COMPLETO** | 685 linhas / **313 regras** | 03/12/2025 |
-| ✅ 03-casos-uso | **COMPLETO** | 462 linhas / **209 casos** | 03/12/2025 |
+| ✅ 02-regras-negocio | **COMPLETO** | 685 linhas / **313 regras** | 07/12/2025 |
+| ✅ 03-casos-uso | **COMPLETO** | 462 linhas / **185 casos** | 07/12/2025 |
 | ✅ 04-fluxogramas | **COMPLETO** | 1.709 linhas / 25 fluxos | 03/12/2025 |
-| ✅ 05-modelo-dados | **COMPLETO** | 4.179 linhas / **207 tabelas** | 03/12/2025 |
+| ✅ 05-modelo-dados | **COMPLETO** | 4.179 linhas / **207 tabelas** | 07/12/2025 |
 | ✅ 06-especificacao-telas | **COMPLETO** | 3.776 linhas / 203 telas | 03/12/2025 |
 | 🟡 07-apis | Em construção | Endpoints internos | - |
-| ✅ 08-integracoes | **COMPLETO** | 7 integrações documentadas | 06/12/2025 |
+| ✅ 08-integracoes | **COMPLETO** | **10 integrações** documentadas | 07/12/2025 |
 | 🟡 09-manuais | Em construção | - | - |
 | ✅ 10-anexos/SEGURANCA | **COMPLETO** | 816 linhas | 03/12/2025 |
 | ✅ 10-anexos/GUIA_NUVEM_FISCAL | **COMPLETO** | 114 linhas | 06/12/2025 |
 
-**Total de Documentação:** ~12.662 linhas
+**Total de Documentação:** ~14.288 linhas
 
 ### Infraestrutura Cloudflare
 
@@ -72,6 +72,9 @@
 | ✅ SERPRO Integra Contador | Dados fiscais | Documentado |
 | ✅ SERPRO Consulta Renda | Análise de crédito | Documentado |
 | ✅ SERPRO Consulta Faturamento | Análise de crédito | Documentado |
+| ✅ IBPT - De Olho no Imposto | Tributário | Documentado |
+| ✅ Bluesoft Cosmos | Catálogo de Produtos | Documentado |
+| ✅ API Brasil | Análise Crédito + WhatsApp | Documentado |
 
 ---
 
@@ -104,12 +107,12 @@ Planac-Revisado/
 ├── docs/
 │   ├── 01-sumario/             ✅ 1.851 linhas (28 caps)
 │   ├── 02-regras-negocio/      ✅ 685 linhas (313 regras)
-│   ├── 03-casos-uso/           ✅ 462 linhas (209 casos)
+│   ├── 03-casos-uso/           ✅ 462 linhas (185 casos)
 │   ├── 04-fluxogramas/         ✅ 1.709 linhas (25 fluxos)
 │   ├── 05-modelo-dados/        ✅ 4.179 linhas (207 tabelas)
 │   ├── 06-especificacao-telas/ ✅ 3.776 linhas (203 telas)
 │   ├── 07-apis/                🟡 Em construção
-│   ├── 08-integracoes/         ✅ 7 integrações
+│   ├── 08-integracoes/         ✅ 10 integrações
 │   ├── 09-manuais/             🟡 Em construção
 │   └── 10-anexos/
 │       ├── README.md
@@ -135,13 +138,13 @@ Planac-Revisado/
 |---------|-------|
 | Total de Tabelas | **207** |
 | Total de Regras de Negócio | **313** |
-| Total de Casos de Uso | **209** |
+| Total de Casos de Uso | **185** |
 | Total de Fluxogramas | 25 |
 | Total de Telas Especificadas | 203 |
-| Linhas de Documentação | ~12.662 |
+| Linhas de Documentação | ~14.288 |
 | Capítulos do Sistema | 28 |
 | Módulos Cobertos | 18 |
-| Integrações Documentadas | 7 |
+| Integrações Documentadas | **10** |
 
 ---
 
@@ -173,7 +176,8 @@ Planac-Revisado/
 
 | Data | Versão | Alterações |
 |------|--------|------------|
-| 06/12/2025 | 5.0 | Correção de métricas (313 regras, 209 casos, 207 tabelas) + 7 integrações documentadas |
+| 07/12/2025 | 6.0 | Revisão completa: correção métricas (313 regras, 185 casos, 207 tabelas, 10 integrações) |
+| 06/12/2025 | 5.0 | Correção de métricas + 7 integrações documentadas |
 | 06/12/2025 | 4.0 | Varredura completa, IDs Cloudflare, Nuvem Fiscal |
 | 03/12/2025 | 3.0 | Documentação completa |
 | 03/12/2025 | 2.0 | Modelo de dados 180 tabelas |
@@ -181,4 +185,4 @@ Planac-Revisado/
 
 ---
 
-*Checklist atualizado em 06/12/2025 por 🏢 DEV.com - Mesa de Especialistas*
+*Checklist atualizado em 07/12/2025 por 🏢 DEV.com - Mesa de Especialistas*
