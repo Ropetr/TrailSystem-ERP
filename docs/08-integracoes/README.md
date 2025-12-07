@@ -620,9 +620,9 @@ Onde:
 
 ## 9.2 O que é o Cosmos
 
-O **Bluesoft Cosmos** é o maior catálogo de produtos online do Brasil. Permite que sistemas ERP realizem o **cadastro automático de produtos** apenas informando o código de barras (GTIN/EAN).
+O **Bluesoft Cosmos** é o maior catálogo de produtos online do Brasil. Permite que sistemas ERP realizem o **cadastro automático de produtos** através de múltiplas formas de busca.
 
-**Benefício para a Planac:** Usuário escaneia/digita o código de barras → Sistema preenche automaticamente descrição, NCM, CEST, marca, peso, foto → Elimina erros de digitação e acelera o cadastro.
+**Benefício para a Planac:** Ao cadastrar um novo produto, o usuário pode buscar por código de barras, descrição, NCM ou categoria → Sistema preenche automaticamente descrição, NCM, CEST, marca, peso, foto → Elimina erros de digitação e acelera o cadastro.
 
 ## 9.3 Credenciais de Acesso
 
@@ -640,21 +640,80 @@ O **Bluesoft Cosmos** é o maior catálogo de produtos online do Brasil. Permite
 https://api.cosmos.bluesoft.com.br
 ```
 
-## 9.5 Endpoints Disponíveis
+## 9.5 Endpoints Disponíveis - TODAS AS FORMAS DE BUSCA
 
-| Endpoint | Método | Descrição |
-|----------|--------|-----------|
-| `/gtins/{gtin}` | GET | Busca produto por código de barras |
-| `/gtins/{gtin}.json` | GET | Busca produto (resposta em JSON) |
-| `/products` | GET | Busca por descrição (`?query=termo`) |
-| `/ncms/{ncm}` | GET | Busca NCM específico |
-| `/ncms/{ncm}/products` | GET | Lista produtos de um NCM |
+| Endpoint | Método | Descrição | Uso no Planac |
+|----------|--------|-----------|---------------|
+| `/gtins/{gtin}` | GET | Busca por código de barras (GTIN/EAN) | Leitor de código de barras ou digitação |
+| `/gtins/{gtin}.json` | GET | Busca por GTIN (resposta JSON) | Alternativa com formato explícito |
+| `/products?query={termo}` | GET | Busca por descrição ou GTIN | Busca textual livre |
+| `/ncms/{ncm}` | GET | Detalhes de um NCM específico | Validar NCM existente |
+| `/ncms/{ncm}/products` | GET | Lista produtos de um NCM | Buscar por classificação fiscal |
+| `/gpcs/{gpc}` | GET | Detalhes de categoria GPC | Buscar por categoria |
+| `/gpcs/{gpc}/products` | GET | Lista produtos de uma categoria | Navegar por categorias |
 
-## 9.6 Exemplo de Requisição
+### 9.5.1 Busca por Código de Barras (GTIN/EAN)
 
 ```bash
-# Busca produto pelo código de barras (GTIN/EAN)
+# Busca direta pelo código de barras
 curl "https://api.cosmos.bluesoft.com.br/gtins/7891000315507.json" \
+  -H "X-Cosmos-Token: mK7UKgCycAPW1Nr_7QDkdw" \
+  -H "User-Agent: Planac ERP (contato@planac.com.br)"
+```
+
+**Uso:** Leitor de código de barras no cadastro ou digitação manual do código.
+
+### 9.5.2 Busca por Descrição (Texto Livre)
+
+```bash
+# Busca por termo (descrição ou parte do nome)
+curl "https://api.cosmos.bluesoft.com.br/products?query=placa%20de%20gesso" \
+  -H "X-Cosmos-Token: mK7UKgCycAPW1Nr_7QDkdw" \
+  -H "User-Agent: Planac ERP (contato@planac.com.br)"
+```
+
+**Uso:** Quando o usuário não tem o código de barras e quer buscar pelo nome do produto.
+
+**Resposta:** Lista paginada de produtos que correspondem ao termo buscado.
+
+### 9.5.3 Busca por NCM (Classificação Fiscal)
+
+```bash
+# Lista produtos de um NCM específico (ex: chapas de gesso)
+curl "https://api.cosmos.bluesoft.com.br/ncms/68091100/products" \
+  -H "X-Cosmos-Token: mK7UKgCycAPW1Nr_7QDkdw" \
+  -H "User-Agent: Planac ERP (contato@planac.com.br)"
+```
+
+**Uso:** Quando o usuário sabe o NCM do produto que quer cadastrar (comum para materiais de construção).
+
+**NCMs comuns para Planac:**
+- `6809.11.00` - Chapas, placas e painéis de gesso
+- `6809.19.00` - Outras obras de gesso
+- `7308.90.90` - Perfis metálicos
+- `3214.10.10` - Massas para acabamento
+
+### 9.5.4 Busca por Categoria (GPC)
+
+```bash
+# Lista produtos de uma categoria mercadológica
+curl "https://api.cosmos.bluesoft.com.br/gpcs/10000043/products" \
+  -H "X-Cosmos-Token: mK7UKgCycAPW1Nr_7QDkdw" \
+  -H "User-Agent: Planac ERP (contato@planac.com.br)"
+```
+
+**Uso:** Navegar por categorias de produtos para encontrar itens similares.
+
+## 9.6 Parâmetros de Paginação
+
+| Parâmetro | Descrição | Valor Padrão |
+|-----------|-----------|--------------|
+| `page` | Número da página | 1 |
+| `per_page` | Itens por página (máx 90) | 30 |
+
+```bash
+# Busca paginada
+curl "https://api.cosmos.bluesoft.com.br/products?query=drywall&page=2&per_page=50" \
   -H "X-Cosmos-Token: mK7UKgCycAPW1Nr_7QDkdw" \
   -H "User-Agent: Planac ERP (contato@planac.com.br)"
 ```
@@ -718,25 +777,114 @@ curl "https://api.cosmos.bluesoft.com.br/products?query=drywall" \
   -H "User-Agent: Planac ERP (contato@planac.com.br)"
 ```
 
-## 9.10 Fluxo de Auto Cadastro
+## 9.10 Fluxo de Cadastro de Produto com Cosmos
 
 ```mermaid
 graph TD
-    A[Usuário digita/escaneia código de barras] --> B[Sistema consulta Cosmos]
-    B --> C{Produto encontrado?}
-    C -->|Sim| D[Preenche campos automaticamente]
-    C -->|Não| E[Exibe formulário em branco]
-    D --> F[Usuário complementa dados específicos]
-    F --> G[Preço de venda]
-    F --> H[Estoque mínimo/máximo]
-    F --> I[Localização no estoque]
-    F --> J[Fornecedor padrão]
-    G --> K[Salva produto]
-    H --> K
-    I --> K
-    J --> K
-    E --> L[Usuário cadastra manualmente]
-    L --> K
+    A[Usuário clica em Novo Produto] --> B[Tela de Busca no Cosmos]
+    B --> C{Escolhe forma de busca}
+    C -->|Código de Barras| D[Digita/escaneia GTIN]
+    C -->|Descrição| E[Digita nome/termo]
+    C -->|NCM| F[Digita código NCM]
+    C -->|Categoria| G[Navega por categorias]
+    D --> H[GET /gtins/codigo]
+    E --> I[GET /products?query=termo]
+    F --> J[GET /ncms/codigo/products]
+    G --> K[GET /gpcs/codigo/products]
+    H --> L{Encontrou?}
+    I --> M[Lista de resultados]
+    J --> M
+    K --> M
+    M --> N[Usuário seleciona produto]
+    N --> L
+    L -->|Sim| O[Preenche campos automaticamente]
+    L -->|Não| P[Formulário em branco]
+    O --> Q[Usuário complementa dados]
+    P --> Q
+    Q --> R[Preço de venda, estoque, localização...]
+    R --> S[Salva produto]
+```
+
+### 9.10.1 Tela de Busca - Mockup Funcional
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CADASTRO DE PRODUTO                          │
+├─────────────────────────────────────────────────────────────────┤
+│  🔍 Buscar no Cosmos (escolha uma opção):                       │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ ○ Código de Barras (GTIN/EAN)                            │   │
+│  │   [____________________] [📷 Escanear]                   │   │
+│  │                                                           │   │
+│  │ ○ Busca por Descrição                                    │   │
+│  │   [placa de gesso__________] [🔍 Buscar]                 │   │
+│  │                                                           │   │
+│  │ ○ Busca por NCM                                          │   │
+│  │   [68091100________________] [🔍 Buscar]                 │   │
+│  │                                                           │   │
+│  │ ○ Navegar por Categoria                                  │   │
+│  │   [Materiais de Construção ▼] [📂 Ver Produtos]          │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ─────────────── ou ───────────────                             │
+│                                                                  │
+│  [📝 Cadastrar Manualmente]                                     │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 9.10.2 Resultado da Busca - Lista de Produtos
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Resultados para: "placa de gesso" (47 produtos)                │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────┐ PLACA DE GESSO STANDARD 1200X1800X12,5MM              │
+│  │ 📦  │ Marca: PLACO | NCM: 68091100 | GTIN: 7891234567890    │
+│  └─────┘ [Usar este produto]                                    │
+│  ─────────────────────────────────────────────────────────────  │
+│  ┌─────┐ PLACA DE GESSO RESISTENTE UMIDADE 1200X1800X12,5MM    │
+│  │ 📦  │ Marca: KNAUF | NCM: 68091100 | GTIN: 7891234567891    │
+│  └─────┘ [Usar este produto]                                    │
+│  ─────────────────────────────────────────────────────────────  │
+│  ┌─────┐ PLACA DE GESSO FORRO 600X600X8MM                      │
+│  │ 📦  │ Marca: GYPSUM | NCM: 68091100 | GTIN: 7891234567892   │
+│  └─────┘ [Usar este produto]                                    │
+├─────────────────────────────────────────────────────────────────┤
+│  [◀ Anterior]  Página 1 de 5  [Próximo ▶]                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 9.10.3 Formulário Preenchido Automaticamente
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  ✅ Dados importados do Cosmos                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Código de Barras: [7891234567890_____] (automático)            │
+│  Descrição:        [PLACA DE GESSO STANDARD 1200X1800X12,5MM]   │
+│  Marca:            [PLACO_______________] (automático)          │
+│  NCM:              [68091100____________] (automático)          │
+│  CEST:             [1000100_____________] (automático)          │
+│  Peso Bruto (kg):  [25,00_______________] (automático)          │
+│  Peso Líquido (kg):[24,50_______________] (automático)          │
+│  Foto:             [🖼️ Imagem carregada] (automático)           │
+│                                                                  │
+│  ─────────── DADOS COMPLEMENTARES (preencher) ───────────────   │
+│                                                                  │
+│  Preço de Venda:   [R$ _______________] (obrigatório)           │
+│  Preço de Custo:   [R$ _______________]                         │
+│  Estoque Mínimo:   [__________________ unid.]                   │
+│  Estoque Máximo:   [__________________ unid.]                   │
+│  Localização:      [Corredor __ Prateleira __]                  │
+│  Fornecedor:       [Selecione... ▼__________]                   │
+│  Unidade:          [UN ▼_________________]                      │
+│                                                                  │
+│               [Cancelar]  [💾 Salvar Produto]                   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## 9.11 Limites do Plano
