@@ -20,7 +20,7 @@ Documentação completa dos casos de uso do sistema, organizados por módulo.
 | [RH](#8-módulo-rh) | 20 |
 | [Contratos](#9-módulo-contratos) | 6 |
 | [BI e Relatórios](#10-módulo-bi-e-relatórios) | 5 |
-| **TOTAL** | **145** |
+| **TOTAL** | **185** |
 
 ---
 
