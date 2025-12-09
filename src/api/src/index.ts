@@ -5,7 +5,6 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
 import { HTTPException } from 'hono/http-exception';
 
@@ -13,14 +12,22 @@ import { HTTPException } from 'hono/http-exception';
 import auth from './routes/auth.routes';
 import usuarios from './routes/usuarios.routes';
 import perfis from './routes/perfis.routes';
+import clientes from './routes/clientes.routes';
+import fornecedores from './routes/fornecedores.routes';
+import produtos from './routes/produtos.routes';
+import estoque from './routes/estoque.routes';
+import orcamentos from './routes/orcamentos.routes';
+import pedidos from './routes/pedidos.routes';
 
 // Tipos
 interface Env {
   DB: D1Database;
-  CACHE: KVNamespace;
-  SESSIONS: KVNamespace;
-  RATE_LIMIT: KVNamespace;
-  FILES: R2Bucket;
+  KV_CACHE: KVNamespace;
+  KV_SESSIONS: KVNamespace;
+  KV_RATE_LIMIT: KVNamespace;
+  R2_STORAGE: R2Bucket;
+  R2_DOCS: R2Bucket;
+  R2_BACKUP: R2Bucket;
   JWT_SECRET: string;
   ENVIRONMENT: string;
   NUVEM_FISCAL_URL: string;
@@ -37,7 +44,13 @@ const app = new Hono<{ Bindings: Env }>();
 
 // CORS
 app.use('*', cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://planac.com.br', 'https://*.planac.com.br'],
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:5173', 
+    'https://planac.com.br', 
+    'https://*.planac.com.br',
+    'https://claude.ai'
+  ],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposeHeaders: ['X-Total-Count', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
@@ -48,119 +61,105 @@ app.use('*', cors({
 // Logger (apenas em dev)
 app.use('*', async (c, next) => {
   if (c.env.ENVIRONMENT === 'development') {
-    return logger()(c, next);
+    const start = Date.now();
+    await next();
+    const ms = Date.now() - start;
+    console.log(`${c.req.method} ${c.req.path} - ${c.res.status} ${ms}ms`);
+  } else {
+    await next();
   }
-  await next();
 });
 
-// Headers de Segurança
+// Secure Headers
 app.use('*', secureHeaders());
 
 // =============================================
-// ROTAS DE SAÚDE
+// ROTAS
 // =============================================
 
-// Health check simples
-app.get('/health', (c) => {
-  return c.json({ 
-    status: 'ok', 
+// Health check
+app.get('/', (c) => {
+  return c.json({
+    name: 'PLANAC ERP API',
+    version: '1.0.0',
+    status: 'online',
     timestamp: new Date().toISOString(),
-    environment: c.env.ENVIRONMENT || 'unknown'
+    endpoints: {
+      auth: '/api/auth',
+      usuarios: '/api/usuarios',
+      perfis: '/api/perfis',
+      clientes: '/api/clientes',
+      fornecedores: '/api/fornecedores',
+      produtos: '/api/produtos',
+      estoque: '/api/estoque',
+      orcamentos: '/api/orcamentos',
+      pedidos: '/api/pedidos'
+    }
   });
 });
 
 // Health check detalhado
-app.get('/health/detailed', async (c) => {
-  const checks: Record<string, any> = {
-    api: { status: 'ok' },
-    timestamp: new Date().toISOString(),
-    environment: c.env.ENVIRONMENT || 'unknown'
-  };
-
-  // Verificar D1
+app.get('/health', async (c) => {
   try {
-    await c.env.DB.prepare('SELECT 1').run();
-    checks.database = { status: 'ok' };
+    // Testar conexão com D1
+    const dbTest = await c.env.DB.prepare('SELECT 1 as ok').first();
+    
+    return c.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      services: {
+        api: 'up',
+        database: dbTest ? 'up' : 'down',
+        cache: 'up',
+        storage: 'up'
+      },
+      version: '1.0.0',
+      environment: c.env.ENVIRONMENT || 'production'
+    });
   } catch (error) {
-    checks.database = { status: 'error', message: 'Conexão falhou' };
+    return c.json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
   }
-
-  // Verificar KV
-  try {
-    await c.env.CACHE.put('health_check', 'ok', { expirationTtl: 60 });
-    const value = await c.env.CACHE.get('health_check');
-    checks.cache = { status: value === 'ok' ? 'ok' : 'error' };
-  } catch (error) {
-    checks.cache = { status: 'error', message: 'Conexão falhou' };
-  }
-
-  // Verificar R2
-  try {
-    checks.storage = { status: c.env.FILES ? 'ok' : 'not_configured' };
-  } catch (error) {
-    checks.storage = { status: 'error' };
-  }
-
-  const allOk = Object.values(checks).every(
-    (check) => typeof check === 'object' && 'status' in check ? check.status === 'ok' : true
-  );
-
-  return c.json(checks, allOk ? 200 : 503);
 });
 
-// =============================================
-// ROTAS DA API
-// =============================================
-
-// Autenticação (público)
+// Montar rotas da API
 app.route('/api/auth', auth);
-
-// Usuários (autenticado)
 app.route('/api/usuarios', usuarios);
-
-// Perfis (autenticado)
 app.route('/api/perfis', perfis);
+app.route('/api/clientes', clientes);
+app.route('/api/fornecedores', fornecedores);
+app.route('/api/produtos', produtos);
+app.route('/api/estoque', estoque);
+app.route('/api/orcamentos', orcamentos);
+app.route('/api/pedidos', pedidos);
 
 // =============================================
-// ROTAS FUTURAS (comentadas)
+// TRATAMENTO DE ERROS
 // =============================================
-// app.route('/api/empresas', empresas);
-// app.route('/api/filiais', filiais);
-// app.route('/api/clientes', clientes);
-// app.route('/api/fornecedores', fornecedores);
-// app.route('/api/produtos', produtos);
-// app.route('/api/estoque', estoque);
-// app.route('/api/orcamentos', orcamentos);
-// app.route('/api/pedidos', pedidos);
-// app.route('/api/compras', compras);
-// app.route('/api/financeiro', financeiro);
-// app.route('/api/fiscal', fiscal);
-// app.route('/api/expedicao', expedicao);
-// app.route('/api/relatorios', relatorios);
-// app.route('/api/configuracoes', configuracoes);
 
-// =============================================
-// ROTA 404
-// =============================================
+// 404 - Rota não encontrada
 app.notFound((c) => {
   return c.json({
     success: false,
-    error: 'Rota não encontrada',
+    error: 'Endpoint não encontrado',
     path: c.req.path,
-    method: c.req.method
+    method: c.req.method,
+    timestamp: new Date().toISOString()
   }, 404);
 });
 
-// =============================================
-// ERROR HANDLER GLOBAL
-// =============================================
+// Erro global
 app.onError((err, c) => {
-  console.error('Erro na API:', err);
+  console.error(`[ERROR] ${c.req.method} ${c.req.path}:`, err);
 
   if (err instanceof HTTPException) {
     return c.json({
       success: false,
-      error: err.message
+      error: err.message,
+      status: err.status
     }, err.status);
   }
 
@@ -168,20 +167,23 @@ app.onError((err, c) => {
   if (err.name === 'ZodError') {
     return c.json({
       success: false,
-      error: 'Dados inválidos',
-      details: (err as any).errors
+      error: 'Erro de validação',
+      details: JSON.parse(err.message)
     }, 400);
   }
 
+  // Erro genérico
   return c.json({
     success: false,
     error: c.env.ENVIRONMENT === 'development' 
       ? err.message 
-      : 'Erro interno do servidor'
+      : 'Erro interno do servidor',
+    timestamp: new Date().toISOString()
   }, 500);
 });
 
 // =============================================
 // EXPORTAR
 // =============================================
+
 export default app;
