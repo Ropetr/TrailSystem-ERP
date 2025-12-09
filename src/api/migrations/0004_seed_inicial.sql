@@ -1,212 +1,120 @@
-/**
- * 🌱 PLANAC ERP - Seed Script
- * Cria empresa e usuário administrador inicial
- * Executar via D1 console ou Wrangler
- */
+-- =============================================
+-- 🌱 PLANAC ERP - Migration 0004
+-- Seed: Empresa Planac + Usuário Admin
+-- =============================================
+-- Criado em: 09/12/2025
 
 -- =============================================
--- 1. CRIAR EMPRESA PLANAC
+-- EMPRESA PLANAC (Matriz)
 -- =============================================
 INSERT INTO empresas (
-  id,
-  razao_social,
-  nome_fantasia,
-  cnpj,
-  inscricao_estadual,
-  regime_tributario,
-  cep,
-  logradouro,
-  numero,
-  bairro,
-  cidade,
-  uf,
-  ibge,
-  telefone,
-  email,
-  site
+    id, razao_social, nome_fantasia, cnpj, inscricao_estadual,
+    regime_tributario, cep, logradouro, numero, bairro, cidade, uf, ibge,
+    telefone, email
 ) VALUES (
-  'empresa_planac_001',
-  'PLANAC DISTRIBUIDORA DE MATERIAIS PARA CONSTRUCAO LTDA',
-  'PLANAC',
-  '12345678000190',
-  '1234567890',
-  3, -- Lucro Presumido
-  '80000000',
-  'Rua Principal',
-  '100',
-  'Centro',
-  'Curitiba',
-  'PR',
-  '4106902',
-  '4133334444',
-  'contato@planac.com.br',
-  'https://planac.com.br'
+    '01PLANAC00000000000000000000',
+    'PLANAC DISTRIBUIDORA DE DRYWALL LTDA',
+    'PLANAC',
+    '00000000000191',
+    'ISENTO',
+    1,
+    '80000000',
+    'Rua Principal',
+    '100',
+    'Centro',
+    'Curitiba',
+    'PR',
+    '4106902',
+    '41999999999',
+    'contato@planac.com.br'
 );
 
 -- =============================================
--- 2. CRIAR FILIAL MATRIZ
+-- FILIAL MATRIZ
 -- =============================================
 INSERT INTO filiais (
-  id,
-  empresa_id,
-  nome,
-  tipo,
-  cep,
-  logradouro,
-  numero,
-  bairro,
-  cidade,
-  uf,
-  telefone
+    id, empresa_id, nome, tipo, cep, logradouro, numero, bairro, cidade, uf, ibge
 ) VALUES (
-  'filial_matriz_001',
-  'empresa_planac_001',
-  'Matriz Curitiba',
-  1, -- Matriz
-  '80000000',
-  'Rua Principal',
-  '100',
-  'Centro',
-  'Curitiba',
-  'PR',
-  '4133334444'
+    '01FILIAL0000000000000000MATRIZ',
+    '01PLANAC00000000000000000000',
+    'Matriz Curitiba',
+    1,
+    '80000000',
+    'Rua Principal',
+    '100',
+    'Centro',
+    'Curitiba',
+    'PR',
+    '4106902'
 );
 
 -- =============================================
--- 3. CRIAR PERFIL ADMINISTRADOR
+-- PERFIL ADMINISTRADOR
 -- =============================================
 INSERT INTO perfis (
-  id,
-  empresa_id,
-  nome,
-  descricao,
-  nivel,
-  padrao
+    id, empresa_id, nome, descricao, nivel, padrao
 ) VALUES (
-  'perfil_admin_001',
-  'empresa_planac_001',
-  'Administrador',
-  'Acesso total ao sistema',
-  1,
-  0
+    '01PERFIL000000000000000ADMIN',
+    '01PLANAC00000000000000000000',
+    'Administrador',
+    'Acesso total ao sistema',
+    1,
+    1
 );
 
 -- =============================================
--- 4. CRIAR PERFIL GERENTE
+-- VINCULAR TODAS AS PERMISSÕES AO ADMIN
 -- =============================================
-INSERT INTO perfis (
-  id,
-  empresa_id,
-  nome,
-  descricao,
-  nivel,
-  padrao
-) VALUES (
-  'perfil_gerente_001',
-  'empresa_planac_001',
-  'Gerente',
-  'Acesso gerencial',
-  2,
-  0
-);
+INSERT INTO perfis_permissoes (id, perfil_id, permissao_id)
+SELECT 
+    lower(hex(randomblob(16))),
+    '01PERFIL000000000000000ADMIN',
+    id
+FROM permissoes;
 
 -- =============================================
--- 5. CRIAR PERFIL VENDEDOR (PADRÃO)
+-- PERFIS ADICIONAIS
 -- =============================================
-INSERT INTO perfis (
-  id,
-  empresa_id,
-  nome,
-  descricao,
-  nivel,
-  padrao
-) VALUES (
-  'perfil_vendedor_001',
-  'empresa_planac_001',
-  'Vendedor',
-  'Acesso ao módulo de vendas',
-  5,
-  1
-);
+INSERT INTO perfis (id, empresa_id, nome, descricao, nivel) VALUES 
+('01PERFIL000000000000000GERENTE', '01PLANAC00000000000000000000', 'Gerente', 'Gerente com acesso amplo', 2),
+('01PERFIL000000000000VENDEDOR', '01PLANAC00000000000000000000', 'Vendedor', 'Acesso a vendas e clientes', 5),
+('01PERFIL000000000000FINANCEIRO', '01PLANAC00000000000000000000', 'Financeiro', 'Acesso ao módulo financeiro', 4),
+('01PERFIL000000000000000ESTOQUE', '01PLANAC00000000000000000000', 'Estoquista', 'Acesso ao estoque', 6),
+('01PERFIL000000000000EXPEDICAO', '01PLANAC00000000000000000000', 'Expedição', 'Acesso à expedição e entregas', 6);
 
 -- =============================================
--- 6. DAR TODAS AS PERMISSÕES AO ADMIN
--- =============================================
-INSERT INTO perfis_permissoes (perfil_id, permissao_id)
-SELECT 'perfil_admin_001', id FROM permissoes;
-
--- =============================================
--- 7. DAR PERMISSÕES AO GERENTE
--- =============================================
-INSERT INTO perfis_permissoes (perfil_id, permissao_id)
-SELECT 'perfil_gerente_001', id FROM permissoes 
-WHERE modulo NOT IN ('empresas', 'configuracoes', 'audit')
-   OR acao = 'ver';
-
--- =============================================
--- 8. DAR PERMISSÕES AO VENDEDOR
--- =============================================
-INSERT INTO perfis_permissoes (perfil_id, permissao_id)
-SELECT 'perfil_vendedor_001', id FROM permissoes 
-WHERE modulo IN ('dashboard', 'clientes', 'produtos', 'orcamentos', 'pedidos', 'estoque')
-  AND acao IN ('ver', 'criar', 'editar');
-
--- =============================================
--- 9. CRIAR USUÁRIO ADMIN
+-- USUÁRIO ADMIN
 -- Senha: Admin@123 (hash gerado com PBKDF2)
--- IMPORTANTE: Troque a senha após o primeiro login!
+-- NOTA: Este hash deve ser atualizado na primeira execução
 -- =============================================
 INSERT INTO usuarios (
-  id,
-  empresa_id,
-  nome,
-  email,
-  senha_hash,
-  cargo,
-  ativo
+    id, empresa_id, nome, email, senha_hash, cargo, ativo
 ) VALUES (
-  'user_admin_001',
-  'empresa_planac_001',
-  'Administrador do Sistema',
-  'admin@planac.com.br',
-  '100000:YWJjZGVmZ2hpamtsbW5vcA==:wK1s8QGhZ0L7XmNx4JnV3TvYbSfRpUoIeWcAdBkMqHg=',
-  'Administrador',
-  1
+    '01USER0000000000000000000ADMIN',
+    '01PLANAC00000000000000000000',
+    'Administrador',
+    'admin@planac.com.br',
+    'TROCAR_SENHA_NO_PRIMEIRO_ACESSO',
+    'Administrador do Sistema',
+    1
+);
+
+-- Vincular admin ao perfil Admin
+INSERT INTO usuarios_perfis (id, usuario_id, perfil_id) VALUES (
+    '01USERPERFIL0000000000000001',
+    '01USER0000000000000000000ADMIN',
+    '01PERFIL000000000000000ADMIN'
 );
 
 -- =============================================
--- 10. VINCULAR ADMIN AO PERFIL ADMINISTRADOR
+-- CONFIGURAÇÕES PADRÃO
 -- =============================================
-INSERT INTO usuarios_perfis (
-  usuario_id,
-  perfil_id
-) VALUES (
-  'user_admin_001',
-  'perfil_admin_001'
-);
-
--- =============================================
--- 11. CONFIGURAÇÕES PADRÃO DA EMPRESA
--- =============================================
-INSERT INTO configuracoes (empresa_id, chave, valor, tipo, descricao) VALUES
-('empresa_planac_001', 'sessao_timeout', '480', 'number', 'Tempo de sessão em minutos'),
-('empresa_planac_001', 'tentativas_login', '5', 'number', 'Máximo de tentativas de login'),
-('empresa_planac_001', 'bloqueio_minutos', '15', 'number', 'Tempo de bloqueio após tentativas'),
-('empresa_planac_001', 'two_factor_obrigatorio', 'false', 'boolean', '2FA obrigatório para todos'),
-('empresa_planac_001', 'moeda', 'BRL', 'string', 'Moeda padrão'),
-('empresa_planac_001', 'casas_decimais_quantidade', '3', 'number', 'Casas decimais para quantidade'),
-('empresa_planac_001', 'casas_decimais_valor', '2', 'number', 'Casas decimais para valores'),
-('empresa_planac_001', 'permite_estoque_negativo', 'false', 'boolean', 'Permitir estoque negativo'),
-('empresa_planac_001', 'validade_orcamento', '30', 'number', 'Dias de validade do orçamento'),
-('empresa_planac_001', 'nfe_ambiente', '2', 'number', '1=Produção, 2=Homologação');
-
--- =============================================
--- VERIFICAÇÃO
--- =============================================
--- SELECT * FROM empresas;
--- SELECT * FROM filiais;
--- SELECT * FROM perfis;
--- SELECT * FROM usuarios;
--- SELECT * FROM usuarios_perfis;
--- SELECT * FROM perfis_permissoes WHERE perfil_id = 'perfil_admin_001';
--- SELECT COUNT(*) as total_permissoes_admin FROM perfis_permissoes WHERE perfil_id = 'perfil_admin_001';
+INSERT INTO configuracoes (id, empresa_id, chave, valor, tipo, descricao) VALUES
+('conf_001', '01PLANAC00000000000000000000', 'sessao_timeout_horas', '8', 'number', 'Tempo de expiração da sessão em horas'),
+('conf_002', '01PLANAC00000000000000000000', 'tentativas_login_max', '5', 'number', 'Máximo de tentativas de login antes de bloquear'),
+('conf_003', '01PLANAC00000000000000000000', 'bloqueio_minutos', '15', 'number', 'Tempo de bloqueio após exceder tentativas'),
+('conf_004', '01PLANAC00000000000000000000', 'desconto_maximo_vendedor', '5', 'number', 'Desconto máximo que vendedor pode dar (%)'),
+('conf_005', '01PLANAC00000000000000000000', 'desconto_maximo_gerente', '15', 'number', 'Desconto máximo que gerente pode dar (%)'),
+('conf_006', '01PLANAC00000000000000000000', 'estoque_minimo_alerta', '1', 'boolean', 'Alertar quando estoque atingir mínimo'),
+('conf_007', '01PLANAC00000000000000000000', 'nfe_ambiente', '2', 'number', '1=Produção, 2=Homologação'),
+('conf_008', '01PLANAC00000000000000000000', 'nfe_serie', '1', 'number', 'Série da NF-e');
