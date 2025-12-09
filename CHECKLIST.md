@@ -44,9 +44,9 @@
 
 | Recurso | Nome | ID | Status |
 |---------|------|-------|--------|
-| ✅ D1 Database | Planac-erp-database | `7d9ff002-0a33-4a10-9677-6c5c654a3a56` | Criado |
-| ✅ KV Cache | Planac-erp-cache | `5b02f88e3de2498db31e9679b4c291e5` | Criado |
-| ✅ KV Sessions | Planac-erp-sessions | `9b9cef95c4f741a6a2ac9de75e4e568c` | Criado |
+| ✅ D1 Database | Planac-erp-database | `12f9a7d5-fe09-4b09-bf72-59bae24d65b2` | Criado |
+| ✅ KV Cache | Planac-erp-cache | `d053dab81a554dc6961884eae41f75f7` | Criado |
+| ✅ KV Sessions | Planac-erp-sessions | `80c6322699844ba1bb99e841f0c84306` | Criado |
 | ✅ KV Rate Limit | Planac-erp-rate-limit | `f9991a8379d74873a8030e42dad416bd` | Criado |
 | ✅ R2 Storage | planac-erp-storage | - | Criado |
 
