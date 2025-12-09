@@ -15,8 +15,8 @@
 | Documentação | 95% | ✅ |
 | Infraestrutura Cloudflare | 100% | ✅ |
 | Integrações Documentadas | 100% | ✅ |
-| Código Fonte | 15% | 🟡 |
-| Implementação | 0% | ⏳ |
+| Código Fonte | 35% | 🟡 |
+| Implementação | 15% | 🟡 |
 
 ---
 
@@ -186,3 +186,63 @@ Planac-Revisado/
 ---
 
 *Checklist atualizado em 07/12/2025 por 🏢 DEV.com - Mesa de Especialistas*
+
+---
+
+## 🔐 FASE 1 - AUTENTICAÇÃO E USUÁRIOS ✅ EM ANDAMENTO
+
+**Atualizado em:** 09/12/2025
+
+### Banco de Dados (D1)
+
+| Tabela | Status | Descrição |
+|--------|--------|-----------|
+| ✅ empresas | CRIADA | Multi-tenant principal |
+| ✅ filiais | CRIADA | Filiais/Lojas/CDs |
+| ✅ configuracoes | CRIADA | Chave/Valor por empresa |
+| ✅ perfis | CRIADA | Grupos de permissão |
+| ✅ permissoes | CRIADA | 88 permissões cadastradas |
+| ✅ perfis_permissoes | CRIADA | N:N Perfis ↔ Permissões |
+| ✅ usuarios | CRIADA | Usuários do sistema |
+| ✅ usuarios_perfis | CRIADA | N:N Usuários ↔ Perfis |
+| ✅ usuarios_sessoes | CRIADA | Sessões JWT |
+| ✅ usuarios_tokens | CRIADA | Reset senha, 2FA |
+| ✅ audit_logs | CRIADA | Auditoria completa |
+| ✅ notificacoes | CRIADA | Notificações |
+| ✅ alcadas_aprovacao | CRIADA | Regras de aprovação |
+
+**Total: 13 tabelas criadas ✅**
+
+### API (Cloudflare Workers)
+
+| Arquivo | Status | Rotas/Funções |
+|---------|--------|---------------|
+| ✅ auth.service.ts | CRIADO | hashSenha, verificarSenha, gerarToken, gerarRefreshToken, criarSessao, revogarSessao, registrarAuditoria |
+| ✅ auth.middleware.ts | CRIADO | authMiddleware, requirePermission, rateLimitMiddleware, tenantMiddleware |
+| ✅ auth.routes.ts | CRIADO | POST /login, /logout, /logout-all, /alterar-senha, GET /me, /sessoes |
+| ✅ usuarios.routes.ts | CRIADO | GET /, /:id, POST /, PUT /:id, DELETE /:id, POST /:id/resetar-senha |
+| ✅ perfis.routes.ts | CRIADO | GET /, /permissoes, /:id, /:id/matriz, POST /, PUT /:id, DELETE /:id |
+| ✅ index.ts | ATUALIZADO | Health checks, CORS, Rotas integradas |
+
+### Dados Iniciais (Seed)
+
+| Item | Status | Detalhes |
+|------|--------|----------|
+| ✅ Empresa | CRIADA | PLANAC DISTRIBUIDORA |
+| ✅ Filial | CRIADA | Matriz Curitiba |
+| ✅ Perfis | CRIADOS | Administrador (nível 1), Gerente (nível 2), Vendedor (nível 5) |
+| ✅ Permissões | CRIADAS | 88 permissões (23 módulos) |
+| ✅ Usuário Admin | CRIADO | admin@planac.com.br (senha: Admin@123) |
+| ✅ Configurações | CRIADAS | 10 configurações padrão |
+
+### Próximos Passos - FASE 1
+
+| # | Tarefa | Status | Prioridade |
+|---|--------|--------|------------|
+| 1 | Deploy da API no Cloudflare | ⏳ Pendente | 🔴 Alta |
+| 2 | Testar endpoints de autenticação | ⏳ Pendente | 🔴 Alta |
+| 3 | Criar tela de Login (React) | ⏳ Pendente | 🔴 Alta |
+| 4 | Criar tela de Usuários (React) | ⏳ Pendente | 🟡 Média |
+| 5 | Criar tela de Perfis/Matriz (React) | ⏳ Pendente | 🟡 Média |
+| 6 | Implementar 2FA (TOTP) | ⏳ Pendente | 🟢 Baixa |
+| 7 | Implementar recuperação de senha | ⏳ Pendente | 🟢 Baixa |
