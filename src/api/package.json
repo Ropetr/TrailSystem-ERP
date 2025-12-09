@@ -1,0 +1,41 @@
+{
+  "name": "@planac/api",
+  "version": "0.1.0",
+  "description": "API do ERP Planac",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "db:migrate": "wrangler d1 execute Planac-erp-database --file",
+    "db:seed": "wrangler d1 execute Planac-erp-database --file ./migrations/0004_seed_inicial.sql",
+    "types": "wrangler types",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "@hono/zod-validator": "^0.4.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241106.0",
+    "wrangler": "^3.90.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0"
+  },
+  "keywords": [
+    "planac",
+    "erp",
+    "cloudflare",
+    "workers",
+    "hono"
+  ],
+  "author": "DEV.com",
+  "license": "PROPRIETARY"
+}
