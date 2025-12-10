@@ -2,22 +2,37 @@
 // 🚀 PLANAC ERP - API Principal
 // =============================================
 // Arquivo: src/api/src/index.ts
+// Atualizado: 10/12/2025 - Adicionadas 6 novas rotas
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { HTTPException } from 'hono/http-exception';
 
-// Rotas
+// Rotas - Core
 import auth from './routes/auth.routes';
 import usuarios from './routes/usuarios.routes';
 import perfis from './routes/perfis.routes';
+
+// Rotas - Empresa & Config (NOVAS)
+import empresas from './routes/empresas.routes';
+import filiais from './routes/filiais.routes';
+import configuracoes from './routes/configuracoes.routes';
+
+// Rotas - Cadastros
 import clientes from './routes/clientes.routes';
 import fornecedores from './routes/fornecedores.routes';
 import produtos from './routes/produtos.routes';
-import estoque from './routes/estoque.routes';
+
+// Rotas - Comercial
+import tabelasPreco from './routes/tabelas-preco.routes';
+import condicoesPagamento from './routes/condicoes-pagamento.routes';
 import orcamentos from './routes/orcamentos.routes';
 import pedidos from './routes/pedidos.routes';
+
+// Rotas - Operações
+import estoque from './routes/estoque.routes';
+import transportadoras from './routes/transportadoras.routes';
 
 // Tipos
 interface Env {
@@ -81,19 +96,39 @@ app.use('*', secureHeaders());
 app.get('/', (c) => {
   return c.json({
     name: 'PLANAC ERP API',
-    version: '1.0.0',
+    version: '1.1.0',
     status: 'online',
     timestamp: new Date().toISOString(),
-    endpoints: {
-      auth: '/api/auth',
-      usuarios: '/api/usuarios',
-      perfis: '/api/perfis',
-      clientes: '/api/clientes',
-      fornecedores: '/api/fornecedores',
-      produtos: '/api/produtos',
-      estoque: '/api/estoque',
-      orcamentos: '/api/orcamentos',
-      pedidos: '/api/pedidos'
+    modules: {
+      core: {
+        auth: '/api/auth',
+        usuarios: '/api/usuarios',
+        perfis: '/api/perfis'
+      },
+      empresa: {
+        empresas: '/api/empresas',
+        filiais: '/api/filiais',
+        configuracoes: '/api/configuracoes'
+      },
+      cadastros: {
+        clientes: '/api/clientes',
+        fornecedores: '/api/fornecedores',
+        produtos: '/api/produtos'
+      },
+      comercial: {
+        tabelasPreco: '/api/tabelas-preco',
+        condicoesPagamento: '/api/condicoes-pagamento',
+        orcamentos: '/api/orcamentos',
+        pedidos: '/api/pedidos'
+      },
+      operacoes: {
+        estoque: '/api/estoque',
+        transportadoras: '/api/transportadoras'
+      }
+    },
+    stats: {
+      totalEndpoints: 15,
+      totalRoutes: '~95'
     }
   });
 });
@@ -104,6 +139,16 @@ app.get('/health', async (c) => {
     // Testar conexão com D1
     const dbTest = await c.env.DB.prepare('SELECT 1 as ok').first();
     
+    // Contar registros principais
+    const stats = await c.env.DB.prepare(`
+      SELECT 
+        (SELECT COUNT(*) FROM empresas) as empresas,
+        (SELECT COUNT(*) FROM usuarios) as usuarios,
+        (SELECT COUNT(*) FROM clientes) as clientes,
+        (SELECT COUNT(*) FROM produtos) as produtos,
+        (SELECT COUNT(*) FROM pedidos_venda) as pedidos
+    `).first<any>();
+    
     return c.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -113,7 +158,14 @@ app.get('/health', async (c) => {
         cache: 'up',
         storage: 'up'
       },
-      version: '1.0.0',
+      database: {
+        empresas: stats?.empresas || 0,
+        usuarios: stats?.usuarios || 0,
+        clientes: stats?.clientes || 0,
+        produtos: stats?.produtos || 0,
+        pedidos: stats?.pedidos || 0
+      },
+      version: '1.1.0',
       environment: c.env.ENVIRONMENT || 'production'
     });
   } catch (error) {
@@ -125,16 +177,34 @@ app.get('/health', async (c) => {
   }
 });
 
-// Montar rotas da API
+// =============================================
+// MONTAR ROTAS DA API
+// =============================================
+
+// Core
 app.route('/api/auth', auth);
 app.route('/api/usuarios', usuarios);
 app.route('/api/perfis', perfis);
+
+// Empresa & Config (NOVAS)
+app.route('/api/empresas', empresas);
+app.route('/api/filiais', filiais);
+app.route('/api/configuracoes', configuracoes);
+
+// Cadastros
 app.route('/api/clientes', clientes);
 app.route('/api/fornecedores', fornecedores);
 app.route('/api/produtos', produtos);
-app.route('/api/estoque', estoque);
+
+// Comercial (NOVAS: tabelas-preco, condicoes-pagamento)
+app.route('/api/tabelas-preco', tabelasPreco);
+app.route('/api/condicoes-pagamento', condicoesPagamento);
 app.route('/api/orcamentos', orcamentos);
 app.route('/api/pedidos', pedidos);
+
+// Operações (NOVA: transportadoras)
+app.route('/api/estoque', estoque);
+app.route('/api/transportadoras', transportadoras);
 
 // =============================================
 // TRATAMENTO DE ERROS
@@ -147,6 +217,7 @@ app.notFound((c) => {
     error: 'Endpoint não encontrado',
     path: c.req.path,
     method: c.req.method,
+    hint: 'Acesse / para ver todos os endpoints disponíveis',
     timestamp: new Date().toISOString()
   }, 404);
 });
