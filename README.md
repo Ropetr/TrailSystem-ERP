@@ -122,6 +122,41 @@ Sistema ERP completo, multi-empresas, multi-integrações, desenvolvido em módu
 
 ---
 
+
+## 🤖 Sistema de Governança (Orquestrador DEV.com)
+
+O desenvolvimento do PLANAC ERP é governado pelo **Orquestrador DEV.com**, um sistema de IA que coordena **57 especialistas virtuais**.
+
+### Infraestrutura
+
+| Componente | Recurso | URL |
+|------------|---------|-----|
+| **API do ERP** | `planac-erp-api` | https://planac-erp-api.planacacabamentos.workers.dev |
+| **Orquestrador** | `devcom-orchestrator` | https://devcom-orchestrator.planacacabamentos.workers.dev |
+
+### Capacidades
+
+- 🧠 **57 Especialistas Virtuais** - CEO, CTO, DBA, Frontend, Backend, QA, etc.
+- 🔄 **Arquitetura Duas Cabeças** - Claude (análise) + GPT (validação)
+- 💾 **Memória Ampliada** - Persiste decisões e contexto entre sessões
+- 📊 **Governança Automatizada** - Documenta e rastreia todas as decisões
+
+### Documentação Relacionada
+
+| Documento | Descrição |
+|-----------|-----------|
+| [DEV.com.md](./DEV.com.md) | Estrutura da fábrica de software virtual |
+| [docs/00-devcom/ORQUESTRADOR.md](./docs/00-devcom/ORQUESTRADOR.md) | Detalhes técnicos do orquestrador |
+| [docs/00-devcom/WORKFLOW.md](./docs/00-devcom/WORKFLOW.md) | Fluxos de trabalho |
+
+### Repositórios
+
+```
+📁 Ropetr/Planac-Revisado      ← ERP (este repositório)
+📁 Ropetr/dev.com-orquestrador ← Orquestrador
+```
+
+---
 ## 👥 Equipe
 
 - **Rodrigo** - Product Owner / PLANAC
