@@ -78,7 +78,7 @@ export function UsuariosPage() {
     {
       label: 'Editar',
       icon: <Icons.edit className="w-4 h-4" />,
-      onClick: () => navigate(\`/usuarios/\${usuario.id}\`),
+      onClick: () => navigate(`/usuarios/${usuario.id}`),
     },
     {
       label: 'Resetar Senha',
@@ -125,7 +125,7 @@ export function UsuariosPage() {
           actions={actions}
           isLoading={isLoading}
           emptyMessage="Nenhum usuário encontrado"
-          onRowClick={(u) => navigate(\`/usuarios/\${u.id}\`)}
+          onRowClick={(u) => navigate(`/usuarios/${u.id}`)}
         />
       </Card>
     </div>
