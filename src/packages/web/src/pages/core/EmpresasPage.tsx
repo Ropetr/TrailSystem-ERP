@@ -1,157 +1,143 @@
 // =============================================
-// PLANAC ERP - Empresas Page (Listagem)
+// PLANAC ERP - Empresas Page
 // =============================================
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  DataTable, 
-  Column, 
-  Button, 
-  Badge, 
-  Icons, 
-  DropdownMenuItem,
-  useToast 
-} from '@/components/ui';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { DataTable } from '@/components/ui/DataTable';
+import { Badge } from '@/components/ui/Badge';
+import { Icons } from '@/components/ui/Icons';
+import { useToast } from '@/components/ui/Toast';
 import api from '@/services/api';
-import type { Empresa, PaginatedResponse } from '@/types';
+import type { Empresa } from '@/types';
 
 export function EmpresasPage() {
   const navigate = useNavigate();
-  const { success, error } = useToast();
+  const toast = useToast();
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-
-  const loadEmpresas = async (searchQuery = '') => {
-    setLoading(true);
-    try {
-      const response = await api.get<PaginatedResponse<Empresa>>(
-        \`/empresas?page=\${page}&limit=10&q=\${searchQuery}\`
-      );
-      setEmpresas(response.data);
-      setTotal(response.total);
-    } catch (err) {
-      error('Erro ao carregar empresas');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     loadEmpresas();
-  }, [page]);
+  }, []);
 
-  const columns: Column<Empresa>[] = [
-    {
-      key: 'cnpj',
-      header: 'CNPJ',
-      width: '150px',
-      sortable: true,
-      render: (row) => (
-        <span className="font-mono text-sm">{formatCNPJ(row.cnpj)}</span>
-      ),
-    },
-    {
-      key: 'razao_social',
-      header: 'Razão Social',
-      sortable: true,
-    },
-    {
-      key: 'nome_fantasia',
-      header: 'Nome Fantasia',
-      sortable: true,
-    },
+  const loadEmpresas = async () => {
+    try {
+      const response = await api.get<{ success: boolean; data: Empresa[] }>('/empresas');
+      if (response.success) {
+        setEmpresas(response.data);
+      }
+    } catch (error) {
+      toast.error('Erro ao carregar empresas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Deseja realmente excluir esta empresa?')) return;
+    
+    try {
+      await api.delete(\`/empresas/\${id}\`);
+      toast.success('Empresa excluída com sucesso');
+      loadEmpresas();
+    } catch (error) {
+      toast.error('Erro ao excluir empresa');
+    }
+  };
+
+  const filteredEmpresas = empresas.filter(
+    (e) =>
+      e.razao_social.toLowerCase().includes(search.toLowerCase()) ||
+      e.cnpj.includes(search) ||
+      e.nome_fantasia?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const columns = [
+    { key: 'cnpj', header: 'CNPJ', width: '150px', sortable: true },
+    { key: 'razao_social', header: 'Razão Social', sortable: true },
+    { key: 'nome_fantasia', header: 'Nome Fantasia', sortable: true },
     {
       key: 'cidade',
       header: 'Cidade/UF',
-      render: (row) => row.cidade ? \`\${row.cidade}/\${row.uf}\` : '-',
+      render: (e: Empresa) => e.cidade ? \`\${e.cidade}/\${e.uf}\` : '-',
     },
     {
       key: 'ativo',
       header: 'Status',
       width: '100px',
-      render: (row) => (
-        <Badge variant={row.ativo ? 'success' : 'danger'}>
-          {row.ativo ? 'Ativo' : 'Inativo'}
+      render: (e: Empresa) => (
+        <Badge variant={e.ativo ? 'success' : 'danger'}>
+          {e.ativo ? 'Ativo' : 'Inativo'}
         </Badge>
       ),
     },
   ];
 
-  const getActions = (row: Empresa): DropdownMenuItem[] => [
+  const actions = (empresa: Empresa) => [
     {
       label: 'Editar',
       icon: <Icons.edit className="w-4 h-4" />,
-      onClick: () => navigate(\`/empresas/\${row.id}\`),
+      onClick: () => navigate(\`/empresas/\${empresa.id}\`),
     },
     {
-      label: 'Visualizar',
-      icon: <Icons.eye className="w-4 h-4" />,
-      onClick: () => navigate(\`/empresas/\${row.id}/view\`),
+      label: empresa.ativo ? 'Inativar' : 'Ativar',
+      icon: empresa.ativo ? <Icons.eyeOff className="w-4 h-4" /> : <Icons.eye className="w-4 h-4" />,
+      onClick: () => {/* toggle ativo */},
     },
-    { type: 'separator' },
+    { type: 'separator' as const },
     {
-      label: row.ativo ? 'Inativar' : 'Ativar',
-      icon: row.ativo ? <Icons.x className="w-4 h-4" /> : <Icons.check className="w-4 h-4" />,
-      variant: row.ativo ? 'danger' : 'success',
-      onClick: () => toggleStatus(row),
+      label: 'Excluir',
+      icon: <Icons.trash className="w-4 h-4" />,
+      variant: 'danger' as const,
+      onClick: () => handleDelete(empresa.id),
     },
   ];
-
-  const toggleStatus = async (empresa: Empresa) => {
-    try {
-      await api.put(\`/empresas/\${empresa.id}\`, { ativo: !empresa.ativo });
-      success(\`Empresa \${empresa.ativo ? 'inativada' : 'ativada'} com sucesso\`);
-      loadEmpresas();
-    } catch (err) {
-      error('Erro ao alterar status');
-    }
-  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Empresas</h1>
-          <p className="text-gray-500 mt-1">Gerencie as empresas do sistema</p>
+          <h1 className="text-2xl font-bold text-gray-900">Empresas</h1>
+          <p className="text-gray-500">Gerencie as empresas do sistema</p>
         </div>
-        <Button icon={<Icons.plus className="w-4 h-4" />} onClick={() => navigate('/empresas/novo')}>
+        <Button leftIcon={<Icons.plus className="w-5 h-5" />} onClick={() => navigate('/empresas/novo')}>
           Nova Empresa
         </Button>
       </div>
 
-      {/* DataTable */}
-      <DataTable
-        data={empresas}
-        columns={columns}
-        loading={loading}
-        emptyMessage="Nenhuma empresa encontrada"
-        searchPlaceholder="Buscar por CNPJ, razão social..."
-        onSearch={loadEmpresas}
-        actions={getActions}
-        onRowClick={(row) => navigate(\`/empresas/\${row.id}\`)}
-        pagination={{
-          page,
-          totalPages: Math.ceil(total / 10),
-          total,
-          onPageChange: setPage,
-        }}
-        headerActions={
-          <Button variant="secondary" icon={<Icons.printer className="w-4 h-4" />}>
-            Exportar
-          </Button>
-        }
-      />
+      {/* Filters */}
+      <Card padding="sm">
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Buscar por razão social, CNPJ ou fantasia..."
+              leftIcon={<Icons.search className="w-5 h-5" />}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Table */}
+      <Card padding="none">
+        <DataTable
+          data={filteredEmpresas}
+          columns={columns}
+          actions={actions}
+          isLoading={isLoading}
+          emptyMessage="Nenhuma empresa encontrada"
+          onRowClick={(e) => navigate(\`/empresas/\${e.id}\`)}
+        />
+      </Card>
     </div>
   );
-}
-
-// Helpers
-function formatCNPJ(cnpj: string): string {
-  return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
 }
 
 export default EmpresasPage;
