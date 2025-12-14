@@ -3,6 +3,7 @@
 // =============================================
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -13,41 +14,23 @@ import { Select } from '@/components/ui/Select';
 import { Icons } from '@/components/ui/Icons';
 import { useToast } from '@/components/ui/Toast';
 import api from '@/services/api';
-
-interface Filial {
-  id: string;
-  empresa_id: string;
-  empresa_nome?: string;
-  nome: string;
-  cnpj?: string;
-  cep?: string;
-  cidade?: string;
-  uf?: string;
-  ativo: boolean;
-}
-
-interface Empresa {
-  id: string;
-  nome_fantasia: string;
-}
+import type { Filial, Empresa } from '@/types';
 
 export function FiliaisPage() {
   const toast = useToast();
   const [filiais, setFiliais] = useState<Filial[]>([]);
-  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [empresas, setEmpresas] = useState<{ value: string; label: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  
-  // Modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingFilial, setEditingFilial] = useState<Filial | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Form state
   const [formData, setFormData] = useState({
-    empresa_id: '',
     nome: '',
     cnpj: '',
-    cep: '',
-    cidade: '',
-    uf: '',
+    empresa_id: '',
     ativo: true,
   });
 
@@ -61,18 +44,13 @@ export function FiliaisPage() {
         api.get<{ success: boolean; data: Filial[] }>('/filiais'),
         api.get<{ success: boolean; data: Empresa[] }>('/empresas'),
       ]);
-      
+
       if (filiaisRes.success) setFiliais(filiaisRes.data);
-      if (empresasRes.success) setEmpresas(empresasRes.data);
-    } catch {
-      // Mock data
-      setFiliais([
-        { id: '1', empresa_id: '1', empresa_nome: 'PLANAC', nome: 'Matriz', cidade: 'Londrina', uf: 'PR', ativo: true },
-        { id: '2', empresa_id: '1', empresa_nome: 'PLANAC', nome: 'Filial Centro', cidade: 'Londrina', uf: 'PR', ativo: true },
-      ]);
-      setEmpresas([
-        { id: '1', nome_fantasia: 'PLANAC Distribuidora' },
-      ]);
+      if (empresasRes.success) {
+        setEmpresas(empresasRes.data.map(e => ({ value: e.id, label: e.razao_social })));
+      }
+    } catch (error) {
+      toast.error('Erro ao carregar dados');
     } finally {
       setIsLoading(false);
     }
@@ -82,27 +60,16 @@ export function FiliaisPage() {
     if (filial) {
       setEditingFilial(filial);
       setFormData({
-        empresa_id: filial.empresa_id,
         nome: filial.nome,
         cnpj: filial.cnpj || '',
-        cep: filial.cep || '',
-        cidade: filial.cidade || '',
-        uf: filial.uf || '',
+        empresa_id: filial.empresa_id,
         ativo: filial.ativo,
       });
     } else {
       setEditingFilial(null);
-      setFormData({
-        empresa_id: empresas[0]?.id || '',
-        nome: '',
-        cnpj: '',
-        cep: '',
-        cidade: '',
-        uf: '',
-        ativo: true,
-      });
+      setFormData({ nome: '', cnpj: '', empresa_id: '', ativo: true });
     }
-    setIsModalOpen(true);
+    setModalOpen(true);
   };
 
   const handleSave = async () => {
@@ -111,44 +78,50 @@ export function FiliaisPage() {
       return;
     }
 
+    setIsSaving(true);
     try {
       if (editingFilial) {
         await api.put(`/filiais/${editingFilial.id}`, formData);
-        toast.success('Filial atualizada!');
+        toast.success('Filial atualizada com sucesso');
       } else {
         await api.post('/filiais', formData);
-        toast.success('Filial cadastrada!');
+        toast.success('Filial criada com sucesso');
       }
-      setIsModalOpen(false);
+      setModalOpen(false);
       loadData();
-    } catch {
+    } catch (error) {
       toast.error('Erro ao salvar filial');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Deseja excluir esta filial?')) return;
+    if (!confirm('Deseja realmente excluir esta filial?')) return;
+
     try {
       await api.delete(`/filiais/${id}`);
-      toast.success('Filial excluída!');
+      toast.success('Filial excluída com sucesso');
       loadData();
-    } catch {
+    } catch (error) {
       toast.error('Erro ao excluir filial');
     }
   };
 
-  const filteredFiliais = filiais.filter(f =>
-    f.nome.toLowerCase().includes(search.toLowerCase()) ||
-    f.cidade?.toLowerCase().includes(search.toLowerCase())
+  const filteredFiliais = filiais.filter(
+    (f) => f.nome.toLowerCase().includes(search.toLowerCase())
   );
 
   const columns = [
     { key: 'nome', header: 'Nome', sortable: true },
-    { key: 'empresa_nome', header: 'Empresa', sortable: true },
+    { key: 'cnpj', header: 'CNPJ', width: '150px' },
     {
-      key: 'cidade',
-      header: 'Cidade/UF',
-      render: (f: Filial) => f.cidade ? `${f.cidade}/${f.uf}` : '-',
+      key: 'empresa_id',
+      header: 'Empresa',
+      render: (f: Filial) => {
+        const empresa = empresas.find(e => e.value === f.empresa_id);
+        return empresa?.label || '-';
+      },
     },
     {
       key: 'ativo',
@@ -156,7 +129,7 @@ export function FiliaisPage() {
       width: '100px',
       render: (f: Filial) => (
         <Badge variant={f.ativo ? 'success' : 'danger'}>
-          {f.ativo ? 'Ativa' : 'Inativa'}
+          {f.ativo ? 'Ativo' : 'Inativo'}
         </Badge>
       ),
     },
@@ -177,12 +150,6 @@ export function FiliaisPage() {
     },
   ];
 
-  const empresaOptions = empresas.map(e => ({ value: e.id, label: e.nome_fantasia }));
-  const ufOptions = [
-    'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA',
-    'PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'
-  ].map(uf => ({ value: uf, label: uf }));
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -199,7 +166,7 @@ export function FiliaisPage() {
       {/* Filters */}
       <Card padding="sm">
         <Input
-          placeholder="Buscar por nome ou cidade..."
+          placeholder="Buscar por nome..."
           leftIcon={<Icons.search className="w-5 h-5" />}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -219,69 +186,55 @@ export function FiliaisPage() {
 
       {/* Modal */}
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
         title={editingFilial ? 'Editar Filial' : 'Nova Filial'}
-        size="md"
       >
         <div className="space-y-4">
-          <Select
-            label="Empresa"
-            value={formData.empresa_id}
-            onChange={(v) => setFormData({ ...formData, empresa_id: v })}
-            options={empresaOptions}
-          />
-          
           <Input
-            label="Nome da Filial"
+            label="Nome"
+            placeholder="Nome da filial"
             value={formData.nome}
             onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
             required
           />
 
           <Input
-            label="CNPJ (opcional)"
+            label="CNPJ"
+            placeholder="00.000.000/0000-00"
             value={formData.cnpj}
             onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
           />
 
-          <div className="grid grid-cols-3 gap-4">
-            <Input
-              label="CEP"
-              value={formData.cep}
-              onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
-            />
-            <Input
-              label="Cidade"
-              value={formData.cidade}
-              onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
-            />
-            <Select
-              label="UF"
-              value={formData.uf}
-              onChange={(v) => setFormData({ ...formData, uf: v })}
-              options={ufOptions}
-            />
-          </div>
+          <Select
+            label="Empresa"
+            value={formData.empresa_id}
+            onChange={(v) => setFormData({ ...formData, empresa_id: v })}
+            options={empresas}
+            placeholder="Selecione a empresa"
+          />
 
-          <label className="flex items-center gap-2 cursor-pointer">
+          <div className="flex items-center gap-3">
             <input
               type="checkbox"
+              id="filial-ativo"
               checked={formData.ativo}
               onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-              className="w-4 h-4 text-planac-500 rounded"
+              className="w-4 h-4 text-planac-500 border-gray-300 rounded"
             />
-            <span className="text-sm text-gray-700">Filial Ativa</span>
-          </label>
-
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSave} leftIcon={<Icons.check className="w-4 h-4" />}>
-              Salvar
-            </Button>
+            <label htmlFor="filial-ativo" className="text-sm font-medium text-gray-700">
+              Filial Ativa
+            </label>
           </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+          <Button variant="secondary" onClick={() => setModalOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSave} isLoading={isSaving}>
+            {editingFilial ? 'Salvar' : 'Criar'}
+          </Button>
         </div>
       </Modal>
     </div>
