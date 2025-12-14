@@ -7,13 +7,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Icons } from '@/components/ui/Icons';
 import { useToast } from '@/components/ui/Toast';
-import { Spinner } from '@/components/ui/Spinner';
 import api from '@/services/api';
 
 // Schema de validação
@@ -30,10 +29,6 @@ const clienteSchema = z.object({
   cnpj: z.string().optional(),
   ie: z.string().optional(),
   im: z.string().optional(),
-  // Contato
-  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  telefone: z.string().optional(),
-  celular: z.string().optional(),
   // Endereço
   cep: z.string().optional(),
   logradouro: z.string().optional(),
@@ -42,29 +37,26 @@ const clienteSchema = z.object({
   bairro: z.string().optional(),
   cidade: z.string().optional(),
   uf: z.string().optional(),
+  // Contato
+  telefone: z.string().optional(),
+  celular: z.string().optional(),
+  email: z.string().email('E-mail inválido').optional().or(z.literal('')),
   // Comercial
   vendedor_id: z.string().optional(),
   tabela_preco_id: z.string().optional(),
   condicao_pagamento_id: z.string().optional(),
-  limite_credito: z.number().min(0).optional(),
-  // Observações
-  observacoes: z.string().optional(),
+  limite_credito: z.number().optional(),
+  // Status
   ativo: z.boolean().default(true),
-}).refine(
-  (data) => {
-    if (data.tipo === 'PF') {
-      return data.nome && data.nome.length >= 3;
-    }
-    return data.razao_social && data.razao_social.length >= 3;
-  },
-  { message: 'Nome/Razão Social é obrigatório (mínimo 3 caracteres)', path: ['nome'] }
-);
+});
 
 type ClienteFormData = z.infer<typeof clienteSchema>;
 
-const tipoOptions = [
-  { value: 'PJ', label: 'Pessoa Jurídica' },
-  { value: 'PF', label: 'Pessoa Física' },
+const tabs = [
+  { id: 'dados', label: 'Dados Gerais', icon: Icons.user },
+  { id: 'endereco', label: 'Endereço', icon: Icons.mapPin },
+  { id: 'contato', label: 'Contato', icon: Icons.phone },
+  { id: 'comercial', label: 'Comercial', icon: Icons.dollarSign },
 ];
 
 const ufOptions = [
@@ -80,25 +72,25 @@ const ufOptions = [
 ];
 
 export function ClienteFormPage() {
-  const { id } = useParams();
   const navigate = useNavigate();
+  const { id } = useParams();
   const toast = useToast();
   const isEditing = Boolean(id);
 
+  const [activeTab, setActiveTab] = useState('dados');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dados' | 'endereco' | 'comercial' | 'observacoes'>('dados');
   const [vendedores, setVendedores] = useState<{ value: string; label: string }[]>([]);
-  const [tabelas, setTabelas] = useState<{ value: string; label: string }[]>([]);
-  const [condicoes, setCondicoes] = useState<{ value: string; label: string }[]>([]);
+  const [tabelasPreco, setTabelasPreco] = useState<{ value: string; label: string }[]>([]);
+  const [condicoesPagamento, setCondicoesPagamento] = useState<{ value: string; label: string }[]>([]);
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
     reset,
+    formState: { errors },
   } = useForm<ClienteFormData>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
@@ -111,26 +103,32 @@ export function ClienteFormPage() {
   const tipo = watch('tipo');
 
   useEffect(() => {
-    loadDependencies();
-    if (isEditing) {
+    loadOptions();
+    if (id) {
       loadCliente();
     }
   }, [id]);
 
-  const loadDependencies = async () => {
+  const loadOptions = async () => {
     try {
-      // Carregar vendedores, tabelas de preço e condições de pagamento
-      const [vendRes, tabRes, condRes] = await Promise.all([
-        api.get('/usuarios?perfil=vendedor').catch(() => ({ data: [] })),
-        api.get('/tabelas-preco').catch(() => ({ data: [] })),
-        api.get('/condicoes-pagamento').catch(() => ({ data: [] })),
+      // Carregar vendedores, tabelas de preço, condições de pagamento
+      const [vendedoresRes, tabelasRes, condicoesRes] = await Promise.all([
+        api.get('/usuarios?perfil=vendedor'),
+        api.get('/tabelas-preco'),
+        api.get('/condicoes-pagamento'),
       ]);
 
-      setVendedores(vendRes.data?.map((v: any) => ({ value: v.id, label: v.nome })) || []);
-      setTabelas(tabRes.data?.map((t: any) => ({ value: t.id, label: t.nome })) || []);
-      setCondicoes(condRes.data?.map((c: any) => ({ value: c.id, label: c.nome })) || []);
+      if (vendedoresRes.success) {
+        setVendedores(vendedoresRes.data.map((v: any) => ({ value: v.id, label: v.nome })));
+      }
+      if (tabelasRes.success) {
+        setTabelasPreco(tabelasRes.data.map((t: any) => ({ value: t.id, label: t.nome })));
+      }
+      if (condicoesRes.success) {
+        setCondicoesPagamento(condicoesRes.data.map((c: any) => ({ value: c.id, label: c.nome })));
+      }
     } catch (error) {
-      console.error('Erro ao carregar dependências:', error);
+      console.error('Erro ao carregar opções:', error);
     }
   };
 
@@ -138,7 +136,7 @@ export function ClienteFormPage() {
     setIsLoading(true);
     try {
       const response = await api.get(`/clientes/${id}`);
-      if (response.success && response.data) {
+      if (response.success) {
         reset(response.data);
       }
     } catch (error) {
@@ -158,48 +156,29 @@ export function ClienteFormPage() {
       const data = await response.json();
 
       if (!data.erro) {
-        setValue('logradouro', data.logradouro || '');
-        setValue('bairro', data.bairro || '');
-        setValue('cidade', data.localidade || '');
-        setValue('uf', data.uf || '');
+        setValue('logradouro', data.logradouro);
+        setValue('bairro', data.bairro);
+        setValue('cidade', data.localidade);
+        setValue('uf', data.uf);
       }
     } catch (error) {
       console.error('Erro ao buscar CEP:', error);
     }
   };
 
-  const buscarCnpj = async (cnpj: string) => {
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
-    if (cnpjLimpo.length !== 14) return;
-
-    try {
-      // Usando CPF.CNPJ API ou CNPJá conforme configurado
-      toast.info('Buscando dados do CNPJ...');
-      // Implementar chamada à API configurada
-    } catch (error) {
-      console.error('Erro ao buscar CNPJ:', error);
-    }
-  };
-
   const onSubmit = async (data: ClienteFormData) => {
     setIsSaving(true);
     try {
-      // Montar payload com CPF ou CNPJ
-      const payload = {
-        ...data,
-        cpf_cnpj: data.tipo === 'PF' ? data.cpf : data.cnpj,
-      };
-
       if (isEditing) {
-        await api.put(`/clientes/${id}`, payload);
+        await api.put(`/clientes/${id}`, data);
         toast.success('Cliente atualizado com sucesso');
       } else {
-        await api.post('/clientes', payload);
-        toast.success('Cliente criado com sucesso');
+        await api.post('/clientes', data);
+        toast.success('Cliente cadastrado com sucesso');
       }
       navigate('/clientes');
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao salvar cliente');
+    } catch (error) {
+      toast.error('Erro ao salvar cliente');
     } finally {
       setIsSaving(false);
     }
@@ -208,17 +187,10 @@ export function ClienteFormPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Spinner size="lg" />
+        <Icons.spinner className="w-8 h-8 animate-spin text-planac-500" />
       </div>
     );
   }
-
-  const tabs = [
-    { id: 'dados', label: 'Dados', icon: <Icons.user className="w-4 h-4" /> },
-    { id: 'endereco', label: 'Endereço', icon: <Icons.mapPin className="w-4 h-4" /> },
-    { id: 'comercial', label: 'Comercial', icon: <Icons.dollarSign className="w-4 h-4" /> },
-    { id: 'observacoes', label: 'Observações', icon: <Icons.fileText className="w-4 h-4" /> },
-  ];
 
   return (
     <div className="space-y-6">
@@ -232,288 +204,274 @@ export function ClienteFormPage() {
             {isEditing ? 'Editar Cliente' : 'Novo Cliente'}
           </h1>
           <p className="text-gray-500">
-            {isEditing ? 'Atualize os dados do cliente' : 'Preencha os dados do novo cliente'}
+            {isEditing ? 'Atualize os dados do cliente' : 'Cadastre um novo cliente'}
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="flex gap-4">
-            {tabs.map((tab) => (
+        {/* Tipo de Cliente */}
+        <Card className="mb-6">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-700">Tipo de Cliente:</span>
+            <div className="flex gap-2">
               <button
-                key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-red-500 text-red-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                onClick={() => setValue('tipo', 'PJ')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  tipo === 'PJ'
+                    ? 'bg-planac-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {tab.icon}
-                {tab.label}
+                Pessoa Jurídica
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setValue('tipo', 'PF')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  tipo === 'PF'
+                    ? 'bg-planac-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Pessoa Física
+              </button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="flex gap-8">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 py-3 border-b-2 text-sm font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-planac-500 text-planac-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </nav>
         </div>
 
-        {/* Tab: Dados */}
-        {activeTab === 'dados' && (
-          <Card>
-            <CardContent className="space-y-6">
-              {/* Tipo */}
-              <div className="w-48">
-                <Select
-                  label="Tipo de Cliente"
-                  value={tipo}
-                  onChange={(v) => setValue('tipo', v as 'PF' | 'PJ')}
-                  options={tipoOptions}
-                />
-              </div>
-
-              {/* Campos PJ */}
-              {tipo === 'PJ' && (
+        {/* Tab Content */}
+        <Card>
+          {/* Dados Gerais */}
+          {activeTab === 'dados' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {tipo === 'PJ' ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="CNPJ"
-                      {...register('cnpj')}
-                      onBlur={(e) => buscarCnpj(e.target.value)}
-                      placeholder="00.000.000/0000-00"
-                      error={errors.cnpj?.message}
-                      rightIcon={
-                        <button type="button" className="text-gray-400 hover:text-red-500">
-                          <Icons.search className="w-4 h-4" />
-                        </button>
-                      }
-                    />
-                    <Input
-                      label="Inscrição Estadual"
-                      {...register('ie')}
-                      placeholder="Inscrição Estadual"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="Razão Social"
-                      {...register('razao_social')}
-                      placeholder="Razão Social da Empresa"
-                      error={errors.razao_social?.message}
-                      required
-                    />
-                    <Input
-                      label="Nome Fantasia"
-                      {...register('nome_fantasia')}
-                      placeholder="Nome Fantasia"
-                    />
-                  </div>
+                  <Input
+                    label="CNPJ"
+                    {...register('cnpj')}
+                    error={errors.cnpj?.message}
+                    required
+                  />
+                  <Input
+                    label="Inscrição Estadual"
+                    {...register('ie')}
+                    error={errors.ie?.message}
+                  />
+                  <Input
+                    label="Razão Social"
+                    {...register('razao_social')}
+                    error={errors.razao_social?.message}
+                    required
+                    className="md:col-span-2"
+                  />
+                  <Input
+                    label="Nome Fantasia"
+                    {...register('nome_fantasia')}
+                    error={errors.nome_fantasia?.message}
+                    className="md:col-span-2"
+                  />
                   <Input
                     label="Inscrição Municipal"
                     {...register('im')}
-                    placeholder="Inscrição Municipal"
-                    className="w-1/2"
+                    error={errors.im?.message}
                   />
                 </>
-              )}
-
-              {/* Campos PF */}
-              {tipo === 'PF' && (
+              ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="CPF"
-                      {...register('cpf')}
-                      placeholder="000.000.000-00"
-                      error={errors.cpf?.message}
-                    />
-                    <Input
-                      label="RG"
-                      {...register('rg')}
-                      placeholder="RG"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="Nome Completo"
-                      {...register('nome')}
-                      placeholder="Nome completo"
-                      error={errors.nome?.message}
-                      required
-                    />
-                    <Input
-                      label="Data de Nascimento"
-                      type="date"
-                      {...register('data_nascimento')}
-                    />
-                  </div>
+                  <Input
+                    label="CPF"
+                    {...register('cpf')}
+                    error={errors.cpf?.message}
+                    required
+                  />
+                  <Input
+                    label="RG"
+                    {...register('rg')}
+                    error={errors.rg?.message}
+                  />
+                  <Input
+                    label="Nome Completo"
+                    {...register('nome')}
+                    error={errors.nome?.message}
+                    required
+                    className="md:col-span-2"
+                  />
+                  <Input
+                    label="Data de Nascimento"
+                    type="date"
+                    {...register('data_nascimento')}
+                    error={errors.data_nascimento?.message}
+                  />
                 </>
               )}
+            </div>
+          )}
 
-              {/* Contato */}
-              <div className="border-t pt-6 mt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Contato</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Input
-                    label="E-mail"
-                    type="email"
-                    {...register('email')}
-                    placeholder="email@exemplo.com"
-                    error={errors.email?.message}
-                  />
-                  <Input
-                    label="Telefone"
-                    {...register('telefone')}
-                    placeholder="(00) 0000-0000"
-                  />
-                  <Input
-                    label="Celular"
-                    {...register('celular')}
-                    placeholder="(00) 00000-0000"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Tab: Endereço */}
-        {activeTab === 'endereco' && (
-          <Card>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Endereço */}
+          {activeTab === 'endereco' && (
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+              <div className="md:col-span-2">
                 <Input
                   label="CEP"
                   {...register('cep')}
+                  error={errors.cep?.message}
                   onBlur={(e) => buscarCep(e.target.value)}
-                  placeholder="00000-000"
                   rightIcon={
-                    <button type="button" className="text-gray-400 hover:text-red-500">
+                    <button type="button" className="text-gray-400 hover:text-planac-500">
                       <Icons.search className="w-4 h-4" />
                     </button>
                   }
                 />
-                <div className="md:col-span-2">
-                  <Input
-                    label="Logradouro"
-                    {...register('logradouro')}
-                    placeholder="Rua, Avenida..."
-                  />
-                </div>
+              </div>
+              <div className="md:col-span-4">
+                <Input
+                  label="Logradouro"
+                  {...register('logradouro')}
+                  error={errors.logradouro?.message}
+                />
+              </div>
+              <div className="md:col-span-1">
                 <Input
                   label="Número"
                   {...register('numero')}
-                  placeholder="Nº"
+                  error={errors.numero?.message}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
                 <Input
                   label="Complemento"
                   {...register('complemento')}
-                  placeholder="Apto, Sala..."
+                  error={errors.complemento?.message}
                 />
+              </div>
+              <div className="md:col-span-3">
                 <Input
                   label="Bairro"
                   {...register('bairro')}
-                  placeholder="Bairro"
-                />
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="col-span-2">
-                    <Input
-                      label="Cidade"
-                      {...register('cidade')}
-                      placeholder="Cidade"
-                    />
-                  </div>
-                  <Select
-                    label="UF"
-                    value={watch('uf') || ''}
-                    onChange={(v) => setValue('uf', v)}
-                    options={ufOptions}
-                    placeholder="UF"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Tab: Comercial */}
-        {activeTab === 'comercial' && (
-          <Card>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Select
-                  label="Vendedor Responsável"
-                  value={watch('vendedor_id') || ''}
-                  onChange={(v) => setValue('vendedor_id', v)}
-                  options={vendedores}
-                  placeholder="Selecione..."
-                />
-                <Select
-                  label="Tabela de Preço"
-                  value={watch('tabela_preco_id') || ''}
-                  onChange={(v) => setValue('tabela_preco_id', v)}
-                  options={tabelas}
-                  placeholder="Selecione..."
-                />
-                <Select
-                  label="Condição de Pagamento"
-                  value={watch('condicao_pagamento_id') || ''}
-                  onChange={(v) => setValue('condicao_pagamento_id', v)}
-                  options={condicoes}
-                  placeholder="Selecione..."
+                  error={errors.bairro?.message}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-4">
                 <Input
-                  label="Limite de Crédito"
-                  type="number"
-                  step="0.01"
-                  {...register('limite_credito', { valueAsNumber: true })}
-                  placeholder="0,00"
-                  leftIcon={<span className="text-gray-400">R$</span>}
+                  label="Cidade"
+                  {...register('cidade')}
+                  error={errors.cidade?.message}
                 />
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      {...register('ativo')}
-                      className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
-                    />
-                    <span className="text-sm text-gray-700">Cliente Ativo</span>
-                  </label>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div className="md:col-span-2">
+                <Select
+                  label="UF"
+                  value={watch('uf') || ''}
+                  onChange={(v) => setValue('uf', v)}
+                  options={ufOptions}
+                  error={errors.uf?.message}
+                />
+              </div>
+            </div>
+          )}
 
-        {/* Tab: Observações */}
-        {activeTab === 'observacoes' && (
-          <Card>
-            <CardContent>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Observações Gerais
-              </label>
-              <textarea
-                {...register('observacoes')}
-                rows={6}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 resize-none"
-                placeholder="Informações adicionais sobre o cliente..."
+          {/* Contato */}
+          {activeTab === 'contato' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Input
+                label="Telefone"
+                {...register('telefone')}
+                error={errors.telefone?.message}
               />
-            </CardContent>
-          </Card>
-        )}
+              <Input
+                label="Celular"
+                {...register('celular')}
+                error={errors.celular?.message}
+              />
+              <Input
+                label="E-mail"
+                type="email"
+                {...register('email')}
+                error={errors.email?.message}
+                className="md:col-span-2"
+              />
+            </div>
+          )}
+
+          {/* Comercial */}
+          {activeTab === 'comercial' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Select
+                label="Vendedor"
+                value={watch('vendedor_id') || ''}
+                onChange={(v) => setValue('vendedor_id', v)}
+                options={vendedores}
+                placeholder="Selecione o vendedor"
+              />
+              <Select
+                label="Tabela de Preço"
+                value={watch('tabela_preco_id') || ''}
+                onChange={(v) => setValue('tabela_preco_id', v)}
+                options={tabelasPreco}
+                placeholder="Selecione a tabela"
+              />
+              <Select
+                label="Condição de Pagamento"
+                value={watch('condicao_pagamento_id') || ''}
+                onChange={(v) => setValue('condicao_pagamento_id', v)}
+                options={condicoesPagamento}
+                placeholder="Selecione a condição"
+              />
+              <Input
+                label="Limite de Crédito"
+                type="number"
+                step="0.01"
+                {...register('limite_credito', { valueAsNumber: true })}
+                error={errors.limite_credito?.message}
+                leftIcon={<span className="text-gray-400 text-sm">R$</span>}
+              />
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    {...register('ativo')}
+                    className="w-5 h-5 rounded border-gray-300 text-planac-500 focus:ring-planac-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Cliente ativo</span>
+                </label>
+              </div>
+            </div>
+          )}
+        </Card>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-6">
-          <Button type="button" variant="secondary" onClick={() => navigate('/clientes')}>
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="secondary" onClick={() => navigate('/clientes')}>
             Cancelar
           </Button>
           <Button type="submit" isLoading={isSaving}>
-            {isEditing ? 'Salvar Alterações' : 'Criar Cliente'}
+            {isEditing ? 'Salvar Alterações' : 'Cadastrar Cliente'}
           </Button>
         </div>
       </form>
