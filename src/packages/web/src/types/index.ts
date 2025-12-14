@@ -9,6 +9,7 @@ export interface Usuario {
   email: string;
   empresa_id: string;
   avatar_url?: string;
+  ativo?: boolean;
   perfis: Perfil[];
 }
 
@@ -62,6 +63,8 @@ export interface Filial {
   nome: string;
   cnpj?: string;
   ativo: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // API Response padrão
