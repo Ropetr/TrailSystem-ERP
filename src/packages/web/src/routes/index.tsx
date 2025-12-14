@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - Routes (ATUALIZADO)
+// PLANAC ERP - Routes
 // =============================================
 
 import React from 'react';
@@ -29,7 +29,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Public Route Wrapper
+// Public Route Wrapper (redirect if logged in)
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('planac_token');
   if (token) {
@@ -39,7 +39,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 export const router = createBrowserRouter([
-  // Auth Routes (Public)
+  // Auth Routes
   {
     path: '/',
     element: (
@@ -50,7 +50,6 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/login" replace /> },
       { path: 'login', element: <LoginPage /> },
-      { path: 'recuperar-senha', element: <div>Recuperar Senha (TODO)</div> },
     ],
   },
 
