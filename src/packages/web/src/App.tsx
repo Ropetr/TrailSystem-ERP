@@ -3,11 +3,11 @@
 // =============================================
 
 import React from 'react';
-import { RouterProvider } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/stores/auth.store';
 import { ToastProvider } from '@/components/ui/Toast';
-import { router } from '@/routes';
+import { AppRoutes } from '@/routes';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -24,7 +24,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <RouterProvider router={router} />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>
