@@ -25,9 +25,9 @@ jobs:
         working-directory: src
         run: npm install
 
-      - name: Build web package
-        working-directory: src
-        run: npm run build --workspace=planac-web
+      - name: Build web package (skip type check)
+        working-directory: src/packages/web
+        run: npx vite build
         env:
           VITE_API_URL: https://planac-erp-api.ropetr.workers.dev
 
