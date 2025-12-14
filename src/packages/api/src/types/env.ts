@@ -32,7 +32,7 @@ export interface Env {
   /** Nuvem Fiscal - Client Secret OAuth */
   NUVEM_FISCAL_CLIENT_SECRET: string;
 
-  /** IBPT - Token da API (opcional, pode usar tabela local) */
+  /** IBPT - Token da API (opcional, pode usar por empresa) */
   IBPT_TOKEN?: string;
 
   /** JWT Secret para autenticação */
@@ -41,6 +41,20 @@ export interface Env {
   /** Chave para validar chamadas de cron jobs */
   CRON_SECRET: string;
 
+  // ===== Email (Resend) =====
+  /** Resend API Key */
+  EMAIL_API_KEY?: string;
+  /** Email remetente padrão */
+  EMAIL_FROM?: string;
+
+  // ===== WhatsApp (API Brasil ou similar) =====
+  /** API Key para envio de WhatsApp */
+  WHATSAPP_API_KEY?: string;
+
+  // ===== Push Notifications (Firebase) =====
+  /** Firebase Server Key */
+  FIREBASE_SERVER_KEY?: string;
+
   // ===== Variáveis de ambiente =====
   /** Ambiente atual: development, staging, production */
   ENVIRONMENT: 'development' | 'staging' | 'production';
@@ -48,16 +62,6 @@ export interface Env {
   NUVEM_FISCAL_AMBIENTE: 'homologacao' | 'producao';
   /** Nível de log: debug, info, warn, error */
   LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error';
-
-  // ===== Configurações de Email (para notificações) =====
-  /** Resend API Key (ou outro provedor) */
-  EMAIL_API_KEY?: string;
-  /** Email remetente padrão */
-  EMAIL_FROM?: string;
-
-  // ===== Configurações de Push (para notificações) =====
-  /** Firebase Server Key (para push notifications) */
-  FIREBASE_SERVER_KEY?: string;
 
   // ===== Multi-tenant =====
   /** ID do tenant padrão (para instalação single-tenant) */
@@ -109,4 +113,24 @@ export function shouldLog(env: Env, level: 'debug' | 'info' | 'warn' | 'error'):
   const currentLevel = levels.indexOf(env.LOG_LEVEL || 'info');
   const checkLevel = levels.indexOf(level);
   return checkLevel >= currentLevel;
+}
+
+/**
+ * Logger helper
+ */
+export function createLogger(env: Env, module: string) {
+  return {
+    debug: (msg: string, ...args: any[]) => {
+      if (shouldLog(env, 'debug')) console.log(`[${module}] ${msg}`, ...args);
+    },
+    info: (msg: string, ...args: any[]) => {
+      if (shouldLog(env, 'info')) console.log(`[${module}] ${msg}`, ...args);
+    },
+    warn: (msg: string, ...args: any[]) => {
+      if (shouldLog(env, 'warn')) console.warn(`[${module}] ${msg}`, ...args);
+    },
+    error: (msg: string, ...args: any[]) => {
+      if (shouldLog(env, 'error')) console.error(`[${module}] ${msg}`, ...args);
+    },
+  };
 }
