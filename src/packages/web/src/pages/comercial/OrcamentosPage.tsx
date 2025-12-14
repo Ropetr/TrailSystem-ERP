@@ -20,15 +20,16 @@ interface Orcamento {
   numero: string;
   cliente_id: string;
   cliente_nome: string;
-  vendedor_id: string;
-  vendedor_nome: string;
-  status: 'rascunho' | 'enviado' | 'aprovado' | 'reprovado' | 'convertido' | 'expirado';
-  valor_total: number;
+  cliente_cpf_cnpj?: string;
+  vendedor_id?: string;
+  vendedor_nome?: string;
   data_emissao: string;
   data_validade: string;
+  status: 'rascunho' | 'enviado' | 'aprovado' | 'reprovado' | 'convertido' | 'expirado';
+  valor_total: number;
   itens_count: number;
-  mesclado_de?: string[];
-  created_at: string;
+  observacao?: string;
+  orcamentos_mesclados?: string[];
 }
 
 const statusOptions = [
@@ -41,40 +42,37 @@ const statusOptions = [
   { value: 'expirado', label: 'Expirado' },
 ];
 
-const statusColors: Record<string, 'default' | 'info' | 'success' | 'warning' | 'danger'> = {
-  rascunho: 'default',
-  enviado: 'info',
-  aprovado: 'success',
-  reprovado: 'danger',
-  convertido: 'success',
-  expirado: 'warning',
+const statusConfig: Record<string, { variant: 'default' | 'success' | 'warning' | 'danger' | 'info'; label: string }> = {
+  rascunho: { variant: 'default', label: 'Rascunho' },
+  enviado: { variant: 'info', label: 'Enviado' },
+  aprovado: { variant: 'success', label: 'Aprovado' },
+  reprovado: { variant: 'danger', label: 'Reprovado' },
+  convertido: { variant: 'success', label: 'Convertido' },
+  expirado: { variant: 'warning', label: 'Expirado' },
 };
 
 export function OrcamentosPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const clienteIdParam = searchParams.get('cliente');
   const toast = useToast();
-  
+
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [showMergeModal, setShowMergeModal] = useState(false);
-
-  // Filtro por cliente via URL
-  const clienteIdFilter = searchParams.get('cliente');
+  const [selectedOrcamentos, setSelectedOrcamentos] = useState<string[]>([]);
+  const [showMesclarModal, setShowMesclarModal] = useState(false);
 
   useEffect(() => {
     loadOrcamentos();
-  }, [clienteIdFilter]);
+  }, [clienteIdParam]);
 
   const loadOrcamentos = async () => {
     try {
-      let url = '/orcamentos';
-      if (clienteIdFilter) {
-        url += `?cliente_id=${clienteIdFilter}`;
-      }
+      const url = clienteIdParam 
+        ? `/orcamentos?cliente_id=${clienteIdParam}` 
+        : '/orcamentos';
       const response = await api.get<{ success: boolean; data: Orcamento[] }>(url);
       if (response.success) {
         setOrcamentos(response.data);
@@ -98,72 +96,54 @@ export function OrcamentosPage() {
     }
   };
 
-  const handleConvertToSale = async (id: string) => {
-    try {
-      await api.post(`/orcamentos/${id}/converter`);
-      toast.success('Orçamento convertido em pedido!');
-      loadOrcamentos();
-    } catch (error) {
-      toast.error('Erro ao converter orçamento');
-    }
-  };
-
-  const handleDuplicate = async (id: string) => {
-    try {
-      const response = await api.post(`/orcamentos/${id}/duplicar`);
-      toast.success('Orçamento duplicado com sucesso');
-      if (response.data?.id) {
-        navigate(`/orcamentos/${response.data.id}`);
-      } else {
-        loadOrcamentos();
-      }
-    } catch (error) {
-      toast.error('Erro ao duplicar orçamento');
-    }
-  };
-
-  const handleMerge = async () => {
-    if (selectedIds.length < 2) {
+  const handleMesclar = async () => {
+    if (selectedOrcamentos.length < 2) {
       toast.error('Selecione pelo menos 2 orçamentos para mesclar');
       return;
     }
 
     try {
-      const response = await api.post('/orcamentos/mesclar', { ids: selectedIds });
-      toast.success('Orçamentos mesclados com sucesso!');
-      setSelectedIds([]);
-      setShowMergeModal(false);
-      if (response.data?.id) {
-        navigate(`/orcamentos/${response.data.id}`);
-      } else {
-        loadOrcamentos();
-      }
+      await api.post('/orcamentos/mesclar', { orcamentos_ids: selectedOrcamentos });
+      toast.success('Orçamentos mesclados com sucesso');
+      setSelectedOrcamentos([]);
+      setShowMesclarModal(false);
+      loadOrcamentos();
     } catch (error) {
       toast.error('Erro ao mesclar orçamentos');
     }
   };
 
-  const handleSendEmail = async (id: string) => {
+  const handleConverterPedido = async (id: string) => {
+    try {
+      const response = await api.post(`/orcamentos/${id}/converter`);
+      if (response.success) {
+        toast.success('Orçamento convertido em pedido');
+        navigate(`/vendas/${response.data.pedido_id}`);
+      }
+    } catch (error) {
+      toast.error('Erro ao converter orçamento');
+    }
+  };
+
+  const handleEnviarEmail = async (id: string) => {
     try {
       await api.post(`/orcamentos/${id}/enviar-email`);
       toast.success('Orçamento enviado por e-mail');
+      loadOrcamentos();
     } catch (error) {
       toast.error('Erro ao enviar e-mail');
     }
   };
 
-  const handleSendWhatsApp = async (id: string) => {
-    try {
-      await api.post(`/orcamentos/${id}/enviar-whatsapp`);
-      toast.success('Orçamento enviado por WhatsApp');
-    } catch (error) {
-      toast.error('Erro ao enviar WhatsApp');
-    }
+  const handleEnviarWhatsApp = async (orcamento: Orcamento) => {
+    // Abrir WhatsApp com mensagem pré-formatada
+    const mensagem = `Olá! Segue seu orçamento #${orcamento.numero} no valor de R$ ${orcamento.valor_total.toFixed(2)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, '_blank');
   };
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    setSelectedOrcamentos((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
@@ -184,35 +164,22 @@ export function OrcamentosPage() {
     }).format(value);
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('pt-BR');
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('pt-BR');
   };
 
   const columns = [
     {
       key: 'select',
-      header: (
-        <input
-          type="checkbox"
-          checked={selectedIds.length === filteredOrcamentos.length && filteredOrcamentos.length > 0}
-          onChange={(e) => {
-            if (e.target.checked) {
-              setSelectedIds(filteredOrcamentos.map(o => o.id));
-            } else {
-              setSelectedIds([]);
-            }
-          }}
-          className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
-        />
-      ),
+      header: '',
       width: '40px',
       render: (o: Orcamento) => (
         <input
           type="checkbox"
-          checked={selectedIds.includes(o.id)}
+          checked={selectedOrcamentos.includes(o.id)}
           onChange={() => toggleSelect(o.id)}
+          className="w-4 h-4 rounded border-gray-300 text-planac-500 focus:ring-planac-500"
           onClick={(e) => e.stopPropagation()}
-          className="w-4 h-4 text-red-500 border-gray-300 rounded focus:ring-red-500"
         />
       ),
     },
@@ -223,10 +190,10 @@ export function OrcamentosPage() {
       sortable: true,
       render: (o: Orcamento) => (
         <div className="flex items-center gap-2">
-          <span className="font-mono font-medium">{o.numero}</span>
-          {o.mesclado_de && o.mesclado_de.length > 0 && (
-            <Badge variant="info" size="sm" title={`Mesclado de: ${o.mesclado_de.join(', ')}`}>
-              +{o.mesclado_de.length}
+          <span className="font-mono font-medium text-planac-600">#{o.numero}</span>
+          {o.orcamentos_mesclados && o.orcamentos_mesclados.length > 0 && (
+            <Badge variant="info" size="sm" title={`Mesclado de ${o.orcamentos_mesclados.length} orçamentos`}>
+              +{o.orcamentos_mesclados.length}
             </Badge>
           )}
         </div>
@@ -237,30 +204,19 @@ export function OrcamentosPage() {
       header: 'Cliente',
       sortable: true,
       render: (o: Orcamento) => (
-        <p className="font-medium text-gray-900">{o.cliente_nome}</p>
+        <div>
+          <p className="font-medium text-gray-900">{o.cliente_nome}</p>
+          {o.cliente_cpf_cnpj && (
+            <p className="text-sm text-gray-500">{o.cliente_cpf_cnpj}</p>
+          )}
+        </div>
       ),
     },
     {
-      key: 'vendedor',
+      key: 'vendedor_nome',
       header: 'Vendedor',
       width: '150px',
       render: (o: Orcamento) => o.vendedor_nome || '-',
-    },
-    {
-      key: 'itens',
-      header: 'Itens',
-      width: '60px',
-      render: (o: Orcamento) => o.itens_count,
-    },
-    {
-      key: 'valor_total',
-      header: 'Valor',
-      width: '130px',
-      render: (o: Orcamento) => (
-        <span className="font-medium text-green-600">
-          {formatCurrency(o.valor_total)}
-        </span>
-      ),
     },
     {
       key: 'data_emissao',
@@ -275,71 +231,93 @@ export function OrcamentosPage() {
       render: (o: Orcamento) => {
         const isExpired = new Date(o.data_validade) < new Date();
         return (
-          <span className={isExpired && o.status !== 'convertido' ? 'text-red-600' : ''}>
+          <span className={isExpired ? 'text-red-600' : ''}>
             {formatDate(o.data_validade)}
           </span>
         );
       },
     },
     {
+      key: 'itens_count',
+      header: 'Itens',
+      width: '60px',
+      render: (o: Orcamento) => o.itens_count,
+    },
+    {
+      key: 'valor_total',
+      header: 'Total',
+      width: '120px',
+      render: (o: Orcamento) => (
+        <span className="font-medium text-green-600">
+          {formatCurrency(o.valor_total)}
+        </span>
+      ),
+    },
+    {
       key: 'status',
       header: 'Status',
       width: '110px',
-      render: (o: Orcamento) => (
-        <Badge variant={statusColors[o.status]}>
-          {o.status.charAt(0).toUpperCase() + o.status.slice(1)}
-        </Badge>
-      ),
+      render: (o: Orcamento) => {
+        const config = statusConfig[o.status] || statusConfig.rascunho;
+        return <Badge variant={config.variant}>{config.label}</Badge>;
+      },
     },
   ];
 
-  const actions = (orcamento: Orcamento) => [
-    {
-      label: 'Editar',
-      icon: <Icons.edit className="w-4 h-4" />,
-      onClick: () => navigate(`/orcamentos/${orcamento.id}`),
-    },
-    {
-      label: 'Duplicar',
-      icon: <Icons.copy className="w-4 h-4" />,
-      onClick: () => handleDuplicate(orcamento.id),
-    },
-    {
-      label: 'Imprimir',
-      icon: <Icons.printer className="w-4 h-4" />,
-      onClick: () => window.open(`/api/orcamentos/${orcamento.id}/pdf`, '_blank'),
-    },
-    { type: 'separator' as const },
-    {
-      label: 'Enviar por E-mail',
-      icon: <Icons.mail className="w-4 h-4" />,
-      onClick: () => handleSendEmail(orcamento.id),
-    },
-    {
-      label: 'Enviar por WhatsApp',
-      icon: <Icons.messageCircle className="w-4 h-4" />,
-      onClick: () => handleSendWhatsApp(orcamento.id),
-    },
-    { type: 'separator' as const },
-    ...(orcamento.status === 'aprovado' ? [{
-      label: 'Converter em Pedido',
-      icon: <Icons.shoppingCart className="w-4 h-4" />,
-      variant: 'success' as const,
-      onClick: () => handleConvertToSale(orcamento.id),
-    }] : []),
-    {
-      label: 'Excluir',
-      icon: <Icons.trash className="w-4 h-4" />,
-      variant: 'danger' as const,
-      onClick: () => handleDelete(orcamento.id),
-    },
-  ];
+  const actions = (orcamento: Orcamento) => {
+    const items = [
+      {
+        label: 'Editar',
+        icon: <Icons.edit className="w-4 h-4" />,
+        onClick: () => navigate(`/orcamentos/${orcamento.id}`),
+      },
+      {
+        label: 'Duplicar',
+        icon: <Icons.copy className="w-4 h-4" />,
+        onClick: () => navigate(`/orcamentos/novo?duplicar=${orcamento.id}`),
+      },
+      {
+        label: 'Imprimir',
+        icon: <Icons.printer className="w-4 h-4" />,
+        onClick: () => window.open(`/api/orcamentos/${orcamento.id}/pdf`, '_blank'),
+      },
+      { type: 'separator' as const },
+      {
+        label: 'Enviar por E-mail',
+        icon: <Icons.mail className="w-4 h-4" />,
+        onClick: () => handleEnviarEmail(orcamento.id),
+      },
+      {
+        label: 'Enviar WhatsApp',
+        icon: <Icons.messageCircle className="w-4 h-4" />,
+        onClick: () => handleEnviarWhatsApp(orcamento),
+      },
+    ];
 
-  // Stats
-  const totalOrcamentos = orcamentos.length;
-  const valorTotal = orcamentos.reduce((acc, o) => acc + o.valor_total, 0);
-  const aprovados = orcamentos.filter(o => o.status === 'aprovado').length;
-  const pendentes = orcamentos.filter(o => ['rascunho', 'enviado'].includes(o.status)).length;
+    if (orcamento.status === 'aprovado') {
+      items.push(
+        { type: 'separator' as const },
+        {
+          label: 'Converter em Pedido',
+          icon: <Icons.shoppingCart className="w-4 h-4" />,
+          variant: 'success' as const,
+          onClick: () => handleConverterPedido(orcamento.id),
+        }
+      );
+    }
+
+    items.push(
+      { type: 'separator' as const },
+      {
+        label: 'Excluir',
+        icon: <Icons.trash className="w-4 h-4" />,
+        variant: 'danger' as const,
+        onClick: () => handleDelete(orcamento.id),
+      }
+    );
+
+    return items;
+  };
 
   return (
     <div className="space-y-6">
@@ -347,16 +325,16 @@ export function OrcamentosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Orçamentos</h1>
-          <p className="text-gray-500">Gerencie seus orçamentos e propostas</p>
+          <p className="text-gray-500">Gerencie seus orçamentos</p>
         </div>
-        <div className="flex gap-2">
-          {selectedIds.length >= 2 && (
-            <Button 
+        <div className="flex gap-3">
+          {selectedOrcamentos.length >= 2 && (
+            <Button
               variant="secondary"
               leftIcon={<Icons.merge className="w-5 h-5" />}
-              onClick={() => setShowMergeModal(true)}
+              onClick={() => setShowMesclarModal(true)}
             >
-              Mesclar ({selectedIds.length})
+              Mesclar ({selectedOrcamentos.length})
             </Button>
           )}
           <Button
@@ -368,58 +346,10 @@ export function OrcamentosPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card padding="sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Icons.fileText className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{totalOrcamentos}</p>
-              <p className="text-sm text-gray-500">Total</p>
-            </div>
-          </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Icons.clock className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{pendentes}</p>
-              <p className="text-sm text-gray-500">Pendentes</p>
-            </div>
-          </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Icons.checkCircle className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{aprovados}</p>
-              <p className="text-sm text-gray-500">Aprovados</p>
-            </div>
-          </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Icons.dollarSign className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(valorTotal)}</p>
-              <p className="text-sm text-gray-500">Valor Total</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
       {/* Filters */}
       <Card padding="sm">
         <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-[250px]">
             <Input
               placeholder="Buscar por número ou cliente..."
               leftIcon={<Icons.search className="w-5 h-5" />}
@@ -438,6 +368,48 @@ export function OrcamentosPage() {
         </div>
       </Card>
 
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Card padding="sm">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-gray-900">{orcamentos.length}</p>
+            <p className="text-sm text-gray-500">Total</p>
+          </div>
+        </Card>
+        <Card padding="sm">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-blue-600">
+              {orcamentos.filter((o) => o.status === 'enviado').length}
+            </p>
+            <p className="text-sm text-gray-500">Enviados</p>
+          </div>
+        </Card>
+        <Card padding="sm">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-green-600">
+              {orcamentos.filter((o) => o.status === 'aprovado').length}
+            </p>
+            <p className="text-sm text-gray-500">Aprovados</p>
+          </div>
+        </Card>
+        <Card padding="sm">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-amber-600">
+              {orcamentos.filter((o) => new Date(o.data_validade) < new Date() && o.status !== 'convertido').length}
+            </p>
+            <p className="text-sm text-gray-500">Expirados</p>
+          </div>
+        </Card>
+        <Card padding="sm">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-green-600">
+              {formatCurrency(orcamentos.filter((o) => o.status === 'aprovado').reduce((acc, o) => acc + o.valor_total, 0))}
+            </p>
+            <p className="text-sm text-gray-500">Aprovados (R$)</p>
+          </div>
+        </Card>
+      </div>
+
       {/* Table */}
       <Card padding="none">
         <DataTable
@@ -450,51 +422,34 @@ export function OrcamentosPage() {
         />
       </Card>
 
-      {/* Modal de Mesclagem */}
+      {/* Modal Mesclar */}
       <Modal
-        isOpen={showMergeModal}
-        onClose={() => setShowMergeModal(false)}
+        isOpen={showMesclarModal}
+        onClose={() => setShowMesclarModal(false)}
         title="Mesclar Orçamentos"
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            Você está prestes a mesclar {selectedIds.length} orçamentos em um único.
+            Você está prestes a mesclar {selectedOrcamentos.length} orçamentos.
           </p>
-          
-          <div className="p-4 bg-yellow-50 rounded-xl">
-            <h4 className="font-medium text-yellow-800 mb-2">
-              <Icons.alertTriangle className="w-4 h-4 inline mr-2" />
-              Atenção
-            </h4>
-            <ul className="text-sm text-yellow-700 list-disc list-inside">
-              <li>Os itens de todos os orçamentos serão combinados</li>
-              <li>Itens duplicados terão os preços mantidos (usar regra de preço)</li>
-              <li>O orçamento resultante terá um novo número</li>
-            </ul>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Icons.alertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+              <div className="text-sm text-amber-700">
+                <p className="font-medium">Atenção:</p>
+                <ul className="list-disc ml-4 mt-1">
+                  <li>Os orçamentos selecionados serão combinados em um único</li>
+                  <li>O cliente do primeiro orçamento será mantido</li>
+                  <li>Itens duplicados terão o menor preço aplicado</li>
+                </ul>
+              </div>
+            </div>
           </div>
-
-          <div className="border rounded-lg divide-y">
-            {selectedIds.map((id) => {
-              const orc = orcamentos.find(o => o.id === id);
-              return orc ? (
-                <div key={id} className="p-3 flex justify-between items-center">
-                  <div>
-                    <span className="font-mono font-medium">{orc.numero}</span>
-                    <span className="text-gray-500 ml-2">- {orc.cliente_nome}</span>
-                  </div>
-                  <span className="text-green-600 font-medium">
-                    {formatCurrency(orc.valor_total)}
-                  </span>
-                </div>
-              ) : null;
-            })}
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setShowMergeModal(false)}>
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setShowMesclarModal(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleMerge}>
+            <Button onClick={handleMesclar}>
               Confirmar Mesclagem
             </Button>
           </div>
