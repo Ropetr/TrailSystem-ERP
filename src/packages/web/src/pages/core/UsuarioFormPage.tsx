@@ -1,7 +1,5 @@
 // =============================================
-// PLANAC ERP - Usuário Form Page
-// Especificação: docs/06-especificacao-telas
-// Especialistas: Frontend, UX/UI, Guardião
+// PLANAC ERP - Usuario Form Page
 // =============================================
 
 import React, { useState, useEffect } from 'react';
@@ -17,19 +15,14 @@ import { Icons } from '@/components/ui/Icons';
 import { useToast } from '@/components/ui/Toast';
 import api from '@/services/api';
 
-// =============================================
-// VALIDAÇÃO (Zod)
-// =============================================
 const usuarioSchema = z.object({
   nome: z.string().min(3, 'Mínimo 3 caracteres'),
   email: z.string().email('E-mail inválido'),
   senha: z.string().min(8, 'Mínimo 8 caracteres').optional().or(z.literal('')),
   confirmar_senha: z.string().optional().or(z.literal('')),
   perfil_id: z.string().min(1, 'Selecione um perfil'),
-  empresas: z.array(z.string()).min(1, 'Selecione ao menos uma empresa'),
-  vendedor_id: z.string().optional(),
-  ativo: z.boolean().default(true),
-  two_factor_enabled: z.boolean().default(false),
+  empresa_id: z.string().min(1, 'Selecione uma empresa'),
+  ativo: z.boolean(),
 }).refine((data) => {
   if (data.senha && data.senha !== data.confirmar_senha) {
     return false;
@@ -42,33 +35,17 @@ const usuarioSchema = z.object({
 
 type UsuarioForm = z.infer<typeof usuarioSchema>;
 
-// =============================================
-// INTERFACES
-// =============================================
-interface Perfil {
-  id: string;
-  nome: string;
-}
-
-interface Empresa {
-  id: string;
-  nome_fantasia: string;
-}
-
-// =============================================
-// COMPONENTE PRINCIPAL
-// =============================================
 export function UsuarioFormPage() {
-  const { id } = useParams();
   const navigate = useNavigate();
+  const { id } = useParams();
   const toast = useToast();
-  const isEditing = !!id && id !== 'novo';
-  
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [perfis, setPerfis] = useState<Perfil[]>([]);
-  const [empresas, setEmpresas] = useState<Empresa[]>([]);
-  const [selectedEmpresas, setSelectedEmpresas] = useState<string[]>([]);
+  const [perfis, setPerfis] = useState<{ value: string; label: string }[]>([]);
+  const [empresas, setEmpresas] = useState<{ value: string; label: string }[]>([]);
+
+  const isEdit = id && id !== 'novo';
 
   const {
     register,
@@ -80,69 +57,47 @@ export function UsuarioFormPage() {
     resolver: zodResolver(usuarioSchema),
     defaultValues: {
       ativo: true,
-      two_factor_enabled: false,
-      empresas: [],
     },
   });
 
-  // Carregar dados iniciais
+  const perfilId = watch('perfil_id');
+  const empresaId = watch('empresa_id');
+
   useEffect(() => {
-    loadPerfis();
-    loadEmpresas();
-    if (isEditing) {
+    loadOptions();
+    if (isEdit) {
       loadUsuario();
     }
   }, [id]);
 
-  const loadPerfis = async () => {
+  const loadOptions = async () => {
     try {
-      const response = await api.get<{ success: boolean; data: Perfil[] }>('/perfis');
-      if (response.success) {
-        setPerfis(response.data);
+      // Carregar perfis
+      const perfisRes = await api.get<{ success: boolean; data: { id: string; nome: string }[] }>('/perfis');
+      if (perfisRes.success) {
+        setPerfis(perfisRes.data.map(p => ({ value: p.id, label: p.nome })));
       }
-    } catch {
-      // Dados mock para desenvolvimento
-      setPerfis([
-        { id: '1', nome: 'Administrador' },
-        { id: '2', nome: 'Gerente' },
-        { id: '3', nome: 'Vendedor' },
-        { id: '4', nome: 'Financeiro' },
-        { id: '5', nome: 'Operacional' },
-      ]);
-    }
-  };
 
-  const loadEmpresas = async () => {
-    try {
-      const response = await api.get<{ success: boolean; data: Empresa[] }>('/empresas');
-      if (response.success) {
-        setEmpresas(response.data);
+      // Carregar empresas
+      const empresasRes = await api.get<{ success: boolean; data: { id: string; razao_social: string }[] }>('/empresas');
+      if (empresasRes.success) {
+        setEmpresas(empresasRes.data.map(e => ({ value: e.id, label: e.razao_social })));
       }
-    } catch {
-      // Dados mock para desenvolvimento
-      setEmpresas([
-        { id: '1', nome_fantasia: 'PLANAC Matriz' },
-        { id: '2', nome_fantasia: 'PLANAC Filial SP' },
-        { id: '3', nome_fantasia: 'PLANAC Filial RJ' },
-      ]);
+    } catch (error) {
+      console.error('Erro ao carregar opções:', error);
     }
   };
 
   const loadUsuario = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const response = await api.get<{ success: boolean; data: any }>(`/usuarios/${id}`);
       if (response.success && response.data) {
-        const usuario = response.data;
-        setValue('nome', usuario.nome);
-        setValue('email', usuario.email);
-        setValue('perfil_id', usuario.perfil_id);
-        setValue('ativo', usuario.ativo);
-        setValue('two_factor_enabled', usuario.two_factor_enabled || false);
-        
-        const empresaIds = usuario.empresas?.map((e: any) => e.id) || [];
-        setValue('empresas', empresaIds);
-        setSelectedEmpresas(empresaIds);
+        setValue('nome', response.data.nome);
+        setValue('email', response.data.email);
+        setValue('perfil_id', response.data.perfil_id);
+        setValue('empresa_id', response.data.empresa_id);
+        setValue('ativo', response.data.ativo);
       }
     } catch (error) {
       toast.error('Erro ao carregar usuário');
@@ -152,47 +107,38 @@ export function UsuarioFormPage() {
     }
   };
 
-  // Toggle empresa na seleção
-  const toggleEmpresa = (empresaId: string) => {
-    const newSelection = selectedEmpresas.includes(empresaId)
-      ? selectedEmpresas.filter(id => id !== empresaId)
-      : [...selectedEmpresas, empresaId];
-    
-    setSelectedEmpresas(newSelection);
-    setValue('empresas', newSelection);
-  };
-
-  // Salvar
   const onSubmit = async (data: UsuarioForm) => {
-    setIsLoading(true);
+    setIsSaving(true);
     try {
-      const payload = {
-        ...data,
-        empresas: selectedEmpresas,
-      };
-
-      // Remover senha se vazia (edição sem alterar senha)
-      if (!payload.senha) {
-        delete (payload as any).senha;
-        delete (payload as any).confirmar_senha;
+      const payload = { ...data };
+      // Não enviar senha vazia em edição
+      if (isEdit && !payload.senha) {
+        delete payload.senha;
       }
+      delete payload.confirmar_senha;
 
-      if (isEditing) {
+      if (isEdit) {
         await api.put(`/usuarios/${id}`, payload);
-        toast.success('Usuário atualizado!');
+        toast.success('Usuário atualizado com sucesso');
       } else {
         await api.post('/usuarios', payload);
-        toast.success('Usuário cadastrado!');
+        toast.success('Usuário criado com sucesso');
       }
       navigate('/usuarios');
     } catch (error) {
       toast.error('Erro ao salvar usuário');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
-  const perfilOptions = perfis.map(p => ({ value: p.id, label: p.nome }));
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Icons.spinner className="w-8 h-8 text-planac-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -206,216 +152,124 @@ export function UsuarioFormPage() {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEditing ? 'Editar Usuário' : 'Novo Usuário'}
+            {isEdit ? 'Editar Usuário' : 'Novo Usuário'}
           </h1>
           <p className="text-gray-500">
-            {isEditing ? 'Atualize os dados do usuário' : 'Preencha os dados para cadastrar'}
+            {isEdit ? 'Atualize os dados do usuário' : 'Preencha os dados do novo usuário'}
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Coluna Principal */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Dados Básicos */}
-            <Card>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Icons.user className="w-5 h-5 text-planac-500" />
-                Dados do Usuário
-              </h2>
-
-              <div className="space-y-4">
+          {/* Dados Principais */}
+          <Card className="lg:col-span-2">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Dados do Usuário</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
                 <Input
                   label="Nome Completo"
+                  placeholder="Nome do usuário"
                   error={errors.nome?.message}
+                  required
                   {...register('nome')}
-                  required
-                />
-
-                <Input
-                  label="E-mail (Login)"
-                  type="email"
-                  error={errors.email?.message}
-                  {...register('email')}
-                  required
-                />
-
-                <Select
-                  label="Perfil de Acesso"
-                  value={watch('perfil_id') || ''}
-                  onChange={(v) => setValue('perfil_id', v)}
-                  options={perfilOptions}
-                  error={errors.perfil_id?.message}
                 />
               </div>
-            </Card>
-
-            {/* Senha */}
-            <Card>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Icons.lock className="w-5 h-5 text-planac-500" />
-                {isEditing ? 'Alterar Senha' : 'Senha de Acesso'}
-              </h2>
-
-              {isEditing && (
-                <p className="text-sm text-gray-500 mb-4">
-                  Deixe em branco para manter a senha atual
-                </p>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="relative">
-                  <Input
-                    label="Senha"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    error={errors.senha?.message}
-                    {...register('senha')}
-                    required={!isEditing}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? (
-                      <Icons.eyeOff className="w-5 h-5" />
-                    ) : (
-                      <Icons.eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-
+              
+              <div className="md:col-span-2">
                 <Input
-                  label="Confirmar Senha"
+                  label="E-mail"
+                  type="email"
+                  placeholder="usuario@empresa.com.br"
+                  error={errors.email?.message}
+                  required
+                  {...register('email')}
+                />
+              </div>
+
+              <div className="relative">
+                <Input
+                  label={isEdit ? 'Nova Senha (opcional)' : 'Senha'}
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
-                  error={errors.confirmar_senha?.message}
-                  {...register('confirmar_senha')}
-                  required={!isEditing}
+                  error={errors.senha?.message}
+                  required={!isEdit}
+                  {...register('senha')}
                 />
-              </div>
-
-              <p className="mt-2 text-xs text-gray-500">
-                A senha deve ter no mínimo 8 caracteres
-              </p>
-            </Card>
-
-            {/* Empresas */}
-            <Card>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Icons.building className="w-5 h-5 text-planac-500" />
-                Empresas com Acesso
-              </h2>
-
-              {errors.empresas && (
-                <p className="text-sm text-red-500 mb-3">{errors.empresas.message}</p>
-              )}
-
-              <div className="space-y-2">
-                {empresas.map((empresa) => (
-                  <label
-                    key={empresa.id}
-                    className={`
-                      flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors
-                      ${selectedEmpresas.includes(empresa.id)
-                        ? 'border-planac-500 bg-planac-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                      }
-                    `}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedEmpresas.includes(empresa.id)}
-                      onChange={() => toggleEmpresa(empresa.id)}
-                      className="w-4 h-4 text-planac-500 rounded border-gray-300 focus:ring-planac-500"
-                    />
-                    <Icons.building className="w-5 h-5 text-gray-400" />
-                    <span className="text-sm font-medium text-gray-700">
-                      {empresa.nome_fantasia}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* Coluna Lateral */}
-          <div className="space-y-6">
-            {/* Status */}
-            <Card>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Status</h2>
-
-              <div className="space-y-4">
-                <label className="flex items-center justify-between p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <Icons.check className="w-5 h-5 text-green-500" />
-                    <span className="text-sm font-medium text-gray-700">Usuário Ativo</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register('ativo')}
-                    className="w-4 h-4 text-planac-500 rounded border-gray-300 focus:ring-planac-500"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-50">
-                  <div className="flex items-center gap-3">
-                    <Icons.lock className="w-5 h-5 text-blue-500" />
-                    <div>
-                      <span className="text-sm font-medium text-gray-700 block">2FA Habilitado</span>
-                      <span className="text-xs text-gray-500">Autenticação em dois fatores</span>
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    {...register('two_factor_enabled')}
-                    className="w-4 h-4 text-planac-500 rounded border-gray-300 focus:ring-planac-500"
-                  />
-                </label>
-              </div>
-            </Card>
-
-            {/* Avatar */}
-            <Card>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Foto</h2>
-
-              <div className="flex flex-col items-center">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <Icons.user className="w-12 h-12 text-gray-400" />
-                </div>
-                <Button type="button" variant="ghost" size="sm">
-                  Alterar Foto
-                </Button>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  JPG ou PNG, máx. 2MB
-                </p>
-              </div>
-            </Card>
-
-            {/* Ações */}
-            <Card>
-              <div className="space-y-3">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  isLoading={isLoading}
-                  leftIcon={<Icons.check className="w-4 h-4" />}
-                >
-                  Salvar Usuário
-                </Button>
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => navigate('/usuarios')}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
                 >
-                  Cancelar
-                </Button>
+                  {showPassword ? <Icons.eyeOff className="w-5 h-5" /> : <Icons.eye className="w-5 h-5" />}
+                </button>
               </div>
-            </Card>
-          </div>
+
+              <Input
+                label="Confirmar Senha"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                error={errors.confirmar_senha?.message}
+                {...register('confirmar_senha')}
+              />
+            </div>
+          </Card>
+
+          {/* Permissões */}
+          <Card>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Permissões</h2>
+            
+            <div className="space-y-4">
+              <Select
+                label="Perfil de Acesso"
+                value={perfilId || ''}
+                onChange={(v) => setValue('perfil_id', v)}
+                options={perfis}
+                placeholder="Selecione um perfil"
+                error={errors.perfil_id?.message}
+              />
+
+              <Select
+                label="Empresa"
+                value={empresaId || ''}
+                onChange={(v) => setValue('empresa_id', v)}
+                options={empresas}
+                placeholder="Selecione uma empresa"
+                error={errors.empresa_id?.message}
+              />
+
+              <div className="flex items-center gap-3 pt-4">
+                <input
+                  type="checkbox"
+                  id="ativo"
+                  className="w-4 h-4 text-planac-500 border-gray-300 rounded focus:ring-planac-500"
+                  {...register('ativo')}
+                />
+                <label htmlFor="ativo" className="text-sm font-medium text-gray-700">
+                  Usuário Ativo
+                </label>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 mt-6">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => navigate('/usuarios')}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            isLoading={isSaving}
+            leftIcon={<Icons.check className="w-4 h-4" />}
+          >
+            {isEdit ? 'Salvar Alterações' : 'Criar Usuário'}
+          </Button>
         </div>
       </form>
     </div>
