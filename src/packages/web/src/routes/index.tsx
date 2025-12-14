@@ -3,119 +3,74 @@
 // =============================================
 
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@/stores/auth.store';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { AuthLayout } from '@/components/layout/AuthLayout';
 
-// Layouts
-import { MainLayout, AuthLayout } from '@/components/layout';
-
-// Pages - Auth
+// Pages
 import { LoginPage } from '@/pages/auth/LoginPage';
-
-// Pages - Core
 import { DashboardPage } from '@/pages/core/DashboardPage';
 import { EmpresasPage } from '@/pages/core/EmpresasPage';
 import { UsuariosPage } from '@/pages/core/UsuariosPage';
 
 // Protected Route Wrapper
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = localStorage.getItem('planac_token');
+  if (!token) {
     return <Navigate to="/login" replace />;
   }
-
   return <>{children}</>;
 }
 
-// Public Route Wrapper (redirect if already logged in)
+// Public Route Wrapper (redirect if logged in)
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (isAuthenticated) {
+  const token = localStorage.getItem('planac_token');
+  if (token) {
     return <Navigate to="/dashboard" replace />;
   }
-
   return <>{children}</>;
 }
 
-export function AppRoutes() {
-  return (
-    <Routes>
-      {/* Public Routes */}
-      <Route
-        element={
-          <PublicRoute>
-            <AuthLayout />
-          </PublicRoute>
-        }
-      >
-        <Route path="/login" element={<LoginPage />} />
-      </Route>
+export const router = createBrowserRouter([
+  // Auth Routes
+  {
+    path: '/',
+    element: (
+      <PublicRoute>
+        <AuthLayout />
+      </PublicRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to="/login" replace /> },
+      { path: 'login', element: <LoginPage /> },
+    ],
+  },
 
-      {/* Protected Routes */}
-      <Route
-        element={
-          <PrivateRoute>
-            <MainLayout />
-          </PrivateRoute>
-        }
-      >
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/empresas" element={<EmpresasPage />} />
-        <Route path="/usuarios" element={<UsuariosPage />} />
-        
-        {/* Placeholder routes */}
-        <Route path="/perfis" element={<PlaceholderPage title="Perfis de Acesso" />} />
-        <Route path="/configuracoes" element={<PlaceholderPage title="Configurações" />} />
-      </Route>
+  // Protected Routes
+  {
+    path: '/',
+    element: (
+      <ProtectedRoute>
+        <MainLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'empresas', element: <EmpresasPage /> },
+      { path: 'empresas/:id', element: <div>Empresa Form (TODO)</div> },
+      { path: 'filiais', element: <div>Filiais (TODO)</div> },
+      { path: 'usuarios', element: <UsuariosPage /> },
+      { path: 'usuarios/:id', element: <div>Usuário Form (TODO)</div> },
+      { path: 'perfis', element: <div>Perfis (TODO)</div> },
+      { path: 'configuracoes', element: <div>Configurações (TODO)</div> },
+    ],
+  },
 
-      {/* Redirect root to dashboard */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      
-      {/* 404 */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
-  );
-}
+  // 404
+  {
+    path: '*',
+    element: <Navigate to="/login" replace />,
+  },
+]);
 
-// Placeholder for pages not yet implemented
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">{title}</h1>
-      <p className="text-gray-500">Esta página está em desenvolvimento.</p>
-    </div>
-  );
-}
-
-// 404 Page
-function NotFoundPage() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
-      <h1 className="text-6xl font-bold text-gray-300">404</h1>
-      <p className="text-xl text-gray-500 mt-4">Página não encontrada</p>
-      <a href="/dashboard" className="mt-6 text-red-500 hover:text-red-600">
-        Voltar para o início
-      </a>
-    </div>
-  );
-}
-
-export default AppRoutes;
+export default router;
