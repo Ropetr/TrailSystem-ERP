@@ -19,64 +19,57 @@ interface Produto {
   codigo: string;
   codigo_barras?: string;
   descricao: string;
-  ncm?: string;
   unidade: string;
+  ncm?: string;
   categoria_id?: string;
   categoria_nome?: string;
   preco_venda: number;
-  preco_custo?: number;
+  preco_custo: number;
   estoque_atual: number;
   estoque_minimo: number;
-  marca?: string;
   ativo: boolean;
 }
 
-const statusOptions = [
-  { value: '', label: 'Todos' },
-  { value: 'ativo', label: 'Ativos' },
-  { value: 'inativo', label: 'Inativos' },
-  { value: 'estoque_baixo', label: 'Estoque Baixo' },
-];
+interface Categoria {
+  id: string;
+  nome: string;
+}
 
 export function ProdutosPage() {
   const navigate = useNavigate();
   const toast = useToast();
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [categorias, setCategorias] = useState<{ value: string; label: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [categorias, setCategorias] = useState<{ value: string; label: string }[]>([]);
   const [categoriaFilter, setCategoriaFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [estoqueFilter, setEstoqueFilter] = useState('');
 
   useEffect(() => {
-    loadProdutos();
-    loadCategorias();
+    loadData();
   }, []);
 
-  const loadProdutos = async () => {
+  const loadData = async () => {
     try {
-      const response = await api.get<{ success: boolean; data: Produto[] }>('/produtos');
-      if (response.success) {
-        setProdutos(response.data);
+      const [produtosRes, categoriasRes] = await Promise.all([
+        api.get<{ success: boolean; data: Produto[] }>('/produtos'),
+        api.get<{ success: boolean; data: Categoria[] }>('/categorias'),
+      ]);
+
+      if (produtosRes.success) {
+        setProdutos(produtosRes.data);
+      }
+      if (categoriasRes.success) {
+        setCategorias([
+          { value: '', label: 'Todas' },
+          ...categoriasRes.data.map((c) => ({ value: c.id, label: c.nome })),
+        ]);
       }
     } catch (error) {
       toast.error('Erro ao carregar produtos');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const loadCategorias = async () => {
-    try {
-      const response = await api.get('/categorias');
-      if (response.success) {
-        setCategorias([
-          { value: '', label: 'Todas' },
-          ...response.data.map((c: any) => ({ value: c.id, label: c.nome })),
-        ]);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar categorias');
     }
   };
 
@@ -86,7 +79,7 @@ export function ProdutosPage() {
     try {
       await api.delete(`/produtos/${id}`);
       toast.success('Produto excluído com sucesso');
-      loadProdutos();
+      loadData();
     } catch (error) {
       toast.error('Erro ao excluir produto');
     }
@@ -98,15 +91,17 @@ export function ProdutosPage() {
       p.descricao?.toLowerCase().includes(search.toLowerCase()) ||
       p.codigo_barras?.includes(search);
 
+    const matchCategoria = !categoriaFilter || p.categoria_id === categoriaFilter;
     const matchStatus =
       !statusFilter ||
       (statusFilter === 'ativo' && p.ativo) ||
-      (statusFilter === 'inativo' && !p.ativo) ||
-      (statusFilter === 'estoque_baixo' && p.estoque_atual <= p.estoque_minimo);
+      (statusFilter === 'inativo' && !p.ativo);
+    const matchEstoque =
+      !estoqueFilter ||
+      (estoqueFilter === 'baixo' && p.estoque_atual <= p.estoque_minimo) ||
+      (estoqueFilter === 'normal' && p.estoque_atual > p.estoque_minimo);
 
-    const matchCategoria = !categoriaFilter || p.categoria_id === categoriaFilter;
-
-    return matchSearch && matchStatus && matchCategoria;
+    return matchSearch && matchCategoria && matchStatus && matchEstoque;
   });
 
   const formatCurrency = (value: number) => {
@@ -123,7 +118,7 @@ export function ProdutosPage() {
       width: '100px',
       sortable: true,
       render: (p: Produto) => (
-        <span className="font-mono text-sm">{p.codigo}</span>
+        <span className="font-mono text-sm text-gray-600">{p.codigo}</span>
       ),
     },
     {
@@ -133,15 +128,19 @@ export function ProdutosPage() {
       render: (p: Produto) => (
         <div>
           <p className="font-medium text-gray-900">{p.descricao}</p>
-          {p.marca && <p className="text-sm text-gray-500">{p.marca}</p>}
+          {p.categoria_nome && (
+            <p className="text-sm text-gray-500">{p.categoria_nome}</p>
+          )}
         </div>
       ),
     },
     {
-      key: 'categoria',
-      header: 'Categoria',
-      width: '150px',
-      render: (p: Produto) => p.categoria_nome || '-',
+      key: 'ncm',
+      header: 'NCM',
+      width: '100px',
+      render: (p: Produto) => (
+        <span className="font-mono text-sm">{p.ncm || '-'}</span>
+      ),
     },
     {
       key: 'unidade',
@@ -150,7 +149,7 @@ export function ProdutosPage() {
     },
     {
       key: 'preco_venda',
-      header: 'Preço',
+      header: 'Preço Venda',
       width: '120px',
       render: (p: Produto) => (
         <span className="font-medium text-green-600">
@@ -162,16 +161,19 @@ export function ProdutosPage() {
       key: 'estoque_atual',
       header: 'Estoque',
       width: '100px',
-      render: (p: Produto) => (
-        <div className="flex items-center gap-2">
-          <span className={p.estoque_atual <= p.estoque_minimo ? 'text-red-600 font-medium' : ''}>
-            {p.estoque_atual}
-          </span>
-          {p.estoque_atual <= p.estoque_minimo && (
-            <Icons.alertTriangle className="w-4 h-4 text-red-500" />
-          )}
-        </div>
-      ),
+      render: (p: Produto) => {
+        const baixo = p.estoque_atual <= p.estoque_minimo;
+        return (
+          <div className="flex items-center gap-2">
+            <span className={baixo ? 'text-red-600 font-medium' : 'text-gray-900'}>
+              {p.estoque_atual}
+            </span>
+            {baixo && (
+              <Icons.alertTriangle className="w-4 h-4 text-red-500" />
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'ativo',
@@ -205,11 +207,9 @@ export function ProdutosPage() {
     },
   ];
 
-  // Stats
-  const totalProdutos = produtos.length;
-  const produtosAtivos = produtos.filter((p) => p.ativo).length;
-  const estoqueBaixo = produtos.filter((p) => p.estoque_atual <= p.estoque_minimo).length;
-  const valorEstoque = produtos.reduce((acc, p) => acc + p.preco_venda * p.estoque_atual, 0);
+  const produtosBaixoEstoque = produtos.filter(
+    (p) => p.ativo && p.estoque_atual <= p.estoque_minimo
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -219,8 +219,11 @@ export function ProdutosPage() {
           <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
           <p className="text-gray-500">Gerencie seu catálogo de produtos</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" leftIcon={<Icons.download className="w-5 h-5" />}>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            leftIcon={<Icons.download className="w-5 h-5" />}
+          >
             Importar
           </Button>
           <Button
@@ -232,60 +235,33 @@ export function ProdutosPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card padding="sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Icons.package className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{totalProdutos}</p>
-              <p className="text-sm text-gray-500">Total</p>
-            </div>
+      {/* Alerta de estoque baixo */}
+      {produtosBaixoEstoque > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3">
+          <Icons.alertTriangle className="w-5 h-5 text-amber-600" />
+          <div>
+            <p className="font-medium text-amber-800">Atenção: Estoque baixo</p>
+            <p className="text-sm text-amber-600">
+              {produtosBaixoEstoque} produto(s) estão com estoque abaixo do mínimo
+            </p>
           </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Icons.check className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{produtosAtivos}</p>
-              <p className="text-sm text-gray-500">Ativos</p>
-            </div>
-          </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Icons.alertTriangle className="w-5 h-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{estoqueBaixo}</p>
-              <p className="text-sm text-gray-500">Estoque Baixo</p>
-            </div>
-          </div>
-        </Card>
-        <Card padding="sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Icons.dollarSign className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(valorEstoque)}</p>
-              <p className="text-sm text-gray-500">Valor em Estoque</p>
-            </div>
-          </div>
-        </Card>
-      </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="ml-auto"
+            onClick={() => setEstoqueFilter('baixo')}
+          >
+            Ver produtos
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <Card padding="sm">
         <div className="flex flex-wrap gap-4">
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-[250px]">
             <Input
-              placeholder="Buscar por código, descrição, código de barras..."
+              placeholder="Buscar por código, descrição ou código de barras..."
               leftIcon={<Icons.search className="w-5 h-5" />}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -299,16 +275,82 @@ export function ProdutosPage() {
               placeholder="Categoria"
             />
           </div>
-          <div className="w-40">
+          <div className="w-36">
             <Select
               value={statusFilter}
               onChange={setStatusFilter}
-              options={statusOptions}
+              options={[
+                { value: '', label: 'Todos' },
+                { value: 'ativo', label: 'Ativos' },
+                { value: 'inativo', label: 'Inativos' },
+              ]}
               placeholder="Status"
+            />
+          </div>
+          <div className="w-36">
+            <Select
+              value={estoqueFilter}
+              onChange={setEstoqueFilter}
+              options={[
+                { value: '', label: 'Todos' },
+                { value: 'baixo', label: 'Estoque baixo' },
+                { value: 'normal', label: 'Estoque OK' },
+              ]}
+              placeholder="Estoque"
             />
           </div>
         </div>
       </Card>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card padding="sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Icons.package className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{produtos.length}</p>
+              <p className="text-sm text-gray-500">Total</p>
+            </div>
+          </div>
+        </Card>
+        <Card padding="sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Icons.check className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">
+                {produtos.filter((p) => p.ativo).length}
+              </p>
+              <p className="text-sm text-gray-500">Ativos</p>
+            </div>
+          </div>
+        </Card>
+        <Card padding="sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 rounded-lg">
+              <Icons.alertTriangle className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{produtosBaixoEstoque}</p>
+              <p className="text-sm text-gray-500">Estoque Baixo</p>
+            </div>
+          </div>
+        </Card>
+        <Card padding="sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Icons.layers className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{categorias.length - 1}</p>
+              <p className="text-sm text-gray-500">Categorias</p>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* Table */}
       <Card padding="none">
