@@ -42,7 +42,7 @@ export function EmpresasPage() {
     if (!confirm('Deseja realmente excluir esta empresa?')) return;
     
     try {
-      await api.delete(\`/empresas/\${id}\`);
+      await api.delete(`/empresas/${id}`);
       toast.success('Empresa excluída com sucesso');
       loadEmpresas();
     } catch (error) {
@@ -64,7 +64,7 @@ export function EmpresasPage() {
     {
       key: 'cidade',
       header: 'Cidade/UF',
-      render: (e: Empresa) => e.cidade ? \`\${e.cidade}/\${e.uf}\` : '-',
+      render: (e: Empresa) => e.cidade ? `${e.cidade}/${e.uf}` : '-',
     },
     {
       key: 'ativo',
@@ -82,7 +82,7 @@ export function EmpresasPage() {
     {
       label: 'Editar',
       icon: <Icons.edit className="w-4 h-4" />,
-      onClick: () => navigate(\`/empresas/\${empresa.id}\`),
+      onClick: () => navigate(`/empresas/${empresa.id}`),
     },
     {
       label: empresa.ativo ? 'Inativar' : 'Ativar',
@@ -133,7 +133,7 @@ export function EmpresasPage() {
           actions={actions}
           isLoading={isLoading}
           emptyMessage="Nenhuma empresa encontrada"
-          onRowClick={(e) => navigate(\`/empresas/\${e.id}\`)}
+          onRowClick={(e) => navigate(`/empresas/${e.id}`)}
         />
       </Card>
     </div>
