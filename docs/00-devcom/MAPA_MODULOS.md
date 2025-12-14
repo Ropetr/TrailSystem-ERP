@@ -1,803 +1,432 @@
-# 🗺️ MAPA DOS MÓDULOS - PLANAC ERP
+# 📊 MAPA DE MÓDULOS - ERP PLANAC
 
-> **Versão:** 1.0 | **Data:** 13/12/2024 | **Total:** 28 Capítulos | 13 Partes
+> **Sistema ERP Completo | Multi-Empresas | Atacado, Varejo e Atacarejo**
+
+**Gerado em:** 14/12/2025  
+**Versão do Sistema:** 7.0  
+**Total de Módulos:** 15 Domínios Principais
 
 ---
 
-## 📊 VISÃO GERAL DO SISTEMA
+## 📈 RESUMO EXECUTIVO
 
+| Área | Documentação | Backend | Tabelas | Frontend | Testes | Status Geral |
+|------|-------------|---------|---------|----------|--------|--------------|
+| **Core** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **Comercial** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **Produtos/Estoque** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **Compras** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **Financeiro** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **Fiscal** | ✅ 100% | 🟡 50% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 50% |
+| **Logística** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **Precificação** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **RH** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **E-commerce** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **BI/Relatórios** | ✅ 100% | 🟡 50% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 50% |
+| **Integrações** | ✅ 100% | 🟡 30% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 46% |
+| **Suporte** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **Contábil** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+| **Patrimônio** | ✅ 100% | ✅ 100% | ✅ 100% | ⏳ 0% | ⏳ 0% | 🟡 60% |
+
+### Totais Gerais
+
+| Métrica | Quantidade | Status |
+|---------|------------|--------|
+| Regras de Negócio | 313 | ✅ Documentadas |
+| Casos de Uso | 185 | ✅ Documentados |
+| Fluxogramas | 25 | ✅ Documentados |
+| Tabelas D1 | 207 | ✅ Criadas |
+| Rotas API | 63 | ✅ Implementadas |
+| Telas Especificadas | 203 | ✅ Documentadas |
+| Telas Implementadas | ~5 | ⏳ 2% |
+| Testes | 0 | ⏳ 0% |
+
+---
+
+## 🔷 MÓDULO 1: CORE (Fundação)
+
+### Visão Geral
+O módulo Core é a **fundação do sistema**, responsável por multi-tenancy, autenticação, autorização e configurações base.
+
+### Rotas API (6 arquivos)
+- `auth.routes.ts` - Login, Logout, Refresh, 2FA ✅
+- `empresas.routes.ts` - CRUD Empresas ✅
+- `filiais.routes.ts` - CRUD Filiais ✅
+- `usuarios.routes.ts` - CRUD Usuários ✅
+- `perfis.routes.ts` - CRUD Perfis/Permissões ✅
+- `configuracoes.routes.ts` - Parâmetros do Sistema ✅
+
+### Tabelas D1 (14 tabelas)
+empresas, filiais, usuarios, usuarios_perfis, usuarios_sessoes, usuarios_tokens, perfis, perfis_permissoes, permissoes, configuracoes, audit_logs, notificacoes, notificacoes_config, arquivos
+
+### Checklist de Finalização
 ```
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                           PLANAC ERP - MAPA DE MÓDULOS                              │
-├─────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                     │
-│   ┌─────────────────────────────────────────────────────────────────────────────┐   │
-│   │                          🏢 PARTE 1 - CORE                                  │   │
-│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                          │   │
-│   │  │  Empresas   │  │  Cadastros  │  │  Usuários   │                          │   │
-│   │  │  Multi-Tenant│  │    Base    │  │  Permissões │                          │   │
-│   │  └─────────────┘  └─────────────┘  └─────────────┘                          │   │
-│   └─────────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                     │
-│   ┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐  │
-│   │      💼 PARTE 2 - COMERCIAL        │  │       📦 PARTE 3 - COMPRAS         │  │
-│   │  ┌─────┐┌─────┐┌─────┐┌─────┐      │  │  ┌─────┐┌─────┐┌─────┐┌─────┐      │  │
-│   │  │ CRM ││Calc ││Orça ││Pedi │      │  │  │Cotaç││Pedi ││Receb││Devol│      │  │
-│   │  │     ││Pro  ││mentos│dos  │      │  │  │ões  ││dos  ││imento│ução │      │  │
-│   │  └─────┘└─────┘└─────┘└─────┘      │  │  └─────┘└─────┘└─────┘└─────┘      │  │
-│   │  ┌─────┐┌─────┐┌─────┐┌─────┐      │  │  ┌─────┐┌─────┐┌─────┐┌─────┐      │  │
-│   │  │ PDV ││Indic││Devol││Troca│      │  │  │Estoq││ WMS ││Prod ││Kits │      │  │
-│   │  │     ││ações││ução ││     │      │  │  │ue   ││     ││ução ││     │      │  │
-│   │  └─────┘└─────┘└─────┘└─────┘      │  │  └─────┘└─────┘└─────┘└─────┘      │  │
-│   │  ┌─────┐┌─────┐┌─────┐┌─────┐      │  │  ┌─────┐┌─────┐                    │  │
-│   │  │Servi││Consi││Garan││Gamif│      │  │  │Custo││Impor│                    │  │
-│   │  │ços  ││gnação│tia  ││icação│     │  │  │s    ││tação│                    │  │
-│   │  └─────┘└─────┘└─────┘└─────┘      │  │  └─────┘└─────┘                    │  │
-│   └─────────────────────────────────────┘  └─────────────────────────────────────┘  │
-│                                                                                     │
-│   ┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐  │
-│   │     💰 PARTE 4 - FINANCEIRO        │  │     📋 PARTE 5 - FISCAL/CONTÁBIL   │  │
-│   │  ┌─────┐┌─────┐┌─────┐┌─────┐      │  │  ┌─────┐┌─────┐┌─────┐┌─────┐      │  │
-│   │  │Contas│Contas│Fluxo ││Bancos│     │  │  │Tribu││NF-e ││Obrig││Contab│     │  │
-│   │  │Receb││Pagar││Caixa ││     │      │  │  │tário││NFCe ││ações││ilidade│    │  │
-│   │  └─────┘└─────┘└─────┘└─────┘      │  │  └─────┘└─────┘└─────┘└─────┘      │  │
-│   │                                     │  │  ┌─────┐                           │  │
-│   │                                     │  │  │Patri│                           │  │
-│   │                                     │  │  │mônio│                           │  │
-│   │                                     │  │  └─────┘                           │  │
-│   └─────────────────────────────────────┘  └─────────────────────────────────────┘  │
-│                                                                                     │
-│   ┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐  │
-│   │    🚚 PARTE 6 - LOGÍSTICA          │  │     📊 PARTE 7 - INTELIGÊNCIA      │  │
-│   │  ┌─────┐┌─────┐┌─────┐              │  │  ┌─────┐┌─────┐┌─────┐              │  │
-│   │  │Separ││Exped││Rastrea│            │  │  │ BI  ││Dashb││Relat│              │  │
-│   │  │ação ││ição ││mento │             │  │  │     ││oards││órios│              │  │
-│   │  └─────┘└─────┘└─────┘              │  │  └─────┘└─────┘└─────┘              │  │
-│   └─────────────────────────────────────┘  └─────────────────────────────────────┘  │
-│                                                                                     │
-│   ┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐  │
-│   │  📱 PARTE 8 - MKT/ECOMM/ATEND      │  │     🔌 PARTE 9 - INTEGRAÇÃO        │  │
-│   │  ┌─────┐┌─────┐┌─────┐              │  │  ┌─────┐┌─────┐┌─────┐              │  │
-│   │  │Marke││E-com││Atendi│             │  │  │ APIs ││Fiscal││Banking│          │  │
-│   │  │ting ││merce││mento │             │  │  │     ││     ││      │             │  │
-│   │  └─────┘└─────┘└─────┘              │  │  └─────┘└─────┘└─────┘              │  │
-│   └─────────────────────────────────────┘  └─────────────────────────────────────┘  │
-│                                                                                     │
-│   ┌─────────────────────────────────────┐  ┌─────────────────────────────────────┐  │
-│   │   📲 PARTE 10/11 - INTERFACE       │  │    👥 PARTE 12 - RH                │  │
-│   │  ┌─────┐┌─────┐┌─────┐┌─────┐      │  │  ┌─────┐┌─────┐┌─────┐              │  │
-│   │  │Mobile│Notifi││Ajuda ││Tickets│   │  │  │Colab││Ponto ││Folha │            │  │
-│   │  │     ││cações││      ││      │    │  │  │orad.││      ││Pagto │            │  │
-│   │  └─────┘└─────┘└─────┘└─────┘      │  │  └─────┘└─────┘└─────┘              │  │
-│   └─────────────────────────────────────┘  └─────────────────────────────────────┘  │
-│                                                                                     │
-│   ┌─────────────────────────────────────────────────────────────────────────────┐   │
-│   │                     📝 PARTE 13 - CONTRATOS                                 │   │
-│   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                          │   │
-│   │  │  Contratos  │  │  Aditivos   │  │  Assinatura │                          │   │
-│   │  │  Clientes   │  │             │  │   Digital   │                          │   │
-│   │  └─────────────┘  └─────────────┘  └─────────────┘                          │   │
-│   └─────────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                     │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+DOCUMENTAÇÃO.............. [✅] Completa
+BACKEND (Rotas)........... [✅] 6/6 implementadas
+BACKEND (Migrations)...... [✅] Criadas
+FRONTEND (Telas).......... [⏳] 0/8 telas
+  [ ] Tela de Login
+  [ ] Tela de Cadastro de Empresas
+  [ ] Tela de Filiais
+  [ ] Tela de Usuários
+  [ ] Tela de Perfis/Permissões
+  [ ] Layout base (sidebar, header)
+  [ ] Componentes base (tabelas, forms)
+  [ ] Dashboard inicial
+TESTES.................... [⏳] 0% cobertura
+DEPLOY.................... [✅] Worker configurado
 ```
 
 ---
 
-## 📈 RESUMO DE STATUS
+## 🔷 MÓDULO 2: COMERCIAL (Vendas)
 
-| Fase | Descrição | Progresso |
-|------|-----------|-----------|
-| 📚 **Documentação** | Regras de negócio, casos de uso | ✅ 100% |
-| 🗄️ **Banco de Dados** | 207 tabelas criadas | ✅ 100% |
-| ⚙️ **API Backend** | ~600 endpoints em 63 arquivos | ✅ 100% |
-| 🧪 **Testes** | Cobertura automatizada | ❌ 0% |
-| 🎨 **Frontend** | Interfaces React | ❌ 5% |
-| 🔗 **Integrações** | APIs externas | 🟡 30% |
+### Visão Geral
+Módulo completo de vendas com CRM, Orçamentos, Pedidos, PDV, CalcPro e gestão de clientes.
 
----
+### Submódulos (12)
+1. CRM (Funil de vendas)
+2. CalcPro (Calculadoras drywall/steel frame)
+3. Orçamentos
+4. Pedido de Venda
+5. PDV (Ponto de Venda)
+6. Programa de Indicações
+7. Devolução de Venda
+8. Troca de Venda
+9. Serviços
+10. Consignação
+11. Garantia de Produtos
+12. Gamificação
 
-## 📋 CHECKLIST POR MÓDULO
+### Rotas API (14 arquivos)
+- `clientes.routes.ts` ✅
+- `vendedores.routes.ts` ✅
+- `orcamentos.routes.ts` ✅
+- `pedidos.routes.ts` ✅
+- `entregas.routes.ts` ✅
+- `devolucoes.routes.ts` ✅
+- `trocas.routes.ts` ✅
+- `garantias.routes.ts` ✅
+- `consignacoes.routes.ts` ✅
+- `crm.routes.ts` ✅
+- `pdv.routes.ts` ✅
+- `comissoes.routes.ts` ✅
+- `ordens-servico.routes.ts` ✅
+- `agenda.routes.ts` ✅
 
-### LEGENDA
-- ✅ Concluído
-- 🟡 Em progresso / Parcial
-- ❌ Não iniciado
-- ⏳ Pendente de integração externa
+### Tabelas D1 (45+ tabelas)
+Clientes, CRM, Orçamentos, Pedidos, PDV, CalcPro, Indicações, Comissões, etc.
 
----
-
-# PARTE 1 - MÓDULOS CORE
-
-## 📦 Capítulo 01 - Gestão de Empresas e Multi-Tenant
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Cadastro de empresas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Cadastro de filiais | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Config. fiscais por empresa | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Parâmetros por empresa | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Consolidação entre empresas | ✅ | ✅ | 🟡 | ❌ | ❌ |
-
-**Tabelas:** `empresas`, `filiais`, `configuracoes`  
-**Rotas:** `empresas.routes.ts`, `filiais.routes.ts`, `configuracoes.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Criar testes unitários para CRUD de empresas
-- [ ] Criar testes de integração para multi-tenant
-- [ ] Desenvolver tela de cadastro de empresas
-- [ ] Desenvolver tela de configurações fiscais
-- [ ] Implementar consolidação de dados
-
----
-
-## 📦 Capítulo 02 - Cadastros Base
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Clientes (PF/PJ) | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Integração API CNPJ | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| Fornecedores | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Produtos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Categorias | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Marcas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Unidades de medida | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Tabelas de preço | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Kits de produtos | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `clientes`, `clientes_contatos`, `clientes_enderecos`, `fornecedores`, `produtos`, `categorias`, `marcas`, `unidades_medida`, `tabelas_preco`, `tabelas_preco_itens`  
-**Rotas:** `clientes.routes.ts`, `fornecedores.routes.ts`, `produtos.routes.ts`, `categorias.routes.ts`, `marcas.routes.ts`, `unidades.routes.ts`, `tabelas-preco.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar API CNPJá para consulta automática
-- [ ] Integrar API CPF/CNPJ para validação
-- [ ] Criar testes para todos os cadastros
-- [ ] Desenvolver telas de cadastro (CRUD completo)
-- [ ] Implementar busca avançada com filtros
-- [ ] Upload de imagens de produtos
+### Checklist de Finalização
+```
+DOCUMENTAÇÃO.............. [✅] 48 regras, 32 casos de uso
+BACKEND (Rotas)........... [✅] 14/14 implementadas
+BACKEND (Migrations)...... [✅] Criadas
+BACKEND (Pendências)...... 
+  [ ] Regras de comissão automática
+  [ ] Mescla de orçamentos
+  [ ] CalcPro cálculos
+FRONTEND (Telas).......... [⏳] 0/35 telas
+  [ ] Dashboard Comercial
+  [ ] Tela Clientes (CRUD completo)
+  [ ] Tela Orçamentos
+  [ ] Tela Pedidos
+  [ ] Tela PDV
+  [ ] Tela CRM/Funil
+  [ ] CalcPro interface
+INTEGRAÇÕES...............
+  [ ] WhatsApp (envio de orçamentos)
+  [ ] Email (envio de orçamentos)
+  [ ] CPF/CNPJ (validação cadastro)
+TESTES.................... [⏳] 0% cobertura
+```
 
 ---
 
-## 📦 Capítulo 03 - Gestão de Usuários e Permissões
+## 🔷 MÓDULO 3: PRODUTOS E ESTOQUE
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Cadastro de usuários | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Perfis de acesso | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Permissões por módulo | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Autenticação JWT | ✅ | ✅ | ✅ | ❌ | ❌ |
-| 2FA (opcional) | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Log de auditoria | ✅ | ✅ | ✅ | ❌ | ❌ |
+### Visão Geral
+Gestão completa de catálogo de produtos, estoque, inventário, transferências.
 
-**Tabelas:** `usuarios`, `perfis`, `permissoes`, `perfis_permissoes`, `usuarios_perfis`, `usuarios_sessoes`, `audit_logs`  
-**Rotas:** `auth.routes.ts`, `usuarios.routes.ts`, `perfis.routes.ts`, `auditoria.routes.ts`
+### Rotas API (8 arquivos)
+- `produtos.routes.ts` ✅
+- `categorias.routes.ts` ✅
+- `marcas.routes.ts` ✅
+- `unidades.routes.ts` ✅
+- `estoque.routes.ts` ✅
+- `locais-estoque.routes.ts` ✅
+- `inventarios.routes.ts` ✅
+- `transferencias.routes.ts` ✅
 
-### Checklist para Finalização:
-- [ ] Implementar 2FA completo
-- [ ] Criar testes de autenticação
-- [ ] Desenvolver tela de login
-- [ ] Desenvolver gestão de usuários
-- [ ] Desenvolver gestão de perfis e permissões
-- [ ] Dashboard de auditoria
+### Tabelas D1 (22 tabelas)
+produtos, produtos_imagens, categorias, marcas, unidades_medida, estoque, estoque_movimentacoes, locais_estoque, inventarios, transferencias, ncm, cfop, etc.
 
----
-
-# PARTE 2 - MÓDULO COMERCIAL (12 Submódulos)
-
-## 📦 Capítulo 04.1 - CRM
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Funil de vendas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Pipeline de oportunidades | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Leads | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Atividades e follow-ups | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Histórico de interações | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `crm_funis`, `crm_etapas`, `crm_leads`, `crm_oportunidades`, `crm_atividades`, `crm_historico`, `crm_notas`  
-**Rotas:** `crm.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Testes unitários do CRM
-- [ ] Tela de pipeline visual (Kanban)
-- [ ] Tela de gestão de leads
-- [ ] Relatórios de conversão
+### Checklist de Finalização
+```
+DOCUMENTAÇÃO.............. [✅] 28 regras, 18 casos de uso
+BACKEND (Rotas)........... [✅] 8/8 implementadas
+BACKEND (Pendências)......
+  [ ] Cálculo automático de custo médio
+  [ ] Curva ABC automática
+  [ ] Ponto de reposição
+FRONTEND (Telas).......... [⏳] 0/15 telas
+  [ ] Tela Produtos (CRUD)
+  [ ] Tela Estoque (saldos)
+  [ ] Tela Movimentações
+  [ ] Tela Inventário
+  [ ] Tela Transferências
+INTEGRAÇÕES...............
+  [ ] Bluesoft Cosmos (catálogo)
+  [ ] IBPT (impostos)
+  [ ] Import XML NF-e
+TESTES.................... [⏳] 0% cobertura
+```
 
 ---
 
-## 📦 Capítulo 04.2 - CalcPro (Calculadoras)
+## 🔷 MÓDULO 4: COMPRAS
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Cadastro de sistemas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Componentes por sistema | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Projetos e ambientes | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Cálculo automático | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Conversão em orçamento | ✅ | ✅ | 🟡 | ❌ | ❌ |
+### Rotas API (2 arquivos)
+- `fornecedores.routes.ts` ✅
+- `compras.routes.ts` ✅
 
-**Tabelas:** `calcpro_sistemas`, `calcpro_sistemas_componentes`, `calcpro_projetos`, `calcpro_ambientes`, `calcpro_paredes`, `calcpro_calculos`, `calcpro_calculos_itens`  
-**Rotas:** Embutido em orçamentos
+### Tabelas D1 (9 tabelas)
+fornecedores, fornecedores_contatos, requisicoes_compra, cotacoes_compra, pedidos_compra, etc.
 
-### Checklist para Finalização:
-- [ ] Finalizar lógica de cálculo por sistema
-- [ ] Testes das fórmulas de cálculo
-- [ ] Interface visual do CalcPro
-- [ ] Integração com orçamentos
-
----
-
-## 📦 Capítulo 04.3 - Orçamentos
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| CRUD de orçamentos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Itens do orçamento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Versionamento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Conversão em pedido | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Mesclar orçamentos | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Desmembrar orçamentos | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Envio por email/WhatsApp | ✅ | ✅ | ⏳ | ❌ | ❌ |
-
-**Tabelas:** `orcamentos`, `orcamentos_itens`, `orcamentos_historico`  
-**Rotas:** `orcamentos.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Implementar mescla de orçamentos
-- [ ] Implementar desmembramento
-- [ ] Integrar envio por WhatsApp (API Brasil)
-- [ ] Testes completos
-- [ ] Tela de criação/edição
-- [ ] Impressão PDF personalizada
+### Checklist de Finalização
+```
+DOCUMENTAÇÃO.............. [✅] 18 regras, 12 casos de uso
+BACKEND (Rotas)........... [✅] 2/2 implementadas
+BACKEND (Pendências)......
+  [ ] Comparativo de cotações
+  [ ] Análise de fornecedores
+FRONTEND (Telas).......... [⏳] 0/8 telas
+  [ ] Tela Fornecedores
+  [ ] Tela Cotações
+  [ ] Tela Pedidos de Compra
+  [ ] Tela Recebimento
+TESTES.................... [⏳] 0% cobertura
+```
 
 ---
 
-## 📦 Capítulo 04.4 - Pedido de Venda
+## 🔷 MÓDULO 5: FINANCEIRO
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| CRUD de pedidos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Itens do pedido | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Status do pedido | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Checkbox bonificado | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Entregas fracionadas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Faturamento flexível | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Múltiplas formas pgto | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Uso de crédito cliente | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Limite de crédito | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Comissões | ✅ | ✅ | ✅ | ❌ | ❌ |
+### Rotas API (4 arquivos)
+- `contas-receber.routes.ts` ✅
+- `contas-pagar.routes.ts` ✅
+- `bancos.routes.ts` ✅
+- `caixas.routes.ts` ✅
 
-**Tabelas:** `pedidos_venda`, `pedidos_venda_itens`, `pedidos_venda_parcelas`, `pedidos_venda_historico`  
-**Rotas:** `pedidos.routes.ts`, `comissoes.routes.ts`
+### Tabelas D1 (16 tabelas)
+contas_receber, contas_pagar, contas_bancarias, movimentacoes_bancarias, conciliacoes, cobrancas_regua, etc.
 
-### Checklist para Finalização:
-- [ ] Implementar faturamento parcial completo
-- [ ] Integrar com emissão de NF-e
-- [ ] Testes de fluxo completo
-- [ ] Tela de pedidos
-- [ ] Tela de entregas fracionadas
-- [ ] Painel de faturamento pendente
-
----
-
-## 📦 Capítulo 04.5 - PDV
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Abertura/fechamento caixa | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Venda rápida | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Sangria e suprimento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Múltiplas formas pgto | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Integração NFC-e | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| TEF (cartões) | ✅ | ✅ | ⏳ | ❌ | ❌ |
-
-**Tabelas:** `pdv_caixas`, `pdv_sessoes`, `pdv_movimentacoes`  
-**Rotas:** `pdv.routes.ts`, `caixas.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar emissão NFC-e (TecnoSpeed/Nuvem Fiscal)
-- [ ] Integrar TEF
-- [ ] Testes de fluxo de caixa
-- [ ] Interface PDV completa
-- [ ] Integração com balança/leitor
+### Checklist de Finalização
+```
+DOCUMENTAÇÃO.............. [✅] 35 regras, 22 casos de uso
+BACKEND (Rotas)........... [✅] 4/4 implementadas
+BACKEND (Pendências)......
+  [ ] Régua de cobrança automática
+  [ ] Conciliação automática
+  [ ] Fluxo de caixa projetado
+FRONTEND (Telas).......... [⏳] 0/12 telas
+  [ ] Tela Contas a Receber
+  [ ] Tela Contas a Pagar
+  [ ] Tela Bancos
+  [ ] Tela Caixa
+  [ ] Dashboard Financeiro
+INTEGRAÇÕES (CRÍTICO).....
+  [ ] TecnoSpeed Boletos
+  [ ] TecnoSpeed PIX
+  [ ] OFX Import
+TESTES.................... [⏳] 0% cobertura
+```
 
 ---
 
-## 📦 Capítulo 04.6 - Programa de Indicações
+## 🔷 MÓDULO 6: FISCAL ⚠️ CRÍTICO
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Cadastro de indicadores | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Vínculo cliente-indicador | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Geração de créditos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Carteira de créditos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Uso em vendas | ✅ | ✅ | ✅ | ❌ | ❌ |
+### Rotas API (1 arquivo)
+- `notas-fiscais.routes.ts` 🟡 50%
 
-**Tabelas:** `indicacoes`, `indicacoes_creditos`  
-**Rotas:** Embutido em clientes e pedidos
+### Tabelas D1 (14 tabelas)
+nfe, nfe_itens, nfce, nfse, regras_fiscais, icms_uf, aliquotas_interestaduais, sped_arquivos, etc.
 
-### Checklist para Finalização:
-- [ ] Testes do fluxo de indicação
-- [ ] Tela de indicadores
-- [ ] Relatório de indicações
-- [ ] Ranking de indicadores
-
----
-
-## 📦 Capítulo 04.7 - Devolução de Venda
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Registro de devolução | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Itens devolvidos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Entrada no estoque | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Geração de crédito | ✅ | ✅ | ✅ | ❌ | ❌ |
-| NF-e de entrada | ✅ | ✅ | ⏳ | ❌ | ❌ |
-
-**Tabelas:** `devolucoes`, `devolucoes_itens`  
-**Rotas:** `devolucoes.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar emissão NF-e devolução
-- [ ] Testes de fluxo
-- [ ] Tela de devolução
+### Checklist de Finalização
+```
+DOCUMENTAÇÃO.............. [✅] 42 regras, 18 casos de uso
+BACKEND (Rotas)........... [🟡] 1/1 parcialmente implementada
+BACKEND (Pendências CRÍTICO)
+  [ ] Cálculo automático de impostos
+  [ ] Validação SEFAZ
+  [ ] Geração XML NF-e
+  [ ] Geração XML NFC-e
+  [ ] Manifestação
+FRONTEND (Telas).......... [⏳] 0/10 telas
+  [ ] Tela Emissão NF-e
+  [ ] Tela Emissão NFC-e
+  [ ] Tela Consulta Notas
+  [ ] Tela Manifestação
+INTEGRAÇÕES (CRÍTICO).....
+  [ ] Nuvem Fiscal - Emissão NF-e
+  [ ] Nuvem Fiscal - Emissão NFC-e
+  [ ] TecnoSpeed - Alternativa
+  [ ] IBPT - Impostos
+  [ ] SERPRO - Dados fiscais
+TESTES.................... [⏳] 0% cobertura
+HOMOLOGAÇÃO SEFAZ......... [⏳] Pendente
+```
 
 ---
 
-## 📦 Capítulo 04.8 - Troca de Venda
+## 🔷 MÓDULO 7: LOGÍSTICA
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Registro de troca | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Itens devolvidos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Itens novos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Diferença a pagar/receber | ✅ | ✅ | ✅ | ❌ | ❌ |
+### Rotas API (6 arquivos)
+- `transportadoras.routes.ts` ✅
+- `motoristas.routes.ts` ✅
+- `veiculos.routes.ts` ✅
+- `rotas.routes.ts` ✅
+- `rastreamento.routes.ts` ✅
+- `ocorrencias.routes.ts` ✅
 
-**Tabelas:** `trocas`, `trocas_itens_devolvidos`, `trocas_itens_novos`  
-**Rotas:** `trocas.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar com NF-e
-- [ ] Testes de fluxo
-- [ ] Tela de troca
-
----
-
-## 📦 Capítulo 04.9 - Serviços (O.S.)
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Ordem de Serviço | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Itens/materiais | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Histórico de status | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Agendamento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| NFS-e | ✅ | ✅ | ⏳ | ❌ | ❌ |
-
-**Tabelas:** `ordens_servico`, `ordens_servico_itens`, `ordens_servico_historico`  
-**Rotas:** `ordens-servico.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar emissão NFS-e
-- [ ] Testes de fluxo
-- [ ] Tela de O.S.
-- [ ] Assinatura digital do cliente
+### Checklist de Finalização
+```
+DOCUMENTAÇÃO.............. [✅] 15 regras, 10 casos de uso
+BACKEND (Rotas)........... [✅] 6/6 implementadas
+BACKEND (Pendências)......
+  [ ] Roteirização automática
+  [ ] Cálculo de frete
+FRONTEND (Telas).......... [⏳] 0/8 telas
+  [ ] Tela Transportadoras
+  [ ] Tela Motoristas
+  [ ] Tela Rotas
+  [ ] App Motorista (PWA)
+TESTES.................... [⏳] 0% cobertura
+```
 
 ---
 
-## 📦 Capítulo 04.10 - Consignação
+## 🔷 MÓDULO 8: PRECIFICAÇÃO
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Envio em consignação | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Itens consignados | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Retorno/venda | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Controle de prazo | ✅ | ✅ | ✅ | ❌ | ❌ |
+### Rotas API (3 arquivos)
+- `tabelas-preco.routes.ts` ✅
+- `condicoes-pagamento.routes.ts` ✅
+- `comissoes.routes.ts` ✅
 
-**Tabelas:** `consignacoes`, `consignacoes_itens`  
-**Rotas:** `consignacoes.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Testes de fluxo
-- [ ] Tela de consignação
-- [ ] Alertas de vencimento
-
----
-
-## 📦 Capítulo 04.11 - Garantia de Produtos
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Abertura de chamado | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Histórico | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Análise técnica | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Resolução | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `garantias`, `garantias_historico`  
-**Rotas:** `garantias.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Testes de fluxo
-- [ ] Tela de garantias
-- [ ] Relatórios de garantia
+### Checklist de Finalização
+```
+BACKEND (Rotas)........... [✅] 3/3 implementadas
+BACKEND (Pendências)......
+  [ ] Motor de promoções
+  [ ] Cálculo automático de markup
+FRONTEND (Telas).......... [⏳] 0/6 telas
+TESTES.................... [⏳] 0% cobertura
+```
 
 ---
 
-## 📦 Capítulo 04.12 - Gamificação
+## 🔷 MÓDULO 9: RH
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Metas de vendedores | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Sistema de pontuação | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Ranking | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Premiações | ✅ | ✅ | 🟡 | ❌ | ❌ |
+### Rotas API (2 arquivos)
+- `rh.routes.ts` ✅
+- `folha-pagamento.routes.ts` ✅
 
-**Tabelas:** `vendedores`, `vendedores_metas`, `bonificacoes`, `bonificacoes_participantes`  
-**Rotas:** `vendedores.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Completar lógica de pontuação
-- [ ] Testes de gamificação
-- [ ] Dashboard de performance
-- [ ] Tela de ranking
-
----
-
-# PARTE 3 - MÓDULO COMPRAS (12 Submódulos)
-
-## 📦 Capítulo 05.1-05.7 - Compras Base
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Cotações | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Pedidos de compra | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Recebimento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Devolução compra | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Importação NF-e | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| Análise de preços | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `cotacoes_compra`, `pedidos_compra`, `pedidos_compra_itens`, `requisicoes_compra`  
-**Rotas:** `compras.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar importação de XML NF-e
-- [ ] Manifestação do destinatário
-- [ ] Testes completos
-- [ ] Telas de compras
+### Checklist de Finalização
+```
+BACKEND (Rotas)........... [✅] 2/2 implementadas
+BACKEND (Pendências)......
+  [ ] Cálculo de folha
+  [ ] Controle de ponto
+FRONTEND (Telas).......... [⏳] 0/10 telas
+  [ ] Tela Colaboradores
+  [ ] Tela Ponto
+  [ ] Tela Férias
+  [ ] App do Colaborador
+TESTES.................... [⏳] 0% cobertura
+```
 
 ---
 
-## 📦 Capítulo 05.8 - Estoque
+## 🔷 MÓDULO 10: E-COMMERCE
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Saldo por local | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Movimentações | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Reservas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Transferências | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Inventário | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Curva ABC | ✅ | ✅ | 🟡 | ❌ | ❌ |
+### Rotas API (1 arquivo)
+- `ecommerce.routes.ts` ✅
 
-**Tabelas:** `estoque`, `estoque_movimentacoes`, `estoque_reservas`, `locais_estoque`, `transferencias`, `inventarios`  
-**Rotas:** `estoque.routes.ts`, `locais-estoque.routes.ts`, `transferencias.routes.ts`, `inventarios.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Implementar curva ABC completa
-- [ ] Testes de movimentação
-- [ ] Telas de estoque
-- [ ] Dashboard de estoque
-
----
-
-## 📦 Capítulo 05.9-05.12 - WMS/Produção/Kits/Custos
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| WMS endereçamento | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Produção/PCP | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Gestão de kits | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Custos fixos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Precificação | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Markup | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `custos_fixos`, `custos_rateios`, `markup_categorias`, `precos_custos_historico`  
-**Rotas:** Embutido em produtos e configurações
-
-### Checklist para Finalização:
-- [ ] Completar WMS
-- [ ] Completar PCP
-- [ ] Testes de custos
-- [ ] Tela de formação de preço
+### Checklist de Finalização
+```
+BACKEND (Rotas)........... [✅] 1/1 implementada
+BACKEND (Pendências)......
+  [ ] Checkout completo
+  [ ] Gateway de pagamento
+FRONTEND.................. [⏳] 0/15 telas
+  [ ] Loja Virtual (React)
+  [ ] Carrinho
+  [ ] Checkout
+  [ ] Área do Cliente
+INTEGRAÇÕES...............
+  [ ] Plug4Market (marketplaces)
+  [ ] Gateway de Pagamento
+TESTES.................... [⏳] 0% cobertura
+```
 
 ---
 
-# PARTE 4 - MÓDULOS FINANCEIROS
+## 🔷 MÓDULOS 11-15: BI, INTEGRAÇÕES, SUPORTE, CONTÁBIL, PATRIMÔNIO
 
-## 📦 Capítulo 06 - Contas a Receber
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Títulos/parcelas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Baixas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Boletos | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| PIX | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| Régua de cobrança | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Renegociação | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `contas_receber`, `contas_receber_baixas`, `contas_receber_historico`, `cobrancas_regua`, `cobrancas_enviadas`  
-**Rotas:** `contas-receber.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar emissão de boletos (TecnoSpeed)
-- [ ] Integrar PIX (TecnoSpeed)
-- [ ] Conciliação automática
-- [ ] Testes completos
-- [ ] Telas de contas a receber
+| Módulo | Rotas | Status Backend | Frontend | Testes |
+|--------|-------|----------------|----------|--------|
+| BI/Relatórios | 2 | 🟡 50% | ⏳ 0% | ⏳ 0% |
+| Integrações | 0 | 🟡 30% | ⏳ 0% | ⏳ 0% |
+| Suporte | 2 | ✅ 100% | ⏳ 0% | ⏳ 0% |
+| Contábil | 1 | ✅ 100% | ⏳ 0% | ⏳ 0% |
+| Patrimônio | 1 | ✅ 100% | ⏳ 0% | ⏳ 0% |
 
 ---
 
-## 📦 Capítulo 07 - Contas a Pagar
+## 📊 PRIORIZAÇÃO RECOMENDADA
 
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Títulos a pagar | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Aprovação por alçada | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Baixas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Pagamento em lote | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| CNAB | ✅ | ✅ | ⏳ | ❌ | ❌ |
+### Fase 1 - Fundação (Semanas 1-4)
+1. ✅ Core (Multi-tenant, Auth, Permissões) - BACKEND PRONTO
+2. ⏳ Frontend - Layout base + Login
+3. ⏳ Testes - Suite básica
 
-**Tabelas:** `contas_pagar`, `contas_pagar_baixas`, `contas_pagar_aprovacoes`, `alcadas_aprovacao`  
-**Rotas:** `contas-pagar.routes.ts`
+### Fase 2 - Operacional (Semanas 5-12)
+4. Comercial (Clientes, Orçamentos, Pedidos)
+5. Produtos/Estoque (Catálogo, Saldos)
+6. Financeiro (Receber, Pagar, Caixa)
 
-### Checklist para Finalização:
-- [ ] Integrar pagamento bancário (TecnoSpeed)
-- [ ] Integrar CNAB
-- [ ] Testes completos
-- [ ] Telas de contas a pagar
+### Fase 3 - Fiscal (Semanas 13-16) ⚠️ CRÍTICO
+7. Fiscal (NF-e, NFC-e)
+8. Integrações (Nuvem Fiscal / TecnoSpeed)
 
----
+### Fase 4 - Avançado (Semanas 17-24)
+9. Compras
+10. Logística
+11. RH
+12. E-commerce
+13. BI/Relatórios
 
-## 📦 Capítulo 08-09 - Fluxo de Caixa e Bancos
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Fluxo de caixa | ✅ | ✅ | ✅ | ❌ | ❌ |
-| DRE gerencial | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Contas bancárias | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Movimentações | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Conciliação | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Open Banking | ✅ | ✅ | ⏳ | ❌ | ❌ |
-
-**Tabelas:** `contas_bancarias`, `movimentacoes_bancarias`, `conciliacoes`  
-**Rotas:** `bancos.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Completar DRE gerencial
-- [ ] Integrar Open Banking (TecnoSpeed)
-- [ ] Conciliação automática
-- [ ] Testes completos
-- [ ] Telas financeiras
+### Fase 5 - Complementar (Semanas 25+)
+14. Contabilidade
+15. Patrimônio
+16. Suporte/Tickets
 
 ---
 
-# PARTE 5 - MÓDULOS FISCAIS E CONTÁBEIS
+## 📁 ARQUIVOS DE REFERÊNCIA
 
-## 📦 Capítulos 10-14 - Fiscal/Contábil
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Regras fiscais (CFOP) | ✅ | ✅ | ✅ | ❌ | ❌ |
-| ICMS/ST | ✅ | ✅ | ✅ | ❌ | ❌ |
-| NF-e | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| NFC-e | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| NFS-e | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| CT-e | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| SPED | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Contabilidade | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Patrimônio | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `cfop`, `cfop_operacoes`, `icms_uf`, `icms_st_uf`, `aliquotas_interestaduais`, `regras_fiscais`, `ncm`, `nfe`, `nfe_itens`, `nfce`, `nfse`, `sped_arquivos`, `contabil_*`, `patrimonio_*`  
-**Rotas:** `notas-fiscais.routes.ts`, `contabilidade.routes.ts`, `patrimonio.routes.ts`
-
-### Checklist para Finalização:
-- [ ] **CRÍTICO:** Integrar TecnoSpeed/Nuvem Fiscal para emissão
-- [ ] Integrar consulta SEFAZ
-- [ ] Gerar arquivos SPED
-- [ ] Testes fiscais completos
-- [ ] Telas de documentos fiscais
-- [ ] Dashboard fiscal
+| Arquivo | Localização |
+|---------|-------------|
+| Sumário Completo | docs/01-sumario/README.md |
+| Regras de Negócio | docs/02-regras-negocio/README.md |
+| Casos de Uso | docs/03-casos-uso/README.md |
+| Fluxogramas | docs/04-fluxogramas/README.md |
+| Modelo de Dados | docs/05-modelo-dados/README.md |
+| Telas | docs/06-especificacao-telas/README.md |
+| Integrações | docs/08-integracoes/ |
+| Module Map | docs/00-devcom/MAP/module-map.json |
+| Orquestrador | docs/00-devcom/ORQUESTRADOR.md |
 
 ---
 
-# PARTE 6-7 - LOGÍSTICA E INTELIGÊNCIA
-
-## 📦 Capítulo 15 - Logística
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Rotas de entrega | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Motoristas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Veículos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Rastreamento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Ocorrências | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `rotas`, `rotas_entregas`, `motoristas`, `veiculos`, `entregas_rastreamento`, `entregas_ocorrencias`  
-**Rotas:** `rotas.routes.ts`, `motoristas.routes.ts`, `veiculos.routes.ts`, `entregas.routes.ts`, `rastreamento.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Testes de logística
-- [ ] Tela de roteirização
-- [ ] Mapa de entregas
-- [ ] App do motorista (mobile)
-
----
-
-## 📦 Capítulo 16 - BI e Dashboards
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Dashboards configuráveis | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Widgets | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Relatórios gerenciais | ✅ | ✅ | 🟡 | ❌ | ❌ |
-| Exportação | ✅ | ✅ | 🟡 | ❌ | ❌ |
-
-**Tabelas:** `dashboards`, `dashboards_widgets`, `relatorios`, `relatorios_agendados`, `relatorios_execucoes`  
-**Rotas:** `bi.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Completar relatórios gerenciais
-- [ ] Testes de BI
-- [ ] Interface de dashboards
-- [ ] Gráficos interativos
-
----
-
-# PARTE 8 - MARKETING/E-COMMERCE/ATENDIMENTO
-
-## 📦 Capítulos 17-19
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| E-commerce B2B/B2C | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Carrinho/checkout | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Cupons/promoções | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Integ. marketplaces | ✅ | ✅ | ⏳ | ❌ | ❌ |
-| Tickets de suporte | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `loja_*`, `carrinhos`, `carrinhos_itens`, `cupons`, `promocoes`, `tickets`, `tickets_mensagens`  
-**Rotas:** `ecommerce.routes.ts`, `tickets.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar Baselinker (marketplaces)
-- [ ] Testes de e-commerce
-- [ ] Loja virtual completa
-- [ ] Tela de tickets
-
----
-
-# PARTE 9-11 - INTEGRAÇÃO/INTERFACE/SUPORTE
-
-## 📦 Integrações e Interfaces
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Configuração integrações | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Logs de integração | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Filas de processamento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Notificações push | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Ajuda contextual | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Import/Export | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `integracoes`, `integracoes_logs`, `integracoes_filas`, `notificacoes`, `ajuda_*`, `importacoes`, `exportacoes`  
-**Rotas:** `notificacoes.routes.ts`, `import-export.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Configurar integrações externas
-- [ ] Testes de notificações
-- [ ] Telas de configuração
-
----
-
-# PARTE 12 - RH
-
-## 📦 Capítulos 26-27 - Recursos Humanos
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Colaboradores | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Cargos/departamentos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Ponto eletrônico | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Banco de horas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Férias | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Folha de pagamento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Benefícios | ✅ | ✅ | ✅ | ❌ | ❌ |
-
-**Tabelas:** `colaboradores`, `colaboradores_*`, `cargos`, `departamentos`, `pontos`, `banco_horas`, `ferias`, `folha_pagamento`, `beneficios`  
-**Rotas:** `rh.routes.ts`, `folha-pagamento.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Testes de RH completos
-- [ ] Telas de gestão de pessoas
-- [ ] App do colaborador (mobile)
-- [ ] Integração eSocial
-
----
-
-# PARTE 13 - CONTRATOS
-
-## 📦 Capítulo 28 - Gestão de Contratos
-
-| Item | Docs | Banco | API | Testes | Frontend |
-|------|:----:|:-----:|:---:|:------:|:--------:|
-| Contratos clientes | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Contratos fornecedores | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Aditivos | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Parcelas | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Alertas vencimento | ✅ | ✅ | ✅ | ❌ | ❌ |
-| Assinatura digital | ✅ | ✅ | ⏳ | ❌ | ❌ |
-
-**Tabelas:** `contratos`, `contratos_aditivos`, `contratos_parcelas`  
-**Rotas:** `contratos.routes.ts`
-
-### Checklist para Finalização:
-- [ ] Integrar assinatura digital
-- [ ] Testes de contratos
-- [ ] Telas de contratos
-
----
-
-# 📊 RESUMO EXECUTIVO
-
-## Contadores Gerais
-
-| Métrica | Quantidade |
-|---------|------------|
-| **Capítulos documentados** | 28 |
-| **Tabelas no banco** | 207 |
-| **Arquivos de rotas** | 63 |
-| **Endpoints estimados** | ~600 |
-| **Integrações planejadas** | 10 |
-
-## Status por Fase
-
-| Fase | Progresso | Observação |
-|------|-----------|------------|
-| 📚 Documentação | ✅ 100% | 313 regras, 185 casos de uso |
-| 🗄️ Banco de Dados | ✅ 100% | 207 tabelas criadas |
-| ⚙️ API Backend | ✅ 100% | ~600 endpoints |
-| 🔗 Integrações | 🟡 30% | TecnoSpeed/Nuvem Fiscal pendente |
-| 🧪 Testes | ❌ 0% | Próxima prioridade |
-| 🎨 Frontend | ❌ 5% | Por último |
-
-## Integrações Críticas Pendentes
-
-| Integração | Provedor | Uso | Prioridade |
-|------------|----------|-----|------------|
-| **Emissão NF-e/NFC-e** | TecnoSpeed/Nuvem Fiscal | Documentos fiscais | 🔴 ALTA |
-| **Boletos** | TecnoSpeed | Financeiro | 🔴 ALTA |
-| **PIX** | TecnoSpeed | Financeiro | 🔴 ALTA |
-| **Consulta CNPJ** | CNPJá | Cadastros | 🟡 MÉDIA |
-| **WhatsApp** | API Brasil | Comunicação | 🟡 MÉDIA |
-| **Marketplaces** | Baselinker | E-commerce | 🟢 BAIXA |
-
----
-
-## 🎯 PRÓXIMOS PASSOS RECOMENDADOS
-
-### Fase Imediata (Dezembro/Janeiro)
-1. ⚙️ Configurar integrações fiscais (TecnoSpeed/Nuvem Fiscal)
-2. 🧪 Criar testes para módulos CORE
-3. 🔗 Integrar emissão de boletos e PIX
-
-### Fase Curto Prazo (Fevereiro)
-4. 🧪 Testes dos módulos Comercial e Compras
-5. 🔗 Integrar consulta CNPJ/CPF
-6. 📊 Completar relatórios gerenciais
-
-### Fase Médio Prazo (Março)
-7. 🎨 Iniciar desenvolvimento Frontend
-8. 📱 Desenvolver PWA/Mobile
-9. 🔗 Integrar marketplaces
-
----
-
-*Documento gerado em: 13/12/2024*  
-*Versão: 1.0*
+*Documento gerado em 14/12/2025 - ERP PLANAC v7.0*
