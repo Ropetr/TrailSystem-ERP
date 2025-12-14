@@ -86,5 +86,27 @@ LOG_LEVEL = "debug"
 [triggers]
 crons = [
   "0 6 * * *",   # 06:00 UTC diariamente - Atualizar certificados
-  "0 7 * * 1",   # 07:00 UTC segundas - Relatório semanal
+  "0 7 * * *",   # 07:00 UTC diariamente - Atualizar tabela IBPT
+  "0 8 * * 1",   # 08:00 UTC segundas - Relatório semanal
+  "0 9 1 * *",   # 09:00 UTC dia 1 - Limpeza mensal
 ]
+
+# ===== SECRETS (configurar via wrangler secret put) =====
+# 
+# Obrigatórios:
+#   ENCRYPTION_KEY        - Chave mestra para criptografia (32+ chars)
+#   JWT_SECRET            - Secret para JWT
+#   CRON_SECRET           - Validar chamadas de cron
+#
+# Nuvem Fiscal:
+#   NUVEM_FISCAL_CLIENT_ID
+#   NUVEM_FISCAL_CLIENT_SECRET
+#
+# IBPT (opcional se configurado por empresa):
+#   IBPT_TOKEN
+#
+# Notificações:
+#   EMAIL_API_KEY         - Resend API Key
+#   EMAIL_FROM            - Email remetente
+#   WHATSAPP_API_KEY      - API Brasil ou similar
+#   FIREBASE_SERVER_KEY   - Push notifications
