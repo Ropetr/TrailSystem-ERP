@@ -27,33 +27,6 @@
 
 ### Progresso: 95% ████████████████████░
 
-### Telas Implementadas
-| Rota | Página | Status |
-|------|--------|--------|
-| /login | LoginPage | ✅ |
-| /dashboard | DashboardPage | ✅ |
-| /empresas | EmpresasPage | ✅ |
-| /empresas/:id | EmpresaFormPage | ✅ |
-| /filiais | FiliaisPage | ✅ |
-| /usuarios | UsuariosPage | ✅ |
-| /usuarios/:id | UsuarioFormPage | ✅ |
-| /perfis | PerfisPage | ✅ |
-| /configuracoes | ConfiguracoesPage | ✅ |
-
-### Testes Base Criados
-| Arquivo | Cobertura |
-|---------|-----------|
-| Button.test.tsx | 9 testes |
-| Input.test.tsx | 9 testes |
-| Select.test.tsx | 7 testes |
-| Modal.test.tsx | 7 testes |
-| Badge.test.tsx | 8 testes |
-| Card.test.tsx | 7 testes |
-| api.test.ts | 7 testes |
-| auth.test.ts | 7 testes |
-| validations.test.ts | 10 testes |
-| **TOTAL** | **71 testes** |
-
 ---
 
 ## 📦 MÓDULO 2: COMERCIAL (Vendas)
@@ -62,23 +35,34 @@
 
 - [x] **Backend** - Endpoints implementados
 - [x] **Banco de Dados** - Tabelas criadas
-- [ ] **Frontend** - Páginas pendentes
-- [ ] **Testes Base**
+- [x] **Frontend** - 6 páginas implementadas
+- [ ] **Testes Base** - Pendente
 - [ ] **Testes Completos** - Integração + E2E (após todos módulos)
 
-### Progresso: 40% ████████░░░░░░░░░░░░
+### Progresso: 80% ████████████████░░░░
 
-### Telas Planejadas
+### Telas Implementadas
 | Rota | Página | Status |
 |------|--------|--------|
-| /clientes | ClientesPage | ⏳ |
-| /clientes/:id | ClienteFormPage | ⏳ |
-| /produtos | ProdutosPage | ⏳ |
-| /produtos/:id | ProdutoFormPage | ⏳ |
-| /orcamentos | OrcamentosPage | ⏳ |
-| /orcamentos/:id | OrcamentoFormPage | ⏳ |
-| /vendas | VendasPage | ⏳ |
-| /vendas/:id | VendaFormPage | ⏳ |
+| /clientes | ClientesPage | ✅ |
+| /clientes/:id | ClienteFormPage | ✅ |
+| /produtos | ProdutosPage | ✅ |
+| /produtos/:id | ProdutoFormPage | ✅ |
+| /orcamentos | OrcamentosPage | ✅ |
+| /vendas | VendasPage | ✅ |
+
+### Funcionalidades Implementadas
+- ✅ CRUD completo de Clientes (PF/PJ)
+- ✅ Formulário com abas (Dados, Endereço, Contato, Comercial)
+- ✅ Busca CEP automática (ViaCEP)
+- ✅ CRUD completo de Produtos
+- ✅ Integração Cosmos (auto-preenchimento por código de barras)
+- ✅ Cálculo automático de margem
+- ✅ Lista de Orçamentos com seleção múltipla
+- ✅ Funcionalidade de Mesclar orçamentos
+- ✅ Conversão Orçamento → Pedido
+- ✅ Lista de Vendas com status de pagamento e entregas
+- ✅ Indicador de entregas fracionadas
 
 ---
 
@@ -94,14 +78,6 @@
 
 ### Progresso: 40% ████████░░░░░░░░░░░░
 
-### Telas Planejadas
-| Rota | Página | Status |
-|------|--------|--------|
-| /estoque | EstoquePage | ⏳ |
-| /estoque/movimentacoes | MovimentacoesPage | ⏳ |
-| /estoque/inventario | InventarioPage | ⏳ |
-| /depositos | DepositosPage | ⏳ |
-
 ---
 
 ## 📦 MÓDULO 4: FISCAL
@@ -115,16 +91,6 @@
 - [ ] **Testes Completos** - Integração + E2E (após todos módulos)
 
 ### Progresso: 40% ████████░░░░░░░░░░░░
-
-### Telas Planejadas
-| Rota | Página | Status |
-|------|--------|--------|
-| /fiscal/nfe | NFePage | ⏳ |
-| /fiscal/nfce | NFCePage | ⏳ |
-| /fiscal/nfse | NFSePage | ⏳ |
-| /fiscal/cte | CTePage | ⏳ |
-| /fiscal/mdfe | MDFePage | ⏳ |
-| /fiscal/monitor | MonitorFiscalPage | ⏳ |
 
 ---
 
@@ -140,16 +106,6 @@
 
 ### Progresso: 40% ████████░░░░░░░░░░░░
 
-### Telas Planejadas
-| Rota | Página | Status |
-|------|--------|--------|
-| /financeiro/contas-receber | ContasReceberPage | ⏳ |
-| /financeiro/contas-pagar | ContasPagarPage | ⏳ |
-| /financeiro/caixa | CaixaPage | ⏳ |
-| /financeiro/bancos | BancosPage | ⏳ |
-| /financeiro/conciliacao | ConciliacaoPage | ⏳ |
-| /financeiro/boletos | BoletosPage | ⏳ |
-
 ---
 
 ## 📦 MÓDULO 6: COMPRAS
@@ -164,47 +120,21 @@
 
 ### Progresso: 40% ████████░░░░░░░░░░░░
 
-### Telas Planejadas
-| Rota | Página | Status |
-|------|--------|--------|
-| /fornecedores | FornecedoresPage | ⏳ |
-| /fornecedores/:id | FornecedorFormPage | ⏳ |
-| /compras/pedidos | PedidosCompraPage | ⏳ |
-| /compras/cotacoes | CotacoesPage | ⏳ |
-
 ---
 
 ## 🔗 TESTES COMPLETOS (Após todos os módulos)
 
 > Esta fase será executada quando TODOS os módulos estiverem com frontend implementado.
 
-### Escopo dos Testes Completos
+### Fluxos Críticos a Testar
 
-1. **Testes de Integração**
-   - Fluxo: Login → Dashboard → Navegação
-   - Fluxo: Cadastro Empresa → Filial → Usuário
-   - Fluxo: Cliente → Orçamento → Venda
-   - Fluxo: Venda → NF-e → Financeiro
-   - Fluxo: Compra → Estoque → Inventário
-
-2. **Testes E2E (End-to-End)**
-   - Playwright ou Cypress
-   - Simulação de usuário real
-   - Screenshots em falhas
-
-3. **Testes de Fluxo Crítico**
-   | Fluxo | Módulos Envolvidos |
-   |-------|-------------------|
-   | Venda Completa | Comercial → Fiscal → Financeiro → Estoque |
-   | Compra Completa | Compras → Fiscal → Financeiro → Estoque |
-   | Emissão NF-e | Comercial → Fiscal → Integração Nuvem Fiscal |
-   | Geração Boleto | Financeiro → Integração TecnoSpeed |
-   | Baixa Automática | Financeiro → Bancos → Conciliação |
-
-4. **Testes de Performance**
-   - Tempo de carregamento de páginas
-   - Queries pesadas (relatórios)
-   - Concorrência (múltiplos usuários)
+| Fluxo | Módulos Envolvidos |
+|-------|-------------------|
+| Venda Completa | Comercial → Fiscal → Financeiro → Estoque |
+| Compra Completa | Compras → Fiscal → Financeiro → Estoque |
+| Emissão NF-e | Comercial → Fiscal → Integração Nuvem Fiscal |
+| Geração Boleto | Financeiro → Integração TecnoSpeed |
+| Baixa Automática | Financeiro → Bancos → Conciliação |
 
 ---
 
@@ -213,7 +143,7 @@
 | Módulo | Backend | Banco | Frontend | Testes Base | Testes Completos |
 |--------|---------|-------|----------|-------------|------------------|
 | CORE | ✅ | ✅ | ✅ | ✅ | ⏳ |
-| Comercial | ✅ | ✅ | ⏳ | ⏳ | ⏳ |
+| Comercial | ✅ | ✅ | ✅ | ⏳ | ⏳ |
 | Estoque | ✅ | ✅ | ⏳ | ⏳ | ⏳ |
 | Fiscal | ✅ | ✅ | ⏳ | ⏳ | ⏳ |
 | Financeiro | ✅ | ✅ | ⏳ | ⏳ | ⏳ |
@@ -221,33 +151,40 @@
 
 ### Progresso Total
 
-```
+\`\`\`
 Backend .............. ████████████████████ 100%
 Banco de Dados ....... ████████████████████ 100%
-Frontend ............. ████░░░░░░░░░░░░░░░░  17% (1/6 módulos)
+Frontend ............. ████████░░░░░░░░░░░░  33% (2/6 módulos)
 Testes Base .......... ████░░░░░░░░░░░░░░░░  17% (1/6 módulos)
 Testes Completos ..... ░░░░░░░░░░░░░░░░░░░░   0% (após todos)
 
-PROJETO TOTAL ........ ██████████░░░░░░░░░░  47%
-```
+PROJETO TOTAL ........ ███████████░░░░░░░░░  50%
+\`\`\`
 
 ---
 
-## 📝 Comandos de Teste
+## 📁 Arquivos Frontend (Total: 49)
 
-```bash
-# Rodar todos os testes
-npm test
+### Módulo CORE (40 arquivos)
+- Componentes UI: 11
+- Layout: 4
+- Páginas: 9
+- Services: 2
+- Stores: 1
+- Routes: 1
+- Types: 1
+- Testes: 12
 
-# Rodar com UI
-npm run test:ui
-
-# Rodar com cobertura
-npm run test:coverage
-
-# Rodar uma vez (CI)
-npm run test:run
-```
+### Módulo COMERCIAL (9 arquivos)
+- ClientesPage.tsx
+- ClienteFormPage.tsx
+- ProdutosPage.tsx
+- ProdutoFormPage.tsx
+- OrcamentosPage.tsx
+- VendasPage.tsx
+- index.ts
+- routes/index.tsx (atualizado)
+- Icons.tsx (atualizado)
 
 ---
 
