@@ -37,10 +37,10 @@ class ApiClient {
     };
 
     if (this.token) {
-      (headers as Record<string, string>)['Authorization'] = \`Bearer \${this.token}\`;
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(\`\${this.baseUrl}\${endpoint}\`, {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,
       headers,
     });
@@ -50,13 +50,13 @@ class ApiClient {
       this.setToken(null);
       localStorage.removeItem('planac_user');
       window.location.href = '/login';
-      throw new Error('Sessão expirada');
+      throw new Error('Sessao expirada');
     }
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Erro na requisição');
+      throw new Error(data.error || 'Erro na requisicao');
     }
 
     return data;
