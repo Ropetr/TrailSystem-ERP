@@ -1,0 +1,39 @@
+name: Deploy Frontend to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/packages/web/**'
+      - 'src/packages/shared/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: src/packages/web
+        run: npm install
+
+      - name: Build
+        working-directory: src/packages/web
+        run: npm run build
+        env:
+          VITE_API_URL: https://planac-erp-api.ropetr.workers.dev
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: f14d821b52a4f6ecbad7fb0e0afba8e5
+          command: pages deploy src/packages/web/dist --project-name=planac-erp
