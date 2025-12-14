@@ -11,7 +11,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy
+    name: Deploy Frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,13 +21,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        working-directory: src/packages/web
+      - name: Install dependencies (monorepo root)
+        working-directory: src
         run: npm install
 
-      - name: Build
-        working-directory: src/packages/web
-        run: npm run build
+      - name: Build web package
+        working-directory: src
+        run: npm run build --workspace=planac-web
         env:
           VITE_API_URL: https://planac-erp-api.ropetr.workers.dev
 
