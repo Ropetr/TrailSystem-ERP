@@ -1,148 +1,148 @@
-/**
- * 🚀 PLANAC ERP - API Entry Point
- * 
- * Backend em Cloudflare Workers com Hono
- * 
- * @version 0.1.0
- * @author DEV.com
- */
+// =============================================
+// PLANAC ERP - Worker Main Entry Point
+// Cloudflare Workers API
+// =============================================
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
 
-// Types
-import type { Context } from 'hono';
+import type { Env, ExecutionContext, ScheduledEvent } from './types/env';
 
-// Bindings do Cloudflare
-interface Env {
-  DB: D1Database;
-  CACHE: KVNamespace;
-  SESSIONS: KVNamespace;
-  RATE_LIMIT: KVNamespace;
-  FILES: R2Bucket;
-  JWT_SECRET: string;
-  ENCRYPTION_KEY: string;
-  ENVIRONMENT: string;
-}
+// Routes
+import fiscal from './routes/fiscal';
+import ibpt from './routes/ibpt';
+import certificados from './routes/certificados';
+import empresasConfig from './routes/empresas-config';
 
-// App instance
+// Scheduled Jobs
+import { handleScheduled } from './scheduled/jobs';
+
+// ===== APP SETUP =====
+
 const app = new Hono<{ Bindings: Env }>();
 
-// =============================================
-// 🛡️ MIDDLEWARES GLOBAIS
-// =============================================
+// ===== MIDDLEWARES =====
 
-// Logger
-app.use('*', logger());
+// CORS
+app.use('*', cors({
+  origin: (origin) => {
+    // Em produção, restringir para domínios específicos
+    const allowedOrigins = [
+      'https://app.planac.com.br',
+      'https://planac.com.br',
+      'http://localhost:3000',
+      'http://localhost:5173',
+    ];
+    return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  },
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-Tenant-Id'],
+  exposeHeaders: ['Content-Length', 'Content-Type'],
+  maxAge: 600,
+  credentials: true,
+}));
 
 // Secure Headers
 app.use('*', secureHeaders());
 
-// CORS
-app.use('*', cors({
-  origin: [
-    'https://app.planac.com.br',
-    'https://admin.planac.com.br',
-    'http://localhost:3000',
-  ],
-  credentials: true,
-  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-CSRF-Token'],
-}));
+// Logger (apenas em desenvolvimento)
+app.use('*', async (c, next) => {
+  if (c.env.LOG_LEVEL === 'debug') {
+    const start = Date.now();
+    await next();
+    const ms = Date.now() - start;
+    console.log(`${c.req.method} ${c.req.path} - ${c.res.status} - ${ms}ms`);
+  } else {
+    await next();
+  }
+});
 
-// =============================================
-// 🏠 ROTAS BASE
-// =============================================
+// ===== HEALTH CHECK =====
 
-// Health Check
-app.get('/', (c: Context) => {
+app.get('/', (c) => {
   return c.json({
     name: 'PLANAC ERP API',
-    version: '0.1.0',
-    status: 'healthy',
+    version: '1.0.0',
+    status: 'online',
     environment: c.env.ENVIRONMENT,
     timestamp: new Date().toISOString(),
   });
 });
 
-// Health Check detalhado
-app.get('/health', async (c: Context) => {
-  const checks = {
-    api: 'ok',
-    database: 'unknown',
-    cache: 'unknown',
-  };
-
-  // Verificar D1
+app.get('/health', async (c) => {
   try {
+    // Testar conexão com D1
     await c.env.DB.prepare('SELECT 1').first();
-    checks.database = 'ok';
-  } catch {
-    checks.database = 'error';
+    
+    return c.json({
+      status: 'healthy',
+      services: {
+        api: 'up',
+        database: 'up',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return c.json({
+      status: 'unhealthy',
+      services: {
+        api: 'up',
+        database: 'down',
+      },
+      error: String(error),
+      timestamp: new Date().toISOString(),
+    }, 503);
   }
-
-  // Verificar KV
-  try {
-    await c.env.CACHE.get('__health_check__');
-    checks.cache = 'ok';
-  } catch {
-    checks.cache = 'error';
-  }
-
-  const allOk = Object.values(checks).every(v => v === 'ok');
-
-  return c.json({
-    status: allOk ? 'healthy' : 'degraded',
-    checks,
-    timestamp: new Date().toISOString(),
-  }, allOk ? 200 : 503);
 });
 
-// =============================================
-// 📁 ROTAS DOS MÓDULOS (a serem implementados)
-// =============================================
+// ===== ROUTES =====
 
-// Auth Routes
-// app.route('/auth', authRoutes);
+// API v1
+app.route('/v1/fiscal', fiscal);
+app.route('/v1/ibpt', ibpt);
+app.route('/v1/certificados', certificados);
+app.route('/v1/empresas-config', empresasConfig);
 
-// API v1 Routes
-// app.route('/api/v1/empresas', empresasRoutes);
-// app.route('/api/v1/usuarios', usuariosRoutes);
-// app.route('/api/v1/clientes', clientesRoutes);
-// app.route('/api/v1/produtos', produtosRoutes);
-// app.route('/api/v1/vendas', vendasRoutes);
-// ... outros módulos
+// Aliases sem versão (para compatibilidade)
+app.route('/fiscal', fiscal);
+app.route('/ibpt', ibpt);
+app.route('/certificados', certificados);
+app.route('/empresas-config', empresasConfig);
 
-// =============================================
-// ❌ NOT FOUND
-// =============================================
+// ===== ERROR HANDLING =====
 
-app.notFound((c: Context) => {
+app.onError((err, c) => {
+  console.error('Unhandled error:', err);
+  
+  // Não expor detalhes em produção
+  const message = c.env.ENVIRONMENT === 'production' 
+    ? 'Erro interno do servidor' 
+    : err.message;
+  
   return c.json({
-    error: 'Not Found',
-    message: `Rota ${c.req.method} ${c.req.path} não encontrada`,
-    timestamp: new Date().toISOString(),
-  }, 404);
-});
-
-// =============================================
-// 🔥 ERROR HANDLER
-// =============================================
-
-app.onError((err, c: Context) => {
-  console.error('Error:', err);
-
-  return c.json({
-    error: 'Internal Server Error',
-    message: c.env.ENVIRONMENT === 'development' ? err.message : 'Erro interno',
+    error: message,
     timestamp: new Date().toISOString(),
   }, 500);
 });
 
-// =============================================
-// 🚀 EXPORT
-// =============================================
+app.notFound((c) => {
+  return c.json({
+    error: 'Endpoint não encontrado',
+    path: c.req.path,
+    method: c.req.method,
+  }, 404);
+});
 
-export default app;
+// ===== EXPORTS =====
+
+export default {
+  // HTTP Handler
+  fetch: app.fetch,
+  
+  // Scheduled Handler (Cron)
+  scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    await handleScheduled(event, env, ctx);
+  },
+};
