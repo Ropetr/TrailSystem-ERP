@@ -1,6 +1,7 @@
 export { Icons } from "./Icons";
 export { Button } from "./Button";
 export { Input } from "./Input";
+export { Textarea } from "./Textarea";
 export { Select } from "./Select";
 export { DropdownMenu } from "./DropdownMenu";
 export { Card, CardHeader, CardTitle, CardContent } from "./Card";
