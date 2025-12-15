@@ -1,112 +1,35 @@
-# =============================================
 # PLANAC ERP - Wrangler Configuration
-# Cloudflare Workers
-# =============================================
-
 name = "planac-erp-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# ===== AMBIENTE DE PRODUÇÃO =====
-[env.production]
-name = "planac-erp-api"
-routes = [
-  { pattern = "api.planac.com.br/*", zone_name = "planac.com.br" }
-]
-
-# Variáveis de ambiente (não sensíveis)
-[env.production.vars]
+# Variáveis de ambiente
+[vars]
 ENVIRONMENT = "production"
-NUVEM_FISCAL_AMBIENTE = "producao"
 LOG_LEVEL = "info"
 
 # D1 Databases
-[[env.production.d1_databases]]
+[[d1_databases]]
 binding = "DB"
 database_name = "Planac-erp-database"
 database_id = "12f9a7d5-fe09-4b09-bf72-59bae24d65b2"
 
-[[env.production.d1_databases]]
+[[d1_databases]]
 binding = "DB_IBPT"
 database_name = "planac-erp-ibpt"
 database_id = "556b7a7a-0ddd-43b7-8b64-f4ea3ebd9966"
 
 # R2 Buckets
-[[env.production.r2_buckets]]
+[[r2_buckets]]
 binding = "STORAGE"
 bucket_name = "planac-erp-storage"
 
-[[env.production.r2_buckets]]
+[[r2_buckets]]
 binding = "CERTIFICADOS_BUCKET"
 bucket_name = "planac-erp-certificados"
 
 # KV Namespaces
-[[env.production.kv_namespaces]]
+[[kv_namespaces]]
 binding = "CACHE"
-id = "planac-erp-cache-id"  # Substituir pelo ID real
-
-# ===== AMBIENTE DE HOMOLOGAÇÃO =====
-[env.staging]
-name = "planac-erp-api-staging"
-
-[env.staging.vars]
-ENVIRONMENT = "staging"
-NUVEM_FISCAL_AMBIENTE = "homologacao"
-LOG_LEVEL = "debug"
-
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "Planac-erp-database"
-database_id = "12f9a7d5-fe09-4b09-bf72-59bae24d65b2"
-
-[[env.staging.d1_databases]]
-binding = "DB_IBPT"
-database_name = "planac-erp-ibpt"
-database_id = "556b7a7a-0ddd-43b7-8b64-f4ea3ebd9966"
-
-[[env.staging.r2_buckets]]
-binding = "STORAGE"
-bucket_name = "planac-erp-storage"
-
-[[env.staging.r2_buckets]]
-binding = "CERTIFICADOS_BUCKET"
-bucket_name = "planac-erp-certificados"
-
-# ===== AMBIENTE DE DESENVOLVIMENTO =====
-[env.development]
-name = "planac-erp-api-dev"
-
-[env.development.vars]
-ENVIRONMENT = "development"
-NUVEM_FISCAL_AMBIENTE = "homologacao"
-LOG_LEVEL = "debug"
-
-# ===== SCHEDULED JOBS (Cron Triggers) =====
-[triggers]
-crons = [
-  "0 6 * * *",   # 06:00 UTC diariamente - Atualizar certificados
-  "0 7 * * *",   # 07:00 UTC diariamente - Atualizar tabela IBPT
-  "0 8 * * 1",   # 08:00 UTC segundas - Relatório semanal
-  "0 9 1 * *",   # 09:00 UTC dia 1 - Limpeza mensal
-]
-
-# ===== SECRETS (configurar via wrangler secret put) =====
-# 
-# Obrigatórios:
-#   ENCRYPTION_KEY        - Chave mestra para criptografia (32+ chars)
-#   JWT_SECRET            - Secret para JWT
-#   CRON_SECRET           - Validar chamadas de cron
-#
-# Nuvem Fiscal:
-#   NUVEM_FISCAL_CLIENT_ID
-#   NUVEM_FISCAL_CLIENT_SECRET
-#
-# IBPT (opcional se configurado por empresa):
-#   IBPT_TOKEN
-#
-# Notificações:
-#   EMAIL_API_KEY         - Resend API Key
-#   EMAIL_FROM            - Email remetente
-#   WHATSAPP_API_KEY      - API Brasil ou similar
-#   FIREBASE_SERVER_KEY   - Push notifications
+id = "5706642392dc4af1ba7eef4a3a0e2322"
