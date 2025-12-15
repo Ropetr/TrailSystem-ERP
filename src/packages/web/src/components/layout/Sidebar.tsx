@@ -1,6 +1,6 @@
 // =============================================
 // PLANAC ERP - Sidebar Completo
-// Todos os módulos com suporte a tema escuro
+// Cores Windows Dark Mode + Altura 100%
 // =============================================
 
 import React, { useState } from 'react';
@@ -205,12 +205,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - altura 100% da viewport */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full w-64
-          bg-white dark:bg-gray-900
-          border-r border-gray-200 dark:border-gray-700
+          fixed top-0 left-0 z-50 h-screen w-64
+          bg-white dark:bg-[#2d2d2d]
+          border-r border-gray-200 dark:border-[#3d3d3d]
           transform transition-all duration-200 ease-in-out
           lg:translate-x-0 lg:static lg:z-auto
           flex flex-col
@@ -218,7 +218,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         `}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+        <div className="h-16 flex items-center justify-center border-b border-gray-100 dark:border-[#3d3d3d] flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">P</span>
@@ -228,7 +228,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Menu com scroll */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin">
           {menuItems.map((item) => (
             <div key={item.id}>
               {/* Item sem filhos */}
@@ -239,8 +239,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                        ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                        : 'text-gray-600 dark:text-[#a0a0a0] hover:bg-gray-50 dark:hover:bg-[#404040] hover:text-gray-900 dark:hover:text-white'
                     }`
                   }
                 >
@@ -256,8 +256,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     onClick={() => toggleMenu(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isMenuActive(item)
-                        ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                        ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                        : 'text-gray-600 dark:text-[#a0a0a0] hover:bg-gray-50 dark:hover:bg-[#404040] hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -271,7 +271,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                   {/* Submenu */}
                   {expandedMenus.includes(item.id) && (
-                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-gray-700 pl-3">
+                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-[#3d3d3d] pl-3">
                       {item.children.map((child) => (
                         <NavLink
                           key={child.path}
@@ -280,8 +280,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           className={({ isActive }) =>
                             `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
                               isActive
-                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium'
-                                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200'
+                                ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-medium'
+                                : 'text-gray-500 dark:text-[#808080] hover:bg-gray-50 dark:hover:bg-[#404040] hover:text-gray-700 dark:hover:text-white'
                             }`
                           }
                         >
@@ -296,9 +296,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="p-3 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
-          <div className="text-xs text-gray-400 dark:text-gray-500 text-center">
+        {/* Footer - sempre no fundo */}
+        <div className="p-3 border-t border-gray-100 dark:border-[#3d3d3d] flex-shrink-0 mt-auto">
+          <div className="text-xs text-gray-400 dark:text-[#808080] text-center">
             PLANAC ERP v1.0.0
           </div>
         </div>
