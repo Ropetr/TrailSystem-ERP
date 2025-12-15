@@ -1,6 +1,6 @@
 // =============================================
 // PLANAC ERP - Sidebar Completo
-// Todos os módulos do sistema
+// Todos os módulos com suporte a tema escuro
 // =============================================
 
 import React, { useState } from 'react';
@@ -25,7 +25,6 @@ const Icons = {
   support: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
   cog: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   chevronDown: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
-  chevronRight: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>,
 };
 
 interface SubMenuItem {
@@ -43,19 +42,9 @@ interface MenuItem {
 
 // Menu completo do ERP
 const menuItems: MenuItem[] = [
-  // Dashboard
-  { 
-    id: 'dashboard',
-    label: 'Dashboard', 
-    icon: Icons.home, 
-    path: '/dashboard' 
-  },
-  
-  // COMERCIAL
+  { id: 'dashboard', label: 'Dashboard', icon: Icons.home, path: '/dashboard' },
   {
-    id: 'comercial',
-    label: 'Comercial',
-    icon: Icons.shoppingCart,
+    id: 'comercial', label: 'Comercial', icon: Icons.shoppingCart,
     children: [
       { label: 'Clientes', path: '/clientes' },
       { label: 'Produtos', path: '/produtos' },
@@ -64,12 +53,8 @@ const menuItems: MenuItem[] = [
       { label: 'Tabelas de Preço', path: '/tabelas-preco' },
     ],
   },
-  
-  // ESTOQUE
   {
-    id: 'estoque',
-    label: 'Estoque',
-    icon: Icons.cube,
+    id: 'estoque', label: 'Estoque', icon: Icons.cube,
     children: [
       { label: 'Saldos', path: '/estoque/saldos' },
       { label: 'Movimentações', path: '/estoque/movimentacoes' },
@@ -77,12 +62,8 @@ const menuItems: MenuItem[] = [
       { label: 'Inventário', path: '/estoque/inventario' },
     ],
   },
-  
-  // FISCAL
   {
-    id: 'fiscal',
-    label: 'Fiscal',
-    icon: Icons.document,
+    id: 'fiscal', label: 'Fiscal', icon: Icons.document,
     children: [
       { label: 'Notas Fiscais', path: '/fiscal/notas' },
       { label: 'Emitir NF-e', path: '/fiscal/nfe/nova' },
@@ -93,12 +74,8 @@ const menuItems: MenuItem[] = [
       { label: 'Configurações', path: '/fiscal/configuracoes' },
     ],
   },
-  
-  // FINANCEIRO
   {
-    id: 'financeiro',
-    label: 'Financeiro',
-    icon: Icons.cash,
+    id: 'financeiro', label: 'Financeiro', icon: Icons.cash,
     children: [
       { label: 'Contas a Receber', path: '/financeiro/receber' },
       { label: 'Contas a Pagar', path: '/financeiro/pagar' },
@@ -108,36 +85,24 @@ const menuItems: MenuItem[] = [
       { label: 'Contas Bancárias', path: '/financeiro/contas' },
     ],
   },
-  
-  // COMPRAS
   {
-    id: 'compras',
-    label: 'Compras',
-    icon: Icons.briefcase,
+    id: 'compras', label: 'Compras', icon: Icons.briefcase,
     children: [
       { label: 'Fornecedores', path: '/fornecedores' },
       { label: 'Cotações', path: '/compras/cotacoes' },
       { label: 'Pedidos de Compra', path: '/compras/pedidos' },
     ],
   },
-  
-  // LOGÍSTICA
   {
-    id: 'logistica',
-    label: 'Logística',
-    icon: Icons.truck,
+    id: 'logistica', label: 'Logística', icon: Icons.truck,
     children: [
       { label: 'Entregas', path: '/logistica/entregas' },
       { label: 'Rotas', path: '/logistica/rotas' },
       { label: 'Rastreamento', path: '/logistica/rastreamento' },
     ],
   },
-  
-  // CRM
   {
-    id: 'crm',
-    label: 'CRM',
-    icon: Icons.userGroup,
+    id: 'crm', label: 'CRM', icon: Icons.userGroup,
     children: [
       { label: 'Dashboard CRM', path: '/crm' },
       { label: 'Pipeline', path: '/crm/pipeline' },
@@ -146,12 +111,8 @@ const menuItems: MenuItem[] = [
       { label: 'Atividades', path: '/crm/atividades' },
     ],
   },
-  
-  // E-COMMERCE
   {
-    id: 'ecommerce',
-    label: 'E-commerce',
-    icon: Icons.globe,
+    id: 'ecommerce', label: 'E-commerce', icon: Icons.globe,
     children: [
       { label: 'Configurar Loja', path: '/ecommerce/config' },
       { label: 'Produtos da Loja', path: '/ecommerce/produtos' },
@@ -160,12 +121,8 @@ const menuItems: MenuItem[] = [
       { label: 'Cupons', path: '/ecommerce/cupons' },
     ],
   },
-  
-  // CONTÁBIL
   {
-    id: 'contabil',
-    label: 'Contábil',
-    icon: Icons.calculator,
+    id: 'contabil', label: 'Contábil', icon: Icons.calculator,
     children: [
       { label: 'Plano de Contas', path: '/contabil/plano-contas' },
       { label: 'Lançamentos', path: '/contabil/lancamentos' },
@@ -174,12 +131,8 @@ const menuItems: MenuItem[] = [
       { label: 'Balanço', path: '/contabil/balanco' },
     ],
   },
-  
-  // RH
   {
-    id: 'rh',
-    label: 'RH',
-    icon: Icons.users,
+    id: 'rh', label: 'RH', icon: Icons.users,
     children: [
       { label: 'Colaboradores', path: '/rh/colaboradores' },
       { label: 'Folha de Pagamento', path: '/rh/folha' },
@@ -187,47 +140,31 @@ const menuItems: MenuItem[] = [
       { label: 'Férias', path: '/rh/ferias' },
     ],
   },
-  
-  // PATRIMÔNIO
   {
-    id: 'patrimonio',
-    label: 'Patrimônio',
-    icon: Icons.archive,
+    id: 'patrimonio', label: 'Patrimônio', icon: Icons.archive,
     children: [
       { label: 'Bens', path: '/patrimonio/bens' },
       { label: 'Depreciação', path: '/patrimonio/depreciacao' },
       { label: 'Manutenção', path: '/patrimonio/manutencao' },
     ],
   },
-  
-  // BI / RELATÓRIOS
   {
-    id: 'bi',
-    label: 'BI & Relatórios',
-    icon: Icons.chart,
+    id: 'bi', label: 'BI & Relatórios', icon: Icons.chart,
     children: [
       { label: 'Dashboards', path: '/bi/dashboards' },
       { label: 'Relatórios', path: '/bi/relatorios' },
       { label: 'Indicadores', path: '/bi/indicadores' },
     ],
   },
-  
-  // SUPORTE
   {
-    id: 'suporte',
-    label: 'Suporte',
-    icon: Icons.support,
+    id: 'suporte', label: 'Suporte', icon: Icons.support,
     children: [
       { label: 'Tickets', path: '/suporte/tickets' },
       { label: 'Base de Conhecimento', path: '/suporte/base' },
     ],
   },
-  
-  // ADMINISTRAÇÃO
   {
-    id: 'admin',
-    label: 'Administração',
-    icon: Icons.cog,
+    id: 'admin', label: 'Administração', icon: Icons.cog,
     children: [
       { label: 'Empresas', path: '/empresas' },
       { label: 'Filiais', path: '/filiais' },
@@ -256,12 +193,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const isMenuActive = (item: MenuItem) => {
-    if (item.path) {
-      return location.pathname === item.path;
-    }
-    if (item.children) {
-      return item.children.some((child) => location.pathname.startsWith(child.path));
-    }
+    if (item.path) return location.pathname === item.path;
+    if (item.children) return item.children.some((child) => location.pathname.startsWith(child.path));
     return false;
   };
 
@@ -269,29 +202,28 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {/* Backdrop mobile */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
       )}
 
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-gray-200
-          transform transition-transform duration-200 ease-in-out
+          fixed top-0 left-0 z-50 h-full w-64
+          bg-white dark:bg-gray-900
+          border-r border-gray-200 dark:border-gray-700
+          transform transition-all duration-200 ease-in-out
           lg:translate-x-0 lg:static lg:z-auto
           flex flex-col
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-gray-100 flex-shrink-0">
+        <div className="h-16 flex items-center justify-center border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">P</span>
             </div>
-            <span className="font-bold text-xl text-gray-900">PLANAC</span>
+            <span className="font-bold text-xl text-gray-900 dark:text-white">PLANAC</span>
           </div>
         </div>
 
@@ -307,8 +239,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-red-50 text-red-600'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                     }`
                   }
                 >
@@ -324,8 +256,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     onClick={() => toggleMenu(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isMenuActive(item)
-                        ? 'bg-red-50 text-red-600'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -339,7 +271,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                   {/* Submenu */}
                   {expandedMenus.includes(item.id) && (
-                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 pl-3">
+                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-gray-700 pl-3">
                       {item.children.map((child) => (
                         <NavLink
                           key={child.path}
@@ -348,8 +280,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           className={({ isActive }) =>
                             `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
                               isActive
-                                ? 'bg-red-50 text-red-600 font-medium'
-                                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium'
+                                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200'
                             }`
                           }
                         >
@@ -365,8 +297,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t border-gray-100 flex-shrink-0">
-          <div className="text-xs text-gray-400 text-center">
+        <div className="p-3 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
+          <div className="text-xs text-gray-400 dark:text-gray-500 text-center">
             PLANAC ERP v1.0.0
           </div>
         </div>
