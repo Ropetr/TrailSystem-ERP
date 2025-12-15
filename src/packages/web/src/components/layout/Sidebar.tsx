@@ -1,6 +1,6 @@
 // =============================================
-// PLANAC ERP - Sidebar Completo
-// Cores iOS/Samsung Dark Mode (preto puro)
+// PLANAC ERP - Sidebar com Módulo CADASTROS
+// Aprovado: 15/12/2025 - 57 Especialistas DEV.com
 // =============================================
 
 import React, { useState } from 'react';
@@ -9,6 +9,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 // Ícones SVG inline
 const Icons = {
   home: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+  database: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
   users: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
   building: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   shoppingCart: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
@@ -31,20 +32,61 @@ interface SubMenuItem { label: string; path: string; }
 interface MenuItem { id: string; label: string; icon: React.ReactNode; path?: string; children?: SubMenuItem[]; }
 
 const menuItems: MenuItem[] = [
+  // Dashboard
   { id: 'dashboard', label: 'Dashboard', icon: Icons.home, path: '/dashboard' },
-  { id: 'comercial', label: 'Comercial', icon: Icons.shoppingCart, children: [
-    { label: 'Clientes', path: '/clientes' },
-    { label: 'Produtos', path: '/produtos' },
-    { label: 'Orçamentos', path: '/orcamentos' },
-    { label: 'Vendas', path: '/vendas' },
-    { label: 'Tabelas de Preço', path: '/tabelas-preco' },
+  
+  // ========================================
+  // CADASTROS - Módulo Central de Dados Base
+  // Aprovado: 15/12/2025 - 57 Especialistas
+  // ========================================
+  { id: 'cadastros', label: 'Cadastros', icon: Icons.database, children: [
+    // 👥 Entidades
+    { label: '👥 Entidades', path: '#entidades' },
+    { label: 'Clientes', path: '/cadastros/clientes' },
+    { label: 'Fornecedores', path: '/cadastros/fornecedores' },
+    { label: 'Transportadoras', path: '/cadastros/transportadoras' },
+    { label: 'Colaboradores', path: '/cadastros/colaboradores' },
+    { label: 'Parceiros de Negócio', path: '/cadastros/parceiros' },
+    // 📦 Produtos
+    { label: '📦 Produtos', path: '#produtos' },
+    { label: 'Produtos e Serviços', path: '/cadastros/produtos' },
+    // 🏢 Empresa
+    { label: '🏢 Empresa', path: '#empresa' },
+    { label: 'Matriz & Filiais', path: '/cadastros/empresas' },
+    // 🏦 Financeiro
+    { label: '🏦 Financeiro', path: '#financeiro' },
+    { label: 'Contas Bancárias', path: '/cadastros/contas-bancarias' },
+    { label: 'Plano de Contas', path: '/cadastros/plano-contas' },
+    { label: 'Centros de Custo', path: '/cadastros/centros-custo' },
+    { label: 'Condições de Pagamento', path: '/cadastros/condicoes-pagamento' },
+    // 🏷️ Comercial
+    { label: '🏷️ Comercial', path: '#comercial' },
+    { label: 'Tabelas de Preço', path: '/cadastros/tabelas-preco' },
+    // 🚗 Patrimônio
+    { label: '🚗 Patrimônio', path: '#patrimonio' },
+    { label: 'Veículos', path: '/cadastros/veiculos' },
+    { label: 'Bens', path: '/cadastros/bens' },
+    // 🔐 Acessos
+    { label: '🔐 Acessos', path: '#acessos' },
+    { label: 'Usuários', path: '/cadastros/usuarios' },
+    { label: 'Perfis de Usuários', path: '/cadastros/perfis' },
   ]},
+  
+  // Comercial
+  { id: 'comercial', label: 'Comercial', icon: Icons.shoppingCart, children: [
+    { label: 'Orçamentos', path: '/comercial/orcamentos' },
+    { label: 'Vendas', path: '/comercial/vendas' },
+  ]},
+  
+  // Estoque
   { id: 'estoque', label: 'Estoque', icon: Icons.cube, children: [
     { label: 'Saldos', path: '/estoque/saldos' },
     { label: 'Movimentações', path: '/estoque/movimentacoes' },
     { label: 'Transferências', path: '/estoque/transferencias' },
     { label: 'Inventário', path: '/estoque/inventario' },
   ]},
+  
+  // Fiscal
   { id: 'fiscal', label: 'Fiscal', icon: Icons.document, children: [
     { label: 'Notas Fiscais', path: '/fiscal/notas' },
     { label: 'Emitir NF-e', path: '/fiscal/nfe/nova' },
@@ -52,26 +94,31 @@ const menuItems: MenuItem[] = [
     { label: 'NFS-e (Serviços)', path: '/fiscal/nfse' },
     { label: 'CT-e / MDF-e', path: '/fiscal/cte' },
     { label: 'SPED', path: '/fiscal/sped' },
-    { label: 'Configurações', path: '/fiscal/configuracoes' },
   ]},
+  
+  // Financeiro
   { id: 'financeiro', label: 'Financeiro', icon: Icons.cash, children: [
     { label: 'Contas a Receber', path: '/financeiro/receber' },
     { label: 'Contas a Pagar', path: '/financeiro/pagar' },
     { label: 'Fluxo de Caixa', path: '/financeiro/fluxo-caixa' },
     { label: 'Boletos', path: '/financeiro/boletos' },
     { label: 'Conciliação', path: '/financeiro/conciliacao' },
-    { label: 'Contas Bancárias', path: '/financeiro/contas' },
   ]},
+  
+  // Compras
   { id: 'compras', label: 'Compras', icon: Icons.briefcase, children: [
-    { label: 'Fornecedores', path: '/fornecedores' },
     { label: 'Cotações', path: '/compras/cotacoes' },
     { label: 'Pedidos de Compra', path: '/compras/pedidos' },
   ]},
+  
+  // Logística
   { id: 'logistica', label: 'Logística', icon: Icons.truck, children: [
     { label: 'Entregas', path: '/logistica/entregas' },
     { label: 'Rotas', path: '/logistica/rotas' },
     { label: 'Rastreamento', path: '/logistica/rastreamento' },
   ]},
+  
+  // CRM
   { id: 'crm', label: 'CRM', icon: Icons.userGroup, children: [
     { label: 'Dashboard CRM', path: '/crm' },
     { label: 'Pipeline', path: '/crm/pipeline' },
@@ -79,6 +126,8 @@ const menuItems: MenuItem[] = [
     { label: 'Oportunidades', path: '/crm/oportunidades' },
     { label: 'Atividades', path: '/crm/atividades' },
   ]},
+  
+  // E-commerce
   { id: 'ecommerce', label: 'E-commerce', icon: Icons.globe, children: [
     { label: 'Configurar Loja', path: '/ecommerce/config' },
     { label: 'Produtos da Loja', path: '/ecommerce/produtos' },
@@ -86,39 +135,49 @@ const menuItems: MenuItem[] = [
     { label: 'Banners', path: '/ecommerce/banners' },
     { label: 'Cupons', path: '/ecommerce/cupons' },
   ]},
+  
+  // Contábil
   { id: 'contabil', label: 'Contábil', icon: Icons.calculator, children: [
-    { label: 'Plano de Contas', path: '/contabil/plano-contas' },
     { label: 'Lançamentos', path: '/contabil/lancamentos' },
     { label: 'Fechamento', path: '/contabil/fechamento' },
     { label: 'DRE', path: '/contabil/dre' },
     { label: 'Balanço', path: '/contabil/balanco' },
   ]},
+  
+  // RH
   { id: 'rh', label: 'RH', icon: Icons.users, children: [
-    { label: 'Colaboradores', path: '/rh/colaboradores' },
     { label: 'Folha de Pagamento', path: '/rh/folha' },
     { label: 'Ponto Eletrônico', path: '/rh/ponto' },
     { label: 'Férias', path: '/rh/ferias' },
   ]},
+  
+  // Patrimônio
   { id: 'patrimonio', label: 'Patrimônio', icon: Icons.archive, children: [
-    { label: 'Bens', path: '/patrimonio/bens' },
     { label: 'Depreciação', path: '/patrimonio/depreciacao' },
     { label: 'Manutenção', path: '/patrimonio/manutencao' },
   ]},
+  
+  // BI & Relatórios
   { id: 'bi', label: 'BI & Relatórios', icon: Icons.chart, children: [
     { label: 'Dashboards', path: '/bi/dashboards' },
     { label: 'Relatórios', path: '/bi/relatorios' },
     { label: 'Indicadores', path: '/bi/indicadores' },
   ]},
+  
+  // Suporte
   { id: 'suporte', label: 'Suporte', icon: Icons.support, children: [
     { label: 'Tickets', path: '/suporte/tickets' },
     { label: 'Base de Conhecimento', path: '/suporte/base' },
   ]},
-  { id: 'admin', label: 'Administração', icon: Icons.cog, children: [
-    { label: 'Empresas', path: '/empresas' },
-    { label: 'Filiais', path: '/filiais' },
-    { label: 'Usuários', path: '/usuarios' },
-    { label: 'Perfis', path: '/perfis' },
-    { label: 'Configurações', path: '/configuracoes' },
+  
+  // CONFIGURAÇÕES - Módulo Separado
+  { id: 'configuracoes', label: 'Configurações', icon: Icons.cog, children: [
+    { label: 'Geral', path: '/configuracoes/geral' },
+    { label: 'Fiscal', path: '/configuracoes/fiscal' },
+    { label: 'Impostos', path: '/configuracoes/impostos' },
+    { label: 'Comercial', path: '/configuracoes/comercial' },
+    { label: 'E-mail', path: '/configuracoes/email' },
+    { label: 'Integrações', path: '/configuracoes/integracoes' },
   ]},
 ];
 
@@ -126,7 +185,7 @@ interface SidebarProps { isOpen: boolean; onClose: () => void; }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['comercial', 'fiscal']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['cadastros']);
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) => prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]);
@@ -134,8 +193,30 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const isMenuActive = (item: MenuItem) => {
     if (item.path) return location.pathname === item.path;
-    if (item.children) return item.children.some((child) => location.pathname.startsWith(child.path));
+    if (item.children) return item.children.some((child) => location.pathname.startsWith(child.path) && !child.path.startsWith('#'));
     return false;
+  };
+
+  const renderSubItem = (child: SubMenuItem) => {
+    if (child.path.startsWith('#')) {
+      return (
+        <div key={child.path} className="pt-3 pb-1 px-3 text-xs font-semibold text-gray-400 dark:text-[#636366] uppercase tracking-wider first:pt-0">
+          {child.label}
+        </div>
+      );
+    }
+    
+    return (
+      <NavLink key={child.path} to={child.path} onClick={onClose}
+        className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
+          isActive
+            ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
+            : 'text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white'
+        }`}
+      >
+        {child.label}
+      </NavLink>
+    );
   };
 
   return (
@@ -193,18 +274,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </button>
 
                   {expandedMenus.includes(item.id) && (
-                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-[#38383a] pl-3">
-                      {item.children.map((child) => (
-                        <NavLink key={child.path} to={child.path} onClick={onClose}
-                          className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                            isActive
-                              ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
-                              : 'text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white'
-                          }`}
-                        >
-                          {child.label}
-                        </NavLink>
-                      ))}
+                    <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-gray-100 dark:border-[#38383a] pl-3">
+                      {item.children.map((child) => renderSubItem(child))}
                     </div>
                   )}
                 </>
