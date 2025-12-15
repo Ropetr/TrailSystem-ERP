@@ -4,17 +4,22 @@
 
 /* =========================================
    PLANAC ERP - Design System Styles
-   Com suporte a tema escuro
+   Windows Dark Mode Colors
    ========================================= */
 
-/* Base styles */
+/* Base styles com cores Windows */
 @layer base {
   html {
     @apply transition-colors duration-200;
   }
   
   body {
-    @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100;
+    @apply bg-gray-50 text-gray-900;
+  }
+  
+  .dark body {
+    background-color: #202020;
+    color: #ffffff;
   }
 }
 
@@ -28,7 +33,7 @@
   }
 }
 
-/* Scrollbar Customizada */
+/* Scrollbar Customizada - Windows Style */
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -36,25 +41,30 @@
   }
   
   .dark .scrollbar-thin {
-    scrollbar-color: #4b5563 transparent;
+    scrollbar-color: #505050 #2d2d2d;
   }
   
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
   }
   
+  .dark .scrollbar-thin::-webkit-scrollbar-track {
+    background: #2d2d2d;
+  }
+  
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: #d1d5db;
-    border-radius: 3px;
+    border-radius: 4px;
   }
   
   .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
+    background-color: #505050;
+    border-radius: 4px;
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
@@ -62,7 +72,7 @@
   }
   
   .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #6b7280;
+    background-color: #686868;
   }
 }
 
@@ -93,14 +103,25 @@
   }
 }
 
-/* Cards e componentes - tema escuro */
+/* Cards e componentes - Windows Dark */
 @layer components {
   .card {
-    @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm;
+    @apply bg-white border border-gray-200 rounded-xl shadow-sm;
+  }
+  
+  .dark .card {
+    background-color: #2d2d2d;
+    border-color: #3d3d3d;
   }
   
   .input-base {
-    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100;
+    @apply bg-white border border-gray-200 text-gray-900;
+  }
+  
+  .dark .input-base {
+    background-color: #383838;
+    border-color: #3d3d3d;
+    color: #ffffff;
   }
 }
 
