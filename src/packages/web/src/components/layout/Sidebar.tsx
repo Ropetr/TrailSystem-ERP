@@ -1,6 +1,7 @@
 // =============================================
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
+// Ajustado: 15/12/2025 - Categorias com chevron
 // =============================================
 
 import React, { useState } from 'react';
@@ -28,7 +29,7 @@ const Icons = {
   chevronDown: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
 };
 
-interface SubMenuItem { label: string; path: string; }
+interface SubMenuItem { label: string; path: string; isCategory?: boolean; categoryId?: string; }
 interface MenuItem { id: string; label: string; icon: React.ReactNode; path?: string; children?: SubMenuItem[]; }
 
 const menuItems: MenuItem[] = [
@@ -38,38 +39,39 @@ const menuItems: MenuItem[] = [
   // ========================================
   // CADASTROS - Módulo Central de Dados Base
   // Aprovado: 15/12/2025 - 57 Especialistas
+  // Ajustado: Categorias com chevron
   // ========================================
   { id: 'cadastros', label: 'Cadastros', icon: Icons.database, children: [
-    // 👥 Entidades
-    { label: '👥 Entidades', path: '#entidades' },
-    { label: 'Clientes', path: '/cadastros/clientes' },
-    { label: 'Fornecedores', path: '/cadastros/fornecedores' },
-    { label: 'Transportadoras', path: '/cadastros/transportadoras' },
-    { label: 'Colaboradores', path: '/cadastros/colaboradores' },
-    { label: 'Parceiros de Negócio', path: '/cadastros/parceiros' },
-    // 📦 Produtos
-    { label: '📦 Produtos', path: '#produtos' },
-    { label: 'Produtos e Serviços', path: '/cadastros/produtos' },
-    // 🏢 Empresa
-    { label: '🏢 Empresa', path: '#empresa' },
-    { label: 'Matriz & Filiais', path: '/cadastros/empresas' },
-    // 🏦 Financeiro
-    { label: '🏦 Financeiro', path: '#financeiro' },
-    { label: 'Contas Bancárias', path: '/cadastros/contas-bancarias' },
-    { label: 'Plano de Contas', path: '/cadastros/plano-contas' },
-    { label: 'Centros de Custo', path: '/cadastros/centros-custo' },
-    { label: 'Condições de Pagamento', path: '/cadastros/condicoes-pagamento' },
-    // 🏷️ Comercial
-    { label: '🏷️ Comercial', path: '#comercial' },
-    { label: 'Tabelas de Preço', path: '/cadastros/tabelas-preco' },
-    // 🚗 Patrimônio
-    { label: '🚗 Patrimônio', path: '#patrimonio' },
-    { label: 'Veículos', path: '/cadastros/veiculos' },
-    { label: 'Bens', path: '/cadastros/bens' },
-    // 🔐 Acessos
-    { label: '🔐 Acessos', path: '#acessos' },
-    { label: 'Usuários', path: '/cadastros/usuarios' },
-    { label: 'Perfis de Usuários', path: '/cadastros/perfis' },
+    // Entidades
+    { label: 'Entidades', path: '#entidades', isCategory: true, categoryId: 'entidades' },
+    { label: 'Clientes', path: '/cadastros/clientes', categoryId: 'entidades' },
+    { label: 'Fornecedores', path: '/cadastros/fornecedores', categoryId: 'entidades' },
+    { label: 'Transportadoras', path: '/cadastros/transportadoras', categoryId: 'entidades' },
+    { label: 'Colaboradores', path: '/cadastros/colaboradores', categoryId: 'entidades' },
+    { label: 'Parceiros de Negócio', path: '/cadastros/parceiros', categoryId: 'entidades' },
+    // Produtos
+    { label: 'Produtos', path: '#produtos', isCategory: true, categoryId: 'produtos' },
+    { label: 'Produtos e Serviços', path: '/cadastros/produtos', categoryId: 'produtos' },
+    // Empresa
+    { label: 'Empresa', path: '#empresa', isCategory: true, categoryId: 'empresa' },
+    { label: 'Matriz & Filiais', path: '/cadastros/empresas', categoryId: 'empresa' },
+    // Financeiro
+    { label: 'Financeiro', path: '#financeiro', isCategory: true, categoryId: 'financeiro' },
+    { label: 'Contas Bancárias', path: '/cadastros/contas-bancarias', categoryId: 'financeiro' },
+    { label: 'Plano de Contas', path: '/cadastros/plano-contas', categoryId: 'financeiro' },
+    { label: 'Centros de Custo', path: '/cadastros/centros-custo', categoryId: 'financeiro' },
+    { label: 'Condições de Pagamento', path: '/cadastros/condicoes-pagamento', categoryId: 'financeiro' },
+    // Comercial
+    { label: 'Comercial', path: '#comercial', isCategory: true, categoryId: 'comercial' },
+    { label: 'Tabelas de Preço', path: '/cadastros/tabelas-preco', categoryId: 'comercial' },
+    // Patrimônio
+    { label: 'Patrimônio', path: '#patrimonio', isCategory: true, categoryId: 'patrimonio' },
+    { label: 'Veículos', path: '/cadastros/veiculos', categoryId: 'patrimonio' },
+    { label: 'Bens', path: '/cadastros/bens', categoryId: 'patrimonio' },
+    // Acessos
+    { label: 'Acessos', path: '#acessos', isCategory: true, categoryId: 'acessos' },
+    { label: 'Usuários', path: '/cadastros/usuarios', categoryId: 'acessos' },
+    { label: 'Perfis de Usuários', path: '/cadastros/perfis', categoryId: 'acessos' },
   ]},
   
   // Comercial
@@ -186,9 +188,20 @@ interface SidebarProps { isOpen: boolean; onClose: () => void; }
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['cadastros']);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([
+    'entidades', 'produtos', 'empresa', 'financeiro', 'comercial', 'patrimonio', 'acessos'
+  ]);
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) => prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]);
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories((prev) => 
+      prev.includes(categoryId) 
+        ? prev.filter((id) => id !== categoryId) 
+        : [...prev, categoryId]
+    );
   };
 
   const isMenuActive = (item: MenuItem) => {
@@ -198,12 +211,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const renderSubItem = (child: SubMenuItem) => {
-    if (child.path.startsWith('#')) {
+    // É uma categoria clicável
+    if (child.isCategory && child.categoryId) {
+      const isExpanded = expandedCategories.includes(child.categoryId);
+      
       return (
-        <div key={child.path} className="pt-3 pb-1 px-3 text-xs font-semibold text-gray-400 dark:text-[#636366] uppercase tracking-wider first:pt-0">
-          {child.label}
-        </div>
+        <button
+          key={child.path}
+          onClick={() => toggleCategory(child.categoryId!)}
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-sm font-medium transition-colors text-gray-600 dark:text-[#8e8e93] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-900 dark:hover:text-white mt-2 first:mt-0"
+        >
+          <span>{child.label}</span>
+          <span className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+            {Icons.chevronDown}
+          </span>
+        </button>
       );
+    }
+    
+    // É um item normal - verifica se a categoria está expandida
+    if (child.categoryId && !expandedCategories.includes(child.categoryId)) {
+      return null;
     }
     
     return (
