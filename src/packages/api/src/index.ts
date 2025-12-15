@@ -9,6 +9,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { logger } from 'hono/logger';
 
 // Routes
+import auth from './routes/auth';
 import fiscal from './routes/fiscal';
 import ibpt from './routes/ibpt';
 import certificados from './routes/certificados';
@@ -27,9 +28,16 @@ const app = new Hono<{ Bindings: Env }>();
 
 // ===== MIDDLEWARES =====
 
-// CORS
+// CORS - Permitir origens necessárias
 app.use('*', cors({
-  origin: ['http://localhost:3000', 'https://planac.com.br', 'https://*.planac.com.br'],
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://planac.com.br',
+    'https://*.planac.com.br',
+    'https://planac-erp.pages.dev',
+    'https://*.planac-erp.pages.dev',
+  ],
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id', 'X-Cron-Secret'],
   credentials: true,
@@ -58,7 +66,11 @@ app.get('/health', (c) => {
   });
 });
 
+// Auth (sem prefixo v1 para compatibilidade com frontend)
+app.route('/api/auth', auth);
+
 // API v1
+app.route('/v1/auth', auth);
 app.route('/v1/fiscal', fiscal);
 app.route('/v1/ibpt', ibpt);
 app.route('/v1/certificados', certificados);
@@ -72,6 +84,7 @@ app.get('/', (c) => {
     version: '1.0.0',
     docs: '/v1/docs',
     health: '/health',
+    auth: '/api/auth/login',
   });
 });
 
