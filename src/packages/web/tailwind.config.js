@@ -21,15 +21,16 @@ export default {
           800: "#991b1b",
           900: "#7f1d1d",
         },
-        // Windows Dark Mode Colors
+        // iOS/Samsung Dark Mode Colors
         dark: {
-          bg: "#202020",        // Fundo principal
-          card: "#2d2d2d",      // Cards, painéis
-          elevated: "#383838",  // Elementos elevados
-          border: "#3d3d3d",    // Bordas
-          hover: "#404040",     // Hover states
+          bg: "#000000",        // Preto puro (fundo)
+          surface: "#1c1c1e",   // Superfície (cards, sidebar)
+          elevated: "#2c2c2e",  // Elementos elevados
+          border: "#38383a",    // Bordas sutis
+          hover: "#3a3a3c",     // Hover states
           text: "#ffffff",      // Texto principal
-          muted: "#a0a0a0",     // Texto secundário
+          secondary: "#8e8e93", // Texto secundário (cinza iOS)
+          tertiary: "#636366",  // Texto terciário
         }
       },
       borderRadius: {
