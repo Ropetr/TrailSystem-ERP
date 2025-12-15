@@ -1,13 +1,15 @@
 // =============================================
 // PLANAC ERP - App
+// Com suporte a tema claro/escuro
 // =============================================
 
-import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/stores/auth.store';
-import { ToastProvider } from '@/components/ui/Toast';
-import { AppRoutes } from '@/routes';
+import React from "react";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/stores/auth.store";
+import { ThemeProvider } from "@/stores/theme.store";
+import { ToastProvider } from "@/components/ui/Toast";
+import { AppRoutes } from "@/routes";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -22,15 +24,18 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </ToastProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ToastProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </ToastProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
 
 export default App;
+
