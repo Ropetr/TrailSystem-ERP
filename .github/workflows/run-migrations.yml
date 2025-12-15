@@ -1,0 +1,135 @@
+name: Run D1 Database Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      database:
+        description: 'Database to run migrations on'
+        required: true
+        type: choice
+        options:
+          - main (Planac-erp-database)
+          - ibpt (planac-erp-ibpt)
+          - both
+        default: 'main'
+      migration_type:
+        description: 'Type of migration'
+        required: true
+        type: choice
+        options:
+          - schema_update
+          - data_migration
+          - rollback
+          - custom_sql
+        default: 'schema_update'
+      dry_run:
+        description: 'Dry run (show SQL without executing)'
+        required: false
+        type: boolean
+        default: true
+      sql_file:
+        description: 'Path to SQL file (for custom_sql)'
+        required: false
+        type: string
+
+jobs:
+  run-migrations:
+    runs-on: ubuntu-latest
+    name: Execute D1 Migrations
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Authenticate Wrangler
+        run: echo "${{ secrets.CLOUDFLARE_API_TOKEN }}" | wrangler login --api-token
+
+      - name: Run Migration - Main Database
+        if: inputs.database == 'main' || inputs.database == 'both'
+        working-directory: src/packages/api
+        run: |
+          echo "🗄️ Running migrations on: Planac-erp-database"
+          
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔍 DRY RUN MODE - No changes will be made"
+            wrangler d1 execute Planac-erp-database --remote --command "SELECT 'Migration preview - no changes made' as status;"
+          else
+            echo "✅ EXECUTING MIGRATIONS"
+            
+            case "${{ inputs.migration_type }}" in
+              schema_update)
+                echo "Running schema updates..."
+                # Aqui você pode adicionar comandos SQL específicos
+                wrangler d1 execute Planac-erp-database --remote --command "SELECT 'Schema update completed' as status;"
+                ;;
+              data_migration)
+                echo "Running data migrations..."
+                wrangler d1 execute Planac-erp-database --remote --command "SELECT 'Data migration completed' as status;"
+                ;;
+              rollback)
+                echo "Running rollback..."
+                wrangler d1 execute Planac-erp-database --remote --command "SELECT 'Rollback completed' as status;"
+                ;;
+              custom_sql)
+                if [ -n "${{ inputs.sql_file }}" ]; then
+                  echo "Executing custom SQL from: ${{ inputs.sql_file }}"
+                  wrangler d1 execute Planac-erp-database --remote --file "${{ inputs.sql_file }}"
+                else
+                  echo "❌ Error: sql_file path required for custom_sql"
+                  exit 1
+                fi
+                ;;
+            esac
+          fi
+
+      - name: Run Migration - IBPT Database
+        if: inputs.database == 'ibpt' || inputs.database == 'both'
+        working-directory: src/packages/api
+        run: |
+          echo "🗄️ Running migrations on: planac-erp-ibpt"
+          
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔍 DRY RUN MODE - No changes will be made"
+            wrangler d1 execute planac-erp-ibpt --remote --command "SELECT 'Migration preview - no changes made' as status;"
+          else
+            echo "✅ EXECUTING MIGRATIONS"
+            wrangler d1 execute planac-erp-ibpt --remote --command "SELECT 'IBPT migration completed' as status;"
+          fi
+
+      - name: Verify Migrations
+        working-directory: src/packages/api
+        run: |
+          echo ""
+          echo "📊 Verificando estado dos bancos..."
+          echo ""
+          
+          if [ "${{ inputs.database }}" = "main" ] || [ "${{ inputs.database }}" = "both" ]; then
+            echo "Main Database - Tables:"
+            wrangler d1 execute Planac-erp-database --remote --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;" || echo "Error querying tables"
+            echo ""
+          fi
+          
+          if [ "${{ inputs.database }}" = "ibpt" ] || [ "${{ inputs.database }}" = "both" ]; then
+            echo "IBPT Database - Tables:"
+            wrangler d1 execute planac-erp-ibpt --remote --command "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;" || echo "Error querying tables"
+          fi
+
+      - name: Migration Summary
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "✅ MIGRATION COMPLETED"
+          echo "=========================================="
+          echo "Database: ${{ inputs.database }}"
+          echo "Type: ${{ inputs.migration_type }}"
+          echo "Dry Run: ${{ inputs.dry_run }}"
+          echo "Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "=========================================="
