@@ -1,6 +1,6 @@
 // =============================================
 // PLANAC ERP - Main Layout
-// Com suporte a tema escuro
+// Com cores Windows Dark Mode e altura 100%
 // =============================================
 
 import React, { useState } from "react";
@@ -12,12 +12,12 @@ export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex transition-colors">
+    <div className="h-screen bg-gray-50 dark:bg-[#202020] flex overflow-hidden transition-colors">
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Header */}
         <Header onMenuClick={() => setSidebarOpen(true)} />
 
