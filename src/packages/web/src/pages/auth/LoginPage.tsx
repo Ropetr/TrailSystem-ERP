@@ -5,9 +5,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// URL da API
-const API_URL = 'https://planac-erp-api.ropetr.workers.dev';
+import { useAuth } from '@/stores/auth.store';
 
 // Ícones SVG inline
 const Icons = {
@@ -47,6 +45,7 @@ const Icons = {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -83,25 +82,14 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha }),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.token) {
-        localStorage.setItem('planac_token', data.token);
-        if (data.usuario) {
-          localStorage.setItem('planac_user', JSON.stringify(data.usuario));
-        }
-        if (lembrar && data.refreshToken) {
-          localStorage.setItem('planac_refresh', data.refreshToken);
-        }
+      // Usar o login do auth store que atualiza o estado do React
+      const result = await login(email, senha);
+      
+      if (result.success) {
+        // Navegar para o dashboard
         navigate('/dashboard');
       } else {
-        setErro(data.error || data.message || 'Credenciais inválidas');
+        setErro(result.error || 'Credenciais inválidas');
       }
     } catch (err) {
       console.error('Erro no login:', err);
@@ -132,90 +120,92 @@ export function LoginPage() {
               </div>
             </div>
             
-            <h1 className="text-xl font-semibold text-gray-800 mt-6">Bem-vindo de volta!</h1>
-            <p className="text-sm text-gray-500 mt-1">Entre com suas credenciais para acessar o sistema</p>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">Bem-vindo de volta!</h1>
+            <p className="text-sm text-gray-500">Entre com suas credenciais para acessar o sistema</p>
           </div>
 
           {/* Formulário */}
           <form onSubmit={handleLogin} className="px-8 pb-8 space-y-5">
             {/* Mensagem de erro */}
             {erro && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700">
-                <span className="text-red-500 flex-shrink-0">{Icons.alert}</span>
-                <span className="text-sm font-medium">{erro}</span>
+              <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
+                {Icons.alert}
+                <span>{erro}</span>
               </div>
             )}
 
             {/* Campo Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                E-mail
+              </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">{Icons.mail}</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  {Icons.mail}
+                </span>
                 <input
+                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  autoComplete="email"
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:bg-white"
+                  placeholder="seu@email.com.br"
+                  disabled={loading}
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 disabled:opacity-50 transition-all"
                 />
               </div>
             </div>
 
             {/* Campo Senha */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+              <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1.5">
+                Senha
+              </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">{Icons.lock}</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  {Icons.lock}
+                </span>
                 <input
+                  id="senha"
                   type={mostrarSenha ? 'text' : 'password'}
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   placeholder="••••••••"
-                  autoComplete="current-password"
-                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:bg-white"
+                  disabled={loading}
+                  className="w-full pl-12 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 disabled:opacity-50 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setMostrarSenha(!mostrarSenha)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  disabled={loading}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50 transition-colors"
                 >
                   {mostrarSenha ? Icons.eyeOff : Icons.eye}
                 </button>
               </div>
             </div>
 
-            {/* Lembrar + Esqueci senha */}
+            {/* Lembrar + Esqueci */}
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={lembrar}
-                    onChange={(e) => setLembrar(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className={`w-5 h-5 border-2 rounded-md transition-all flex items-center justify-center ${lembrar ? 'bg-red-600 border-red-600' : 'border-gray-300 group-hover:border-gray-400'}`}>
-                    {lembrar && (
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-                <span className="text-sm text-gray-600 group-hover:text-gray-800">Lembrar-me</span>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={lembrar}
+                  onChange={(e) => setLembrar(e.target.checked)}
+                  disabled={loading}
+                  className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                />
+                <span className="text-sm text-gray-600">Lembrar-me</span>
               </label>
-
-              <a href="/esqueci-senha" className="text-sm text-red-600 hover:text-red-700 font-medium transition-colors">
+              <a href="#" className="text-sm font-medium text-red-600 hover:text-red-700 transition-colors">
                 Esqueci minha senha
               </a>
             </div>
 
-            {/* Botão Entrar */}
+            {/* Botão Login */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl shadow-lg shadow-red-500/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-semibold rounded-xl shadow-lg shadow-red-500/25 transition-all duration-200 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -223,24 +213,24 @@ export function LoginPage() {
                   <span>Entrando...</span>
                 </>
               ) : (
-                <span>Entrar</span>
+                'Entrar'
               )}
             </button>
           </form>
 
-          {/* Footer */}
-          <div className="px-8 py-5 bg-gray-50 border-t border-gray-100 text-center">
+          {/* Footer do card */}
+          <div className="px-8 py-4 bg-gray-50 border-t border-gray-100 text-center">
             <p className="text-sm text-gray-500">
               Problemas para acessar?{' '}
-              <a href="mailto:suporte@planac.com.br" className="text-red-600 hover:text-red-700 font-medium">
+              <a href="#" className="font-medium text-red-600 hover:text-red-700 transition-colors">
                 Fale com o suporte
               </a>
             </p>
           </div>
         </div>
 
-        {/* Versão */}
-        <p className="text-center text-xs text-gray-400 mt-6">
+        {/* Rodapé */}
+        <p className="text-center text-sm text-gray-400 mt-6">
           PLANAC ERP v1.0.0 • Sistema de Gestão Empresarial
         </p>
       </div>
