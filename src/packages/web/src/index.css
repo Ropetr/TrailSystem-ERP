@@ -4,10 +4,9 @@
 
 /* =========================================
    PLANAC ERP - Design System Styles
-   Windows Dark Mode Colors
+   iOS/Samsung Dark Mode (preto puro)
    ========================================= */
 
-/* Base styles com cores Windows */
 @layer base {
   html {
     @apply transition-colors duration-200;
@@ -18,22 +17,19 @@
   }
   
   .dark body {
-    background-color: #202020;
+    background-color: #000000;
     color: #ffffff;
   }
 }
 
-/* Focus States - Vermelho PLANAC */
+/* Focus States */
 @layer base {
-  input:focus,
-  textarea:focus,
-  select:focus,
-  button:focus-visible {
+  input:focus, textarea:focus, select:focus, button:focus-visible {
     @apply outline-none ring-2 ring-planac-500/20 border-planac-500;
   }
 }
 
-/* Scrollbar Customizada - Windows Style */
+/* Scrollbar - iOS Style */
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -41,12 +37,12 @@
   }
   
   .dark .scrollbar-thin {
-    scrollbar-color: #505050 #2d2d2d;
+    scrollbar-color: #38383a #1c1c1e;
   }
   
   .scrollbar-thin::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -54,17 +50,17 @@
   }
   
   .dark .scrollbar-thin::-webkit-scrollbar-track {
-    background: #2d2d2d;
+    background: #1c1c1e;
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: #d1d5db;
-    border-radius: 4px;
+    border-radius: 3px;
   }
   
   .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #505050;
-    border-radius: 4px;
+    background-color: #48484a;
+    border-radius: 3px;
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
@@ -72,7 +68,7 @@
   }
   
   .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #686868;
+    background-color: #636366;
   }
 }
 
@@ -92,26 +88,20 @@
   }
   
   @keyframes slideDown {
-    from { 
-      opacity: 0; 
-      transform: translateY(-10px); 
-    }
-    to { 
-      opacity: 1; 
-      transform: translateY(0); 
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 
-/* Cards e componentes - Windows Dark */
+/* Cards - iOS Style */
 @layer components {
   .card {
     @apply bg-white border border-gray-200 rounded-xl shadow-sm;
   }
   
   .dark .card {
-    background-color: #2d2d2d;
-    border-color: #3d3d3d;
+    background-color: #1c1c1e;
+    border-color: #38383a;
   }
   
   .input-base {
@@ -119,8 +109,8 @@
   }
   
   .dark .input-base {
-    background-color: #383838;
-    border-color: #3d3d3d;
+    background-color: #2c2c2e;
+    border-color: #38383a;
     color: #ffffff;
   }
 }
