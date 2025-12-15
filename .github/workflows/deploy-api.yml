@@ -1,0 +1,52 @@
+name: Deploy API to Cloudflare Workers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/packages/api/**'
+      - 'src/packages/shared/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Worker API
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/packages/api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: src/packages/api
+        run: npm ci
+
+      - name: Build (if needed)
+        working-directory: src/packages/api
+        run: |
+          if [ -f "package.json" ] && grep -q "\"build\":" package.json; then
+            npm run build
+          else
+            echo "No build script found, skipping..."
+          fi
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: f14d821b52a4f6ecbad7fb0e0afba8e5
+          workingDirectory: src/packages/api
+          command: deploy --env production
+
+      - name: Deployment Summary
+        run: |
+          echo "✅ Worker deployado com sucesso!"
+          echo "📍 URL: https://planac-erp-api.ropetr.workers.dev"
+          echo "⏰ Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
