@@ -4,7 +4,19 @@
 
 /* =========================================
    PLANAC ERP - Design System Styles
+   Com suporte a tema escuro
    ========================================= */
+
+/* Base styles */
+@layer base {
+  html {
+    @apply transition-colors duration-200;
+  }
+  
+  body {
+    @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100;
+  }
+}
 
 /* Focus States - Vermelho PLANAC */
 @layer base {
@@ -23,6 +35,10 @@
     scrollbar-color: #d1d5db transparent;
   }
   
+  .dark .scrollbar-thin {
+    scrollbar-color: #4b5563 transparent;
+  }
+  
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -37,8 +53,16 @@
     border-radius: 3px;
   }
   
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+  }
+  
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: #9ca3af;
+  }
+  
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
   }
 }
 
@@ -68,3 +92,15 @@
     }
   }
 }
+
+/* Cards e componentes - tema escuro */
+@layer components {
+  .card {
+    @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm;
+  }
+  
+  .input-base {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100;
+  }
+}
+
