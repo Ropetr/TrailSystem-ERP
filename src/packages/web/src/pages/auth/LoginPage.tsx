@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // URL da API
-const API_URL = 'https://planac-erp-api.planacacabamentos.workers.dev';
+const API_URL = 'https://planac-erp-api.ropetr.workers.dev';
 
 // Ícones SVG inline
 const Icons = {
