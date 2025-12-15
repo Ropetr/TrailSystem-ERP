@@ -2,17 +2,17 @@
 // PLANAC ERP - Auth Service
 // =============================================
 
-import api from './api';
-import type { LoginRequest, LoginResponse, Usuario } from '@/types';
+import api from "./api";
+import type { LoginRequest, LoginResponse, Usuario } from "@/types";
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>('/api/auth/login', credentials);
+    const response = await api.post<LoginResponse>("/v1/auth/login", credentials);
     
     if (response.success && response.token) {
       api.setToken(response.token);
       if (response.usuario) {
-        localStorage.setItem('planac_user', JSON.stringify(response.usuario));
+        localStorage.setItem("planac_user", JSON.stringify(response.usuario));
       }
     }
     
@@ -21,19 +21,19 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      await api.post('/api/auth/logout');
+      await api.post("/v1/auth/logout");
     } catch {
       // Ignorar erro de logout
     } finally {
       api.setToken(null);
-      localStorage.removeItem('planac_user');
-      localStorage.removeItem('planac_refresh');
+      localStorage.removeItem("planac_user");
+      localStorage.removeItem("planac_refresh");
     }
   },
 
   async me(): Promise<Usuario | null> {
     try {
-      const response = await api.get<{ success: boolean; usuario: Usuario }>('/api/auth/me');
+      const response = await api.get<{ success: boolean; usuario: Usuario }>("/v1/auth/me");
       return response.usuario;
     } catch {
       return null;
@@ -41,7 +41,7 @@ export const authService = {
   },
 
   async alterarSenha(senhaAtual: string, novaSenha: string): Promise<boolean> {
-    const response = await api.post<{ success: boolean }>('/api/auth/alterar-senha', {
+    const response = await api.post<{ success: boolean }>("/v1/auth/alterar-senha", {
       senhaAtual,
       novaSenha,
     });
@@ -49,7 +49,7 @@ export const authService = {
   },
 
   getStoredUser(): Usuario | null {
-    const stored = localStorage.getItem('planac_user');
+    const stored = localStorage.getItem("planac_user");
     return stored ? JSON.parse(stored) : null;
   },
 
