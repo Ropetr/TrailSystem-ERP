@@ -13,10 +13,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://planac-erp-api.planacacabamentos.workers.dev',
+        target: 'https://planac-erp-api.ropetr.workers.dev',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }
 })
+
