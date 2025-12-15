@@ -1,6 +1,6 @@
 // =============================================
 // PLANAC ERP - Sidebar Completo
-// Cores Windows Dark Mode + Altura 100%
+// Cores iOS/Samsung Dark Mode (preto puro)
 // =============================================
 
 import React, { useState } from 'react';
@@ -27,169 +27,109 @@ const Icons = {
   chevronDown: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
 };
 
-interface SubMenuItem {
-  label: string;
-  path: string;
-}
+interface SubMenuItem { label: string; path: string; }
+interface MenuItem { id: string; label: string; icon: React.ReactNode; path?: string; children?: SubMenuItem[]; }
 
-interface MenuItem {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  path?: string;
-  children?: SubMenuItem[];
-}
-
-// Menu completo do ERP
 const menuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: Icons.home, path: '/dashboard' },
-  {
-    id: 'comercial', label: 'Comercial', icon: Icons.shoppingCart,
-    children: [
-      { label: 'Clientes', path: '/clientes' },
-      { label: 'Produtos', path: '/produtos' },
-      { label: 'Orçamentos', path: '/orcamentos' },
-      { label: 'Vendas', path: '/vendas' },
-      { label: 'Tabelas de Preço', path: '/tabelas-preco' },
-    ],
-  },
-  {
-    id: 'estoque', label: 'Estoque', icon: Icons.cube,
-    children: [
-      { label: 'Saldos', path: '/estoque/saldos' },
-      { label: 'Movimentações', path: '/estoque/movimentacoes' },
-      { label: 'Transferências', path: '/estoque/transferencias' },
-      { label: 'Inventário', path: '/estoque/inventario' },
-    ],
-  },
-  {
-    id: 'fiscal', label: 'Fiscal', icon: Icons.document,
-    children: [
-      { label: 'Notas Fiscais', path: '/fiscal/notas' },
-      { label: 'Emitir NF-e', path: '/fiscal/nfe/nova' },
-      { label: 'PDV (NFC-e)', path: '/fiscal/pdv' },
-      { label: 'NFS-e (Serviços)', path: '/fiscal/nfse' },
-      { label: 'CT-e / MDF-e', path: '/fiscal/cte' },
-      { label: 'SPED', path: '/fiscal/sped' },
-      { label: 'Configurações', path: '/fiscal/configuracoes' },
-    ],
-  },
-  {
-    id: 'financeiro', label: 'Financeiro', icon: Icons.cash,
-    children: [
-      { label: 'Contas a Receber', path: '/financeiro/receber' },
-      { label: 'Contas a Pagar', path: '/financeiro/pagar' },
-      { label: 'Fluxo de Caixa', path: '/financeiro/fluxo-caixa' },
-      { label: 'Boletos', path: '/financeiro/boletos' },
-      { label: 'Conciliação', path: '/financeiro/conciliacao' },
-      { label: 'Contas Bancárias', path: '/financeiro/contas' },
-    ],
-  },
-  {
-    id: 'compras', label: 'Compras', icon: Icons.briefcase,
-    children: [
-      { label: 'Fornecedores', path: '/fornecedores' },
-      { label: 'Cotações', path: '/compras/cotacoes' },
-      { label: 'Pedidos de Compra', path: '/compras/pedidos' },
-    ],
-  },
-  {
-    id: 'logistica', label: 'Logística', icon: Icons.truck,
-    children: [
-      { label: 'Entregas', path: '/logistica/entregas' },
-      { label: 'Rotas', path: '/logistica/rotas' },
-      { label: 'Rastreamento', path: '/logistica/rastreamento' },
-    ],
-  },
-  {
-    id: 'crm', label: 'CRM', icon: Icons.userGroup,
-    children: [
-      { label: 'Dashboard CRM', path: '/crm' },
-      { label: 'Pipeline', path: '/crm/pipeline' },
-      { label: 'Leads', path: '/crm/leads' },
-      { label: 'Oportunidades', path: '/crm/oportunidades' },
-      { label: 'Atividades', path: '/crm/atividades' },
-    ],
-  },
-  {
-    id: 'ecommerce', label: 'E-commerce', icon: Icons.globe,
-    children: [
-      { label: 'Configurar Loja', path: '/ecommerce/config' },
-      { label: 'Produtos da Loja', path: '/ecommerce/produtos' },
-      { label: 'Pedidos Online', path: '/ecommerce/pedidos' },
-      { label: 'Banners', path: '/ecommerce/banners' },
-      { label: 'Cupons', path: '/ecommerce/cupons' },
-    ],
-  },
-  {
-    id: 'contabil', label: 'Contábil', icon: Icons.calculator,
-    children: [
-      { label: 'Plano de Contas', path: '/contabil/plano-contas' },
-      { label: 'Lançamentos', path: '/contabil/lancamentos' },
-      { label: 'Fechamento', path: '/contabil/fechamento' },
-      { label: 'DRE', path: '/contabil/dre' },
-      { label: 'Balanço', path: '/contabil/balanco' },
-    ],
-  },
-  {
-    id: 'rh', label: 'RH', icon: Icons.users,
-    children: [
-      { label: 'Colaboradores', path: '/rh/colaboradores' },
-      { label: 'Folha de Pagamento', path: '/rh/folha' },
-      { label: 'Ponto Eletrônico', path: '/rh/ponto' },
-      { label: 'Férias', path: '/rh/ferias' },
-    ],
-  },
-  {
-    id: 'patrimonio', label: 'Patrimônio', icon: Icons.archive,
-    children: [
-      { label: 'Bens', path: '/patrimonio/bens' },
-      { label: 'Depreciação', path: '/patrimonio/depreciacao' },
-      { label: 'Manutenção', path: '/patrimonio/manutencao' },
-    ],
-  },
-  {
-    id: 'bi', label: 'BI & Relatórios', icon: Icons.chart,
-    children: [
-      { label: 'Dashboards', path: '/bi/dashboards' },
-      { label: 'Relatórios', path: '/bi/relatorios' },
-      { label: 'Indicadores', path: '/bi/indicadores' },
-    ],
-  },
-  {
-    id: 'suporte', label: 'Suporte', icon: Icons.support,
-    children: [
-      { label: 'Tickets', path: '/suporte/tickets' },
-      { label: 'Base de Conhecimento', path: '/suporte/base' },
-    ],
-  },
-  {
-    id: 'admin', label: 'Administração', icon: Icons.cog,
-    children: [
-      { label: 'Empresas', path: '/empresas' },
-      { label: 'Filiais', path: '/filiais' },
-      { label: 'Usuários', path: '/usuarios' },
-      { label: 'Perfis', path: '/perfis' },
-      { label: 'Configurações', path: '/configuracoes' },
-    ],
-  },
+  { id: 'comercial', label: 'Comercial', icon: Icons.shoppingCart, children: [
+    { label: 'Clientes', path: '/clientes' },
+    { label: 'Produtos', path: '/produtos' },
+    { label: 'Orçamentos', path: '/orcamentos' },
+    { label: 'Vendas', path: '/vendas' },
+    { label: 'Tabelas de Preço', path: '/tabelas-preco' },
+  ]},
+  { id: 'estoque', label: 'Estoque', icon: Icons.cube, children: [
+    { label: 'Saldos', path: '/estoque/saldos' },
+    { label: 'Movimentações', path: '/estoque/movimentacoes' },
+    { label: 'Transferências', path: '/estoque/transferencias' },
+    { label: 'Inventário', path: '/estoque/inventario' },
+  ]},
+  { id: 'fiscal', label: 'Fiscal', icon: Icons.document, children: [
+    { label: 'Notas Fiscais', path: '/fiscal/notas' },
+    { label: 'Emitir NF-e', path: '/fiscal/nfe/nova' },
+    { label: 'PDV (NFC-e)', path: '/fiscal/pdv' },
+    { label: 'NFS-e (Serviços)', path: '/fiscal/nfse' },
+    { label: 'CT-e / MDF-e', path: '/fiscal/cte' },
+    { label: 'SPED', path: '/fiscal/sped' },
+    { label: 'Configurações', path: '/fiscal/configuracoes' },
+  ]},
+  { id: 'financeiro', label: 'Financeiro', icon: Icons.cash, children: [
+    { label: 'Contas a Receber', path: '/financeiro/receber' },
+    { label: 'Contas a Pagar', path: '/financeiro/pagar' },
+    { label: 'Fluxo de Caixa', path: '/financeiro/fluxo-caixa' },
+    { label: 'Boletos', path: '/financeiro/boletos' },
+    { label: 'Conciliação', path: '/financeiro/conciliacao' },
+    { label: 'Contas Bancárias', path: '/financeiro/contas' },
+  ]},
+  { id: 'compras', label: 'Compras', icon: Icons.briefcase, children: [
+    { label: 'Fornecedores', path: '/fornecedores' },
+    { label: 'Cotações', path: '/compras/cotacoes' },
+    { label: 'Pedidos de Compra', path: '/compras/pedidos' },
+  ]},
+  { id: 'logistica', label: 'Logística', icon: Icons.truck, children: [
+    { label: 'Entregas', path: '/logistica/entregas' },
+    { label: 'Rotas', path: '/logistica/rotas' },
+    { label: 'Rastreamento', path: '/logistica/rastreamento' },
+  ]},
+  { id: 'crm', label: 'CRM', icon: Icons.userGroup, children: [
+    { label: 'Dashboard CRM', path: '/crm' },
+    { label: 'Pipeline', path: '/crm/pipeline' },
+    { label: 'Leads', path: '/crm/leads' },
+    { label: 'Oportunidades', path: '/crm/oportunidades' },
+    { label: 'Atividades', path: '/crm/atividades' },
+  ]},
+  { id: 'ecommerce', label: 'E-commerce', icon: Icons.globe, children: [
+    { label: 'Configurar Loja', path: '/ecommerce/config' },
+    { label: 'Produtos da Loja', path: '/ecommerce/produtos' },
+    { label: 'Pedidos Online', path: '/ecommerce/pedidos' },
+    { label: 'Banners', path: '/ecommerce/banners' },
+    { label: 'Cupons', path: '/ecommerce/cupons' },
+  ]},
+  { id: 'contabil', label: 'Contábil', icon: Icons.calculator, children: [
+    { label: 'Plano de Contas', path: '/contabil/plano-contas' },
+    { label: 'Lançamentos', path: '/contabil/lancamentos' },
+    { label: 'Fechamento', path: '/contabil/fechamento' },
+    { label: 'DRE', path: '/contabil/dre' },
+    { label: 'Balanço', path: '/contabil/balanco' },
+  ]},
+  { id: 'rh', label: 'RH', icon: Icons.users, children: [
+    { label: 'Colaboradores', path: '/rh/colaboradores' },
+    { label: 'Folha de Pagamento', path: '/rh/folha' },
+    { label: 'Ponto Eletrônico', path: '/rh/ponto' },
+    { label: 'Férias', path: '/rh/ferias' },
+  ]},
+  { id: 'patrimonio', label: 'Patrimônio', icon: Icons.archive, children: [
+    { label: 'Bens', path: '/patrimonio/bens' },
+    { label: 'Depreciação', path: '/patrimonio/depreciacao' },
+    { label: 'Manutenção', path: '/patrimonio/manutencao' },
+  ]},
+  { id: 'bi', label: 'BI & Relatórios', icon: Icons.chart, children: [
+    { label: 'Dashboards', path: '/bi/dashboards' },
+    { label: 'Relatórios', path: '/bi/relatorios' },
+    { label: 'Indicadores', path: '/bi/indicadores' },
+  ]},
+  { id: 'suporte', label: 'Suporte', icon: Icons.support, children: [
+    { label: 'Tickets', path: '/suporte/tickets' },
+    { label: 'Base de Conhecimento', path: '/suporte/base' },
+  ]},
+  { id: 'admin', label: 'Administração', icon: Icons.cog, children: [
+    { label: 'Empresas', path: '/empresas' },
+    { label: 'Filiais', path: '/filiais' },
+    { label: 'Usuários', path: '/usuarios' },
+    { label: 'Perfis', path: '/perfis' },
+    { label: 'Configurações', path: '/configuracoes' },
+  ]},
 ];
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+interface SidebarProps { isOpen: boolean; onClose: () => void; }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['comercial', 'fiscal']);
 
   const toggleMenu = (menuId: string) => {
-    setExpandedMenus((prev) =>
-      prev.includes(menuId)
-        ? prev.filter((id) => id !== menuId)
-        : [...prev, menuId]
-    );
+    setExpandedMenus((prev) => prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]);
   };
 
   const isMenuActive = (item: MenuItem) => {
@@ -200,25 +140,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Backdrop mobile */}
-      {isOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
-      )}
+      {isOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={onClose} />}
 
-      {/* Sidebar - altura 100% da viewport */}
-      <aside
-        className={`
-          fixed top-0 left-0 z-50 h-screen w-64
-          bg-white dark:bg-[#2d2d2d]
-          border-r border-gray-200 dark:border-[#3d3d3d]
-          transform transition-all duration-200 ease-in-out
-          lg:translate-x-0 lg:static lg:z-auto
-          flex flex-col
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}
-      >
+      <aside className={`
+        fixed top-0 left-0 z-50 h-screen w-64
+        bg-white dark:bg-[#1c1c1e]
+        border-r border-gray-200 dark:border-[#38383a]
+        transform transition-all duration-200 ease-in-out
+        lg:translate-x-0 lg:static lg:z-auto flex flex-col
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         {/* Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-gray-100 dark:border-[#3d3d3d] flex-shrink-0">
+        <div className="h-16 flex items-center justify-center border-b border-gray-100 dark:border-[#38383a] flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">P</span>
@@ -227,63 +160,47 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        {/* Menu com scroll */}
+        {/* Menu */}
         <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin">
           {menuItems.map((item) => (
             <div key={item.id}>
-              {/* Item sem filhos */}
               {item.path && !item.children && (
-                <NavLink
-                  to={item.path}
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                        : 'text-gray-600 dark:text-[#a0a0a0] hover:bg-gray-50 dark:hover:bg-[#404040] hover:text-gray-900 dark:hover:text-white'
-                    }`
-                  }
+                <NavLink to={item.path} onClick={onClose}
+                  className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-red-500/20 text-red-500 dark:text-red-400'
+                      : 'text-gray-600 dark:text-[#8e8e93] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-900 dark:hover:text-white'
+                  }`}
                 >
                   {item.icon}
                   <span>{item.label}</span>
                 </NavLink>
               )}
 
-              {/* Item com filhos (expansível) */}
               {item.children && (
                 <>
-                  <button
-                    onClick={() => toggleMenu(item.id)}
+                  <button onClick={() => toggleMenu(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isMenuActive(item)
-                        ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                        : 'text-gray-600 dark:text-[#a0a0a0] hover:bg-gray-50 dark:hover:bg-[#404040] hover:text-gray-900 dark:hover:text-white'
+                        ? 'bg-red-500/20 text-red-500 dark:text-red-400'
+                        : 'text-gray-600 dark:text-[#8e8e93] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </div>
+                    <div className="flex items-center gap-3">{item.icon}<span>{item.label}</span></div>
                     <span className={`transition-transform duration-200 ${expandedMenus.includes(item.id) ? 'rotate-180' : ''}`}>
                       {Icons.chevronDown}
                     </span>
                   </button>
 
-                  {/* Submenu */}
                   {expandedMenus.includes(item.id) && (
-                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-[#3d3d3d] pl-3">
+                    <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 dark:border-[#38383a] pl-3">
                       {item.children.map((child) => (
-                        <NavLink
-                          key={child.path}
-                          to={child.path}
-                          onClick={onClose}
-                          className={({ isActive }) =>
-                            `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                              isActive
-                                ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-medium'
-                                : 'text-gray-500 dark:text-[#808080] hover:bg-gray-50 dark:hover:bg-[#404040] hover:text-gray-700 dark:hover:text-white'
-                            }`
-                          }
+                        <NavLink key={child.path} to={child.path} onClick={onClose}
+                          className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                            isActive
+                              ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
+                              : 'text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white'
+                          }`}
                         >
                           {child.label}
                         </NavLink>
@@ -296,11 +213,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           ))}
         </nav>
 
-        {/* Footer - sempre no fundo */}
-        <div className="p-3 border-t border-gray-100 dark:border-[#3d3d3d] flex-shrink-0 mt-auto">
-          <div className="text-xs text-gray-400 dark:text-[#808080] text-center">
-            PLANAC ERP v1.0.0
-          </div>
+        {/* Footer */}
+        <div className="p-3 border-t border-gray-100 dark:border-[#38383a] flex-shrink-0">
+          <div className="text-xs text-gray-400 dark:text-[#636366] text-center">PLANAC ERP v1.0.0</div>
         </div>
       </aside>
     </>
