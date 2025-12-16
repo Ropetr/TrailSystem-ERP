@@ -17,7 +17,7 @@ perfis.get('/', async (c) => {
   try {
     let query = `
       SELECT 
-        p.id, p.nome, p.codigo, p.descricao, p.sistema, p.ativo, p.created_at,
+        p.id, p.nome, p.descricao, p.nivel, p.padrao, p.ativo, p.created_at,
         (SELECT COUNT(*) FROM usuarios_perfis WHERE perfil_id = p.id) as total_usuarios,
         (SELECT COUNT(*) FROM perfis_permissoes WHERE perfil_id = p.id) as total_permissoes
       FROM perfis p
