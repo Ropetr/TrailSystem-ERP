@@ -170,7 +170,7 @@ function FlyoutPortal({ children, targetRef, isVisible, onMouseEnter, onMouseLea
       setPosition({
         // Alinha o TOPO do flyout com o TOPO do item (menos o padding do py-1)
         top: rect.top - 4,
-        left: rect.right + 4,
+        left: rect.right,
       });
     }
   }, [isVisible, targetRef]);
