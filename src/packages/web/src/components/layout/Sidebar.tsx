@@ -1,14 +1,14 @@
 // =============================================
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
-// Ajustado: 16/12/2025 - Ícones neon + sem seleção rosa
+// Ajustado: 16/12/2025 - Menus abrem no hover
 // =============================================
 
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
-// Estilo neon para ícones
+// Estilo dos ícones - vermelho puro
 const neonIconClass = "w-5 h-5 text-red-500";
 
 // Ícones SVG inline
@@ -204,8 +204,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   });
 
+  // Expandir menu (por clique ou hover)
+  const expandMenu = (menuId: string) => {
+    if (!expandedMenus.includes(menuId)) {
+      setExpandedMenus([menuId]); // Só um menu aberto por vez
+    }
+  };
+
+  // Toggle por clique (fecha se já estiver aberto)
   const toggleMenu = (menuId: string) => {
-    setExpandedMenus((prev) => prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]);
+    setExpandedMenus((prev) => 
+      prev.includes(menuId) ? [] : [menuId]
+    );
   };
 
   // Renderizar categoria com flyout
@@ -252,7 +262,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const isExpanded = expandedMenus.includes('cadastros');
 
     return (
-      <div>
+      <div
+        onMouseEnter={() => expandMenu('cadastros')}
+      >
         <button
           onClick={() => toggleMenu('cadastros')}
           className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
@@ -294,7 +306,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const isExpanded = expandedMenus.includes(item.id);
 
     return (
-      <div key={item.id}>
+      <div 
+        key={item.id}
+        onMouseEnter={() => expandMenu(item.id)}
+      >
         <button
           onClick={() => toggleMenu(item.id)}
           className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
@@ -364,5 +379,3 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 }
 
 export default Sidebar;
-
-
