@@ -1,32 +1,34 @@
 // =============================================
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
-// Ajustado: 16/12/2025 - Menus fechados + Flyout hover
+// Ajustado: 16/12/2025 - Ícones neon + sem seleção rosa
 // =============================================
 
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
+// Estilo neon para ícones
+const neonIconClass = "w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]";
+
 // Ícones SVG inline
 const Icons = {
-  home: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-  database: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
-  users: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  building: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
-  shoppingCart: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
-  cube: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
-  document: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
-  cash: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
-  truck: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
-  briefcase: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
-  userGroup: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
-  globe: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
-  calculator: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
-  archive: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
-  chart: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
-  support: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  cog: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  home: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+  database: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
+  users: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+  shoppingCart: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  cube: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+  document: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  cash: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  truck: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>,
+  briefcase: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  userGroup: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  globe: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
+  calculator: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+  archive: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
+  chart: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+  support: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+  cog: <svg className={neonIconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   chevronDown: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
   chevronRight: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>,
 };
@@ -152,7 +154,7 @@ const menuItems: MenuItem[] = [
   ]},
 ];
 
-// Componente Flyout com Portal (renderiza fora do sidebar)
+// Componente Flyout com Portal
 function FlyoutPortal({ children, targetRef, isVisible }: { 
   children: React.ReactNode; 
   targetRef: React.RefObject<HTMLDivElement>; 
@@ -192,12 +194,10 @@ interface SidebarProps { isOpen: boolean; onClose: () => void; }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  // CORREÇÃO 1: Menus fechados no login
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const categoryRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
 
-  // Criar refs para cada categoria
   cadastroCategorias.forEach(cat => {
     if (!categoryRefs.current[cat.id]) {
       categoryRefs.current[cat.id] = React.createRef<HTMLDivElement>();
@@ -208,22 +208,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     setExpandedMenus((prev) => prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]);
   };
 
-  const isMenuActive = (item: MenuItem) => {
-    if (item.path) return location.pathname === item.path;
-    if (item.children) return item.children.some((child) => location.pathname.startsWith(child.path));
-    return false;
-  };
-
-  const isCadastrosActive = () => {
-    return cadastroCategorias.some(cat => 
-      cat.items.some(item => location.pathname.startsWith(item.path))
-    );
-  };
-
   // Renderizar categoria com flyout
   const renderCategoriaComFlyout = (categoria: typeof cadastroCategorias[0]) => {
     const isHovered = hoveredCategory === categoria.id;
-    const hasActiveItem = categoria.items.some(item => location.pathname.startsWith(item.path));
     const ref = categoryRefs.current[categoria.id];
 
     return (
@@ -235,11 +222,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         className="relative"
       >
         <div
-          className={`flex items-center justify-between px-3 py-1.5 ml-3 rounded-lg text-sm cursor-pointer transition-colors ${
-            hasActiveItem
-              ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
-              : 'text-gray-600 dark:text-[#8e8e93] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-900 dark:hover:text-white'
-          }`}
+          className="flex items-center justify-between px-3 py-1.5 ml-3 rounded-lg text-sm cursor-pointer transition-colors text-gray-600 dark:text-[#8e8e93] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-900 dark:hover:text-white"
         >
           <span>{categoria.label}</span>
           <span className="text-gray-400">{Icons.chevronRight}</span>
@@ -254,13 +237,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 setHoveredCategory(null);
                 onClose();
               }}
-              className={({ isActive }) =>
-                `block px-4 py-2 text-sm transition-colors ${
-                  isActive
-                    ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
-                    : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
-                }`
-              }
+              className="block px-4 py-2 text-sm transition-colors text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
             >
               {item.label}
             </NavLink>
@@ -273,22 +250,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   // Renderizar menu Cadastros
   const renderCadastrosMenu = () => {
     const isExpanded = expandedMenus.includes('cadastros');
-    const isActive = isCadastrosActive();
 
     return (
       <div>
         <button
           onClick={() => toggleMenu('cadastros')}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 group ${
-            isActive
-              ? 'bg-red-500/10 text-red-500 dark:text-red-400'
-              : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
-          }`}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
         >
           <div className="flex items-center gap-3">
-            <span className={isActive ? 'text-red-500' : 'text-gray-500 dark:text-[#8e8e93]'}>
-              {Icons.database}
-            </span>
+            {Icons.database}
             <span className="font-medium">Cadastros</span>
           </div>
           <span className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
@@ -313,37 +283,24 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           key={item.id}
           to={item.path}
           onClick={onClose}
-          className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 ${
-              isActive
-                ? 'bg-red-500/10 text-red-500 dark:text-red-400'
-                : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
-            }`
-          }
+          className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
         >
-          <span className="text-gray-500 dark:text-[#8e8e93]">{item.icon}</span>
+          {item.icon}
           <span className="font-medium">{item.label}</span>
         </NavLink>
       );
     }
 
     const isExpanded = expandedMenus.includes(item.id);
-    const isActive = isMenuActive(item);
 
     return (
       <div key={item.id}>
         <button
           onClick={() => toggleMenu(item.id)}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 group ${
-            isActive
-              ? 'bg-red-500/10 text-red-500 dark:text-red-400'
-              : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
-          }`}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
         >
           <div className="flex items-center gap-3">
-            <span className={isActive ? 'text-red-500' : 'text-gray-500 dark:text-[#8e8e93]'}>
-              {item.icon}
-            </span>
+            {item.icon}
             <span className="font-medium">{item.label}</span>
           </div>
           <span className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
@@ -358,13 +315,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 key={child.path}
                 to={child.path}
                 onClick={onClose}
-                className={({ isActive }) =>
-                  `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                    isActive
-                      ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
-                      : 'text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white'
-                  }`
-                }
+                className="block px-3 py-1.5 rounded-lg text-sm transition-colors text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white"
               >
                 {child.label}
               </NavLink>
@@ -398,13 +349,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Menu */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {/* Dashboard */}
           {renderMenuItem(menuItems[0])}
-          
-          {/* Cadastros (especial com flyout) */}
           {renderCadastrosMenu()}
-          
-          {/* Demais menus */}
           {menuItems.slice(1).map(renderMenuItem)}
         </nav>
 
