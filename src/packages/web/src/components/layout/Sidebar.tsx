@@ -1,7 +1,7 @@
 // =============================================
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
-// Ajustado: 16/12/2025 - Hover no nav container (sem salto)
+// Ajustado: 16/12/2025 - Transição suave (menus sobrepõem durante transição)
 // =============================================
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -198,6 +198,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const categoryRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   cadastroCategorias.forEach(cat => {
     if (!categoryRefs.current[cat.id]) {
@@ -205,34 +206,55 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   });
 
-  // Limpar timeout ao desmontar
+  // Limpar timeouts ao desmontar
   useEffect(() => {
     return () => {
-      if (closeTimeoutRef.current) {
-        clearTimeout(closeTimeoutRef.current);
-      }
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
     };
   }, []);
 
-  // Quando mouse entra em um menu, abre ele (fecha outros)
+  // Quando mouse entra em um menu - TRANSIÇÃO SUAVE
   const handleMenuEnter = (menuId: string) => {
-    // Cancelar qualquer fechamento pendente
+    // Cancelar fechamentos pendentes
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
-    // Abrir o novo menu
-    setExpandedMenus([menuId]);
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
+    }
+
+    // Se já está no menu, não faz nada
+    if (expandedMenus.includes(menuId) && expandedMenus.length === 1) {
+      return;
+    }
+
+    // PRIMEIRO: Adiciona o novo menu (ambos ficam abertos)
+    setExpandedMenus(prev => {
+      if (prev.includes(menuId)) return prev;
+      return [...prev, menuId];
+    });
+
+    // DEPOIS de 150ms: Remove o menu anterior (só o novo fica)
+    transitionTimeoutRef.current = setTimeout(() => {
+      setExpandedMenus([menuId]);
+    }, 150);
   };
 
-  // Quando mouse sai do NAV inteiro, fecha tudo com delay
+  // Quando mouse sai do NAV inteiro
   const handleNavLeave = () => {
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
+    }
     closeTimeoutRef.current = setTimeout(() => {
       setExpandedMenus([]);
-    }, 200);
+    }, 300);
   };
 
-  // Quando mouse entra no NAV, cancela fechamento pendente
+  // Quando mouse entra no NAV
   const handleNavEnter = () => {
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
@@ -242,6 +264,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   // Toggle por clique
   const toggleMenu = (menuId: string) => {
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
+    }
     setExpandedMenus((prev) => 
       prev.includes(menuId) ? [] : [menuId]
     );
@@ -386,7 +412,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </NavLink>
         </div>
 
-        {/* Menu - onMouseLeave aqui no NAV */}
+        {/* Menu */}
         <nav 
           className="flex-1 px-3 py-4 space-y-1 overflow-y-auto"
           onMouseLeave={handleNavLeave}
