@@ -9,7 +9,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
 // Estilo neon para ícones
-const neonIconClass = "w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]";
+const neonIconClass = "w-5 h-5 text-red-500 drop-shadow-[0_0_1px_#ef4444] drop-shadow-[0_0_3px_#ef4444] drop-shadow-[0_0_5px_#ef4444]";
 
 // Ícones SVG inline
 const Icons = {
@@ -364,3 +364,4 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 }
 
 export default Sidebar;
+
