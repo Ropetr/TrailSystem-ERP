@@ -7,7 +7,7 @@ import type { LoginRequest, LoginResponse, Usuario } from "@/types";
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await api.post<LoginResponse>("/v1/auth/login", credentials);
+    const response = await api.post<LoginResponse>("/auth/login", credentials);
     
     if (response.success && response.token) {
       api.setToken(response.token);
@@ -21,7 +21,7 @@ export const authService = {
 
   async logout(): Promise<void> {
     try {
-      await api.post("/v1/auth/logout");
+      await api.post("/auth/logout");
     } catch {
       // Ignorar erro de logout
     } finally {
@@ -33,7 +33,7 @@ export const authService = {
 
   async me(): Promise<Usuario | null> {
     try {
-      const response = await api.get<{ success: boolean; usuario: Usuario }>("/v1/auth/me");
+      const response = await api.get<{ success: boolean; usuario: Usuario }>("/auth/me");
       return response.usuario;
     } catch {
       return null;
@@ -41,7 +41,7 @@ export const authService = {
   },
 
   async alterarSenha(senhaAtual: string, novaSenha: string): Promise<boolean> {
-    const response = await api.post<{ success: boolean }>("/v1/auth/alterar-senha", {
+    const response = await api.post<{ success: boolean }>("/auth/alterar-senha", {
       senhaAtual,
       novaSenha,
     });
@@ -59,4 +59,5 @@ export const authService = {
 };
 
 export default authService;
+
 
