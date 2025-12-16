@@ -1,6 +1,7 @@
 // =============================================
 // PLANAC ERP - API Entry Point
 // Cloudflare Workers com Hono
+// Atualizado: 16/12/2025 - Adicao de rotas migradas
 // =============================================
 
 import { Hono } from 'hono';
@@ -8,8 +9,19 @@ import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { logger } from 'hono/logger';
 
-// Routes
+// Routes - Core
 import auth from './routes/auth';
+import usuarios from './routes/usuarios';
+import perfis from './routes/perfis';
+
+// Routes - Comercial
+import clientes from './routes/clientes';
+import fornecedores from './routes/fornecedores';
+import produtos from './routes/produtos';
+import orcamentos from './routes/orcamentos';
+import vendas from './routes/vendas';
+
+// Routes - Fiscal/Integracao
 import fiscal from './routes/fiscal';
 import ibpt from './routes/ibpt';
 import certificados from './routes/certificados';
@@ -28,7 +40,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 // ===== MIDDLEWARES =====
 
-// CORS - Permitir origens necessárias
+// CORS - Permitir origens necessarias
 app.use('*', cors({
   origin: [
     'http://localhost:3000',
@@ -60,17 +72,34 @@ app.use('*', async (c, next) => {
 app.get('/health', (c) => {
   return c.json({
     status: 'healthy',
-    version: '1.0.0',
+    version: '2.0.0',
     timestamp: new Date().toISOString(),
     environment: c.env.ENVIRONMENT || 'development',
+    routes: {
+      core: ['/v1/auth', '/v1/usuarios', '/v1/perfis'],
+      comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas'],
+      fiscal: ['/v1/fiscal', '/v1/ibpt', '/v1/certificados'],
+      config: ['/v1/empresas-config', '/v1/jobs']
+    }
   });
 });
 
 // Auth (sem prefixo v1 para compatibilidade com frontend)
 app.route('/api/auth', auth);
 
-// API v1
+// ===== API v1 - Core =====
 app.route('/v1/auth', auth);
+app.route('/v1/usuarios', usuarios);
+app.route('/v1/perfis', perfis);
+
+// ===== API v1 - Comercial =====
+app.route('/v1/clientes', clientes);
+app.route('/v1/fornecedores', fornecedores);
+app.route('/v1/produtos', produtos);
+app.route('/v1/orcamentos', orcamentos);
+app.route('/v1/vendas', vendas);
+
+// ===== API v1 - Fiscal/Integracao =====
 app.route('/v1/fiscal', fiscal);
 app.route('/v1/ibpt', ibpt);
 app.route('/v1/certificados', certificados);
@@ -81,10 +110,17 @@ app.route('/v1/jobs', jobs);
 app.get('/', (c) => {
   return c.json({
     name: 'PLANAC ERP API',
-    version: '1.0.0',
+    version: '2.0.0',
+    description: 'API do sistema ERP PLANAC',
     docs: '/v1/docs',
     health: '/health',
     auth: '/api/auth/login',
+    modules: {
+      core: 'Usuarios, Perfis, Autenticacao',
+      comercial: 'Clientes, Fornecedores, Produtos, Orcamentos, Vendas',
+      fiscal: 'NF-e, NFC-e, NFS-e, CT-e, MDF-e, IBPT',
+      config: 'Empresas, Certificados, Jobs'
+    }
   });
 });
 
@@ -93,6 +129,22 @@ app.notFound((c) => {
   return c.json({
     error: 'Not Found',
     message: `Route ${c.req.method} ${c.req.path} not found`,
+    available_routes: [
+      '/health',
+      '/api/auth/*',
+      '/v1/usuarios',
+      '/v1/perfis',
+      '/v1/clientes',
+      '/v1/fornecedores',
+      '/v1/produtos',
+      '/v1/orcamentos',
+      '/v1/vendas',
+      '/v1/fiscal/*',
+      '/v1/ibpt/*',
+      '/v1/certificados/*',
+      '/v1/empresas-config/*',
+      '/v1/jobs/*'
+    ]
   }, 404);
 });
 
