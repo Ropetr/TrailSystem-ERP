@@ -12,7 +12,7 @@ const getApiUrl = () => {
   
   // Em produção (Cloudflare Pages), usa a URL do worker
   if (typeof window !== "undefined" && window.location.hostname.includes("pages.dev")) {
-    return "https://planac-erp-api.planacacabamentos.workers.dev";
+    return "https://planac-erp-api.planacacabamentos.workers.dev/v1";
   }
   
   // Desenvolvimento local - usa proxy
@@ -117,4 +117,5 @@ class ApiClient {
 
 export const api = new ApiClient(API_URL);
 export default api;
+
 
