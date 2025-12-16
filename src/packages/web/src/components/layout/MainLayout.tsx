@@ -4,11 +4,14 @@
 // =============================================
 
 import React, { useState } from "react";
-import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 
-export function MainLayout() {
+interface MainLayoutProps {
+  children?: React.ReactNode;
+}
+
+export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -19,7 +22,7 @@ export function MainLayout() {
         <Header onMenuClick={() => setSidebarOpen(true)} />
 
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>
@@ -27,4 +30,3 @@ export function MainLayout() {
 }
 
 export default MainLayout;
-
