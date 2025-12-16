@@ -1,7 +1,7 @@
 // =============================================
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
-// Ajustado: 16/12/2025 - Transição suave (menus sobrepõem durante transição)
+// Ajustado: 16/12/2025 - Abre no hover, fecha só no clique
 // =============================================
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -197,8 +197,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const categoryRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
-  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   cadastroCategorias.forEach(cat => {
     if (!categoryRefs.current[cat.id]) {
@@ -206,70 +204,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   });
 
-  // Limpar timeouts ao desmontar
-  useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
-    };
-  }, []);
-
-  // Quando mouse entra em um menu - TRANSIÇÃO SUAVE
-  const handleMenuEnter = (menuId: string) => {
-    // Cancelar fechamentos pendentes
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = null;
-    }
-
-    // Se já está no menu, não faz nada
-    if (expandedMenus.includes(menuId) && expandedMenus.length === 1) {
-      return;
-    }
-
-    // PRIMEIRO: Adiciona o novo menu (ambos ficam abertos)
-    setExpandedMenus(prev => {
-      if (prev.includes(menuId)) return prev;
-      return [...prev, menuId];
-    });
-
-    // DEPOIS de 150ms: Remove o menu anterior (só o novo fica)
-    transitionTimeoutRef.current = setTimeout(() => {
-      setExpandedMenus([menuId]);
-    }, 150);
-  };
-
-  // Quando mouse sai do NAV inteiro
-  const handleNavLeave = () => {
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = null;
-    }
-    closeTimeoutRef.current = setTimeout(() => {
-      setExpandedMenus([]);
-    }, 300);
-  };
-
-  // Quando mouse entra no NAV
-  const handleNavEnter = () => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
+  // HOVER: Apenas ADICIONA o menu (não remove nenhum)
+  const handleMenuHover = (menuId: string) => {
+    if (!expandedMenus.includes(menuId)) {
+      setExpandedMenus(prev => [...prev, menuId]);
     }
   };
 
-  // Toggle por clique
+  // CLIQUE: Toggle - fecha se estiver aberto
   const toggleMenu = (menuId: string) => {
-    if (transitionTimeoutRef.current) {
-      clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = null;
-    }
     setExpandedMenus((prev) => 
-      prev.includes(menuId) ? [] : [menuId]
+      prev.includes(menuId) 
+        ? prev.filter(id => id !== menuId)  // Remove só este
+        : [...prev, menuId]                  // Adiciona
     );
   };
 
@@ -317,7 +264,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const isExpanded = expandedMenus.includes('cadastros');
 
     return (
-      <div onMouseEnter={() => handleMenuEnter('cadastros')}>
+      <div onMouseEnter={() => handleMenuHover('cadastros')}>
         <button
           onClick={() => toggleMenu('cadastros')}
           className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
@@ -359,7 +306,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const isExpanded = expandedMenus.includes(item.id);
 
     return (
-      <div key={item.id} onMouseEnter={() => handleMenuEnter(item.id)}>
+      <div key={item.id} onMouseEnter={() => handleMenuHover(item.id)}>
         <button
           onClick={() => toggleMenu(item.id)}
           className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
@@ -413,11 +360,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         {/* Menu */}
-        <nav 
-          className="flex-1 px-3 py-4 space-y-1 overflow-y-auto"
-          onMouseLeave={handleNavLeave}
-          onMouseEnter={handleNavEnter}
-        >
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {renderMenuItem(menuItems[0])}
           {renderCadastrosMenu()}
           {menuItems.slice(1).map(renderMenuItem)}
