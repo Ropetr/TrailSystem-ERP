@@ -1,18 +1,19 @@
 // =============================================
-// PLANAC ERP - Sidebar com Flyout Hover
-// Atualizado: 16/12/2025
-// - Menus fechados no login
-// - Submenus com flyout hover para a direita
+// PLANAC ERP - Sidebar com Módulo CADASTROS
+// Aprovado: 15/12/2025 - 57 Especialistas DEV.com
+// Ajustado: 16/12/2025 - Menus fechados + Flyout hover
 // =============================================
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 
 // Ícones SVG inline
 const Icons = {
   home: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   database: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
   users: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+  building: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   shoppingCart: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
   cube: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   document: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
@@ -30,84 +31,44 @@ const Icons = {
   chevronRight: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>,
 };
 
-// Estrutura de Categorias para Cadastros (com flyout)
-interface CategoryItem {
-  id: string;
-  label: string;
-  items: { label: string; path: string }[];
-}
-
-const cadastroCategories: CategoryItem[] = [
-  {
-    id: 'entidades',
-    label: 'Entidades',
-    items: [
-      { label: 'Clientes', path: '/cadastros/clientes' },
-      { label: 'Fornecedores', path: '/cadastros/fornecedores' },
-      { label: 'Transportadoras', path: '/cadastros/transportadoras' },
-      { label: 'Colaboradores', path: '/cadastros/colaboradores' },
-      { label: 'Parceiros de Negócio', path: '/cadastros/parceiros' },
-    ],
-  },
-  {
-    id: 'produtos',
-    label: 'Produtos',
-    items: [
-      { label: 'Produtos e Serviços', path: '/cadastros/produtos' },
-    ],
-  },
-  {
-    id: 'empresa',
-    label: 'Empresa',
-    items: [
-      { label: 'Matriz & Filiais', path: '/cadastros/empresas' },
-    ],
-  },
-  {
-    id: 'financeiro',
-    label: 'Financeiro',
-    items: [
-      { label: 'Contas Bancárias', path: '/cadastros/contas-bancarias' },
-      { label: 'Plano de Contas', path: '/cadastros/plano-contas' },
-      { label: 'Centros de Custo', path: '/cadastros/centros-custo' },
-      { label: 'Condições de Pagamento', path: '/cadastros/condicoes-pagamento' },
-    ],
-  },
-  {
-    id: 'comercial',
-    label: 'Comercial',
-    items: [
-      { label: 'Tabelas de Preço', path: '/cadastros/tabelas-preco' },
-    ],
-  },
-  {
-    id: 'patrimonio',
-    label: 'Patrimônio',
-    items: [
-      { label: 'Veículos', path: '/cadastros/veiculos' },
-      { label: 'Bens', path: '/cadastros/bens' },
-    ],
-  },
-  {
-    id: 'acessos',
-    label: 'Acessos',
-    items: [
-      { label: 'Usuários', path: '/cadastros/usuarios' },
-      { label: 'Perfis de Usuários', path: '/cadastros/perfis' },
-    ],
-  },
+// Categorias do módulo Cadastros
+const cadastroCategorias = [
+  { id: 'entidades', label: 'Entidades', items: [
+    { label: 'Clientes', path: '/cadastros/clientes' },
+    { label: 'Fornecedores', path: '/cadastros/fornecedores' },
+    { label: 'Transportadoras', path: '/cadastros/transportadoras' },
+    { label: 'Colaboradores', path: '/cadastros/colaboradores' },
+    { label: 'Parceiros de Negócio', path: '/cadastros/parceiros' },
+  ]},
+  { id: 'produtos', label: 'Produtos', items: [
+    { label: 'Produtos e Serviços', path: '/cadastros/produtos' },
+  ]},
+  { id: 'empresa', label: 'Empresa', items: [
+    { label: 'Matriz & Filiais', path: '/cadastros/empresas' },
+  ]},
+  { id: 'financeiro', label: 'Financeiro', items: [
+    { label: 'Contas Bancárias', path: '/cadastros/contas-bancarias' },
+    { label: 'Plano de Contas', path: '/cadastros/plano-contas' },
+    { label: 'Centros de Custo', path: '/cadastros/centros-custo' },
+    { label: 'Condições de Pagamento', path: '/cadastros/condicoes-pagamento' },
+  ]},
+  { id: 'comercial', label: 'Comercial', items: [
+    { label: 'Tabelas de Preço', path: '/cadastros/tabelas-preco' },
+  ]},
+  { id: 'patrimonio', label: 'Patrimônio', items: [
+    { label: 'Veículos', path: '/cadastros/veiculos' },
+    { label: 'Bens', path: '/cadastros/bens' },
+  ]},
+  { id: 'acessos', label: 'Acessos', items: [
+    { label: 'Usuários', path: '/cadastros/usuarios' },
+    { label: 'Perfis de Usuários', path: '/cadastros/perfis' },
+  ]},
 ];
 
-// Menus simples (sem subcategorias)
-interface SimpleMenuItem {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  path?: string;
-  children?: { label: string; path: string }[];
-}
+interface SubMenuItem { label: string; path: string; }
+interface MenuItem { id: string; label: string; icon: React.ReactNode; path?: string; children?: SubMenuItem[]; }
 
-const simpleMenuItems: SimpleMenuItem[] = [
+const menuItems: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: Icons.home, path: '/dashboard' },
   { id: 'comercial', label: 'Comercial', icon: Icons.shoppingCart, children: [
     { label: 'Orçamentos', path: '/comercial/orcamentos' },
@@ -191,180 +152,217 @@ const simpleMenuItems: SimpleMenuItem[] = [
   ]},
 ];
 
-interface SidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
+// Componente Flyout com Portal (renderiza fora do sidebar)
+function FlyoutPortal({ children, targetRef, isVisible }: { 
+  children: React.ReactNode; 
+  targetRef: React.RefObject<HTMLDivElement>; 
+  isVisible: boolean;
+}) {
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (targetRef.current && isVisible) {
+      const rect = targetRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.top,
+        left: rect.right + 4,
+      });
+    }
+  }, [isVisible, targetRef]);
+
+  if (!isVisible) return null;
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: position.top,
+        left: position.left,
+        zIndex: 99999,
+      }}
+      className="bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-[#3a3a3c] rounded-lg shadow-xl py-1 min-w-48"
+    >
+      {children}
+    </div>,
+    document.body
+  );
 }
+
+interface SidebarProps { isOpen: boolean; onClose: () => void; }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  // CORREÇÃO 1: Menus fechados no login (arrays vazios)
+  // CORREÇÃO 1: Menus fechados no login
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const categoryRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
+
+  // Criar refs para cada categoria
+  cadastroCategorias.forEach(cat => {
+    if (!categoryRefs.current[cat.id]) {
+      categoryRefs.current[cat.id] = React.createRef<HTMLDivElement>();
+    }
+  });
 
   const toggleMenu = (menuId: string) => {
-    setExpandedMenus((prev) =>
-      prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]
+    setExpandedMenus((prev) => prev.includes(menuId) ? prev.filter((id) => id !== menuId) : [...prev, menuId]);
+  };
+
+  const isMenuActive = (item: MenuItem) => {
+    if (item.path) return location.pathname === item.path;
+    if (item.children) return item.children.some((child) => location.pathname.startsWith(child.path));
+    return false;
+  };
+
+  const isCadastrosActive = () => {
+    return cadastroCategorias.some(cat => 
+      cat.items.some(item => location.pathname.startsWith(item.path))
     );
   };
 
-  const isPathActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
-
-  // Componente de item de submenu com flyout hover
-  const CategoryWithFlyout = ({ category }: { category: CategoryItem }) => {
-    const isHovered = hoveredCategory === category.id;
-    const hasActiveItem = category.items.some((item) => isPathActive(item.path));
+  // Renderizar categoria com flyout
+  const renderCategoriaComFlyout = (categoria: typeof cadastroCategorias[0]) => {
+    const isHovered = hoveredCategory === categoria.id;
+    const hasActiveItem = categoria.items.some(item => location.pathname.startsWith(item.path));
+    const ref = categoryRefs.current[categoria.id];
 
     return (
       <div
-        className="relative"
-        onMouseEnter={() => setHoveredCategory(category.id)}
+        key={categoria.id}
+        ref={ref}
+        onMouseEnter={() => setHoveredCategory(categoria.id)}
         onMouseLeave={() => setHoveredCategory(null)}
+        className="relative"
       >
-        {/* Categoria com seta para direita */}
         <div
-          className={`flex items-center justify-between px-3 py-2 ml-3 rounded-lg cursor-pointer transition-colors ${
+          className={`flex items-center justify-between px-3 py-1.5 ml-3 rounded-lg text-sm cursor-pointer transition-colors ${
             hasActiveItem
-              ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-              : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+              ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
+              : 'text-gray-600 dark:text-[#8e8e93] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          <span className="text-sm font-medium">{category.label}</span>
+          <span>{categoria.label}</span>
           <span className="text-gray-400">{Icons.chevronRight}</span>
         </div>
 
-        {/* Flyout Box - aparece à direita no hover */}
-        {isHovered && (
-          <div
-            className="absolute left-full top-0 ml-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-2 min-w-48 z-[9999]"
-            style={{ marginTop: '-4px' }}
-          >
-            {category.items.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `block px-4 py-2 text-sm transition-colors ${
-                    isActive
-                      ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                  }`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </div>
-        )}
+        <FlyoutPortal targetRef={ref} isVisible={isHovered}>
+          {categoria.items.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={() => {
+                setHoveredCategory(null);
+                onClose();
+              }}
+              className={({ isActive }) =>
+                `block px-4 py-2 text-sm transition-colors ${
+                  isActive
+                    ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
+                    : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </FlyoutPortal>
       </div>
     );
   };
 
-  // Renderizar menu Cadastros (especial, com flyout)
+  // Renderizar menu Cadastros
   const renderCadastrosMenu = () => {
     const isExpanded = expandedMenus.includes('cadastros');
-    const hasActiveChild = cadastroCategories.some((cat) =>
-      cat.items.some((item) => isPathActive(item.path))
-    );
+    const isActive = isCadastrosActive();
 
     return (
-      <div key="cadastros">
+      <div>
         <button
           onClick={() => toggleMenu('cadastros')}
-          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
-            hasActiveChild
-              ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 group ${
+            isActive
+              ? 'bg-red-500/10 text-red-500 dark:text-red-400'
+              : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
           }`}
         >
           <div className="flex items-center gap-3">
-            <span className={hasActiveChild ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}>
+            <span className={isActive ? 'text-red-500' : 'text-gray-500 dark:text-[#8e8e93]'}>
               {Icons.database}
             </span>
             <span className="font-medium">Cadastros</span>
           </div>
-          <span
-            className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-          >
+          <span className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
             {Icons.chevronDown}
           </span>
         </button>
 
-        {/* Subcategorias com flyout */}
         {isExpanded && (
-          <div className="mt-1 space-y-1">
-            {cadastroCategories.map((category) => (
-              <CategoryWithFlyout key={category.id} category={category} />
-            ))}
+          <div className="mt-1 space-y-0.5">
+            {cadastroCategorias.map(renderCategoriaComFlyout)}
           </div>
         )}
       </div>
     );
   };
 
-  // Renderizar menus simples
-  const renderSimpleMenu = (menu: SimpleMenuItem) => {
-    // Menu sem filhos (Dashboard)
-    if (!menu.children) {
+  // Renderizar menu padrão
+  const renderMenuItem = (item: MenuItem) => {
+    if (item.path) {
       return (
         <NavLink
-          key={menu.id}
-          to={menu.path!}
+          key={item.id}
+          to={item.path}
           onClick={onClose}
           className={({ isActive }) =>
-            `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+            `flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 ${
               isActive
-                ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                ? 'bg-red-500/10 text-red-500 dark:text-red-400'
+                : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
             }`
           }
         >
-          <span className="text-gray-500 dark:text-gray-400">{menu.icon}</span>
-          <span className="font-medium">{menu.label}</span>
+          <span className="text-gray-500 dark:text-[#8e8e93]">{item.icon}</span>
+          <span className="font-medium">{item.label}</span>
         </NavLink>
       );
     }
 
-    // Menu com filhos
-    const isExpanded = expandedMenus.includes(menu.id);
-    const hasActiveChild = menu.children.some((child) => isPathActive(child.path));
+    const isExpanded = expandedMenus.includes(item.id);
+    const isActive = isMenuActive(item);
 
     return (
-      <div key={menu.id}>
+      <div key={item.id}>
         <button
-          onClick={() => toggleMenu(menu.id)}
-          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
-            hasActiveChild
-              ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-              : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+          onClick={() => toggleMenu(item.id)}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 group ${
+            isActive
+              ? 'bg-red-500/10 text-red-500 dark:text-red-400'
+              : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
           }`}
         >
           <div className="flex items-center gap-3">
-            <span className={hasActiveChild ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}>
-              {menu.icon}
+            <span className={isActive ? 'text-red-500' : 'text-gray-500 dark:text-[#8e8e93]'}>
+              {item.icon}
             </span>
-            <span className="font-medium">{menu.label}</span>
+            <span className="font-medium">{item.label}</span>
           </div>
-          <span
-            className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-          >
+          <span className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
             {Icons.chevronDown}
           </span>
         </button>
 
-        {isExpanded && (
-          <div className="mt-1 ml-3 space-y-1">
-            {menu.children.map((child) => (
+        {isExpanded && item.children && (
+          <div className="mt-1 ml-3 space-y-0.5">
+            {item.children.map((child) => (
               <NavLink
                 key={child.path}
                 to={child.path}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `block px-3 py-2 rounded-lg text-sm transition-colors ${
+                  `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
                     isActive
-                      ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                      ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
+                      : 'text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white'
                   }`
                 }
               >
@@ -379,45 +377,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Overlay mobile */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onClose} />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-black border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-black border-r border-gray-200 dark:border-[#2c2c2e] transform transition-transform duration-300 ease-in-out flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-800">
+        <div className="h-16 flex items-center px-4 border-b border-gray-200 dark:border-[#2c2c2e]">
           <NavLink to="/dashboard" className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center">
+            <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
               <span className="text-white font-bold text-lg">P</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">PLANAC</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">PLANAC</span>
           </NavLink>
         </div>
 
         {/* Menu */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto h-[calc(100vh-8rem)]">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {/* Dashboard */}
-          {renderSimpleMenu(simpleMenuItems[0])}
-
+          {renderMenuItem(menuItems[0])}
+          
           {/* Cadastros (especial com flyout) */}
           {renderCadastrosMenu()}
-
+          
           {/* Demais menus */}
-          {simpleMenuItems.slice(1).map((menu) => renderSimpleMenu(menu))}
+          {menuItems.slice(1).map(renderMenuItem)}
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-          <p className="text-xs text-gray-400 dark:text-gray-600">PLANAC ERP v1.0.0</p>
+        <div className="p-4 border-t border-gray-200 dark:border-[#2c2c2e]">
+          <p className="text-xs text-gray-400 dark:text-[#636366]">PLANAC ERP v1.0.0</p>
         </div>
       </aside>
     </>
@@ -425,4 +418,3 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 }
 
 export default Sidebar;
-
