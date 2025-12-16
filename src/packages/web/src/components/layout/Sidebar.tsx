@@ -1,7 +1,7 @@
 // =============================================
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
-// Ajustado: 16/12/2025 - Menus hover com delay para fechar
+// Ajustado: 16/12/2025 - Hover no nav container (sem salto)
 // =============================================
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -214,7 +214,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     };
   }, []);
 
-  // Expandir menu imediatamente ao hover
+  // Quando mouse entra em um menu, abre ele (fecha outros)
   const handleMenuEnter = (menuId: string) => {
     // Cancelar qualquer fechamento pendente
     if (closeTimeoutRef.current) {
@@ -225,20 +225,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     setExpandedMenus([menuId]);
   };
 
-  // Fechar menu com delay ao sair
-  const handleMenuLeave = () => {
-    // Aguardar 200ms antes de fechar
+  // Quando mouse sai do NAV inteiro, fecha tudo com delay
+  const handleNavLeave = () => {
     closeTimeoutRef.current = setTimeout(() => {
       setExpandedMenus([]);
     }, 200);
   };
 
-  // Toggle por clique (fecha se já estiver aberto)
-  const toggleMenu = (menuId: string) => {
+  // Quando mouse entra no NAV, cancela fechamento pendente
+  const handleNavEnter = () => {
     if (closeTimeoutRef.current) {
       clearTimeout(closeTimeoutRef.current);
       closeTimeoutRef.current = null;
     }
+  };
+
+  // Toggle por clique
+  const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) => 
       prev.includes(menuId) ? [] : [menuId]
     );
@@ -288,10 +291,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const isExpanded = expandedMenus.includes('cadastros');
 
     return (
-      <div
-        onMouseEnter={() => handleMenuEnter('cadastros')}
-        onMouseLeave={handleMenuLeave}
-      >
+      <div onMouseEnter={() => handleMenuEnter('cadastros')}>
         <button
           onClick={() => toggleMenu('cadastros')}
           className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
@@ -333,11 +333,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const isExpanded = expandedMenus.includes(item.id);
 
     return (
-      <div 
-        key={item.id}
-        onMouseEnter={() => handleMenuEnter(item.id)}
-        onMouseLeave={handleMenuLeave}
-      >
+      <div key={item.id} onMouseEnter={() => handleMenuEnter(item.id)}>
         <button
           onClick={() => toggleMenu(item.id)}
           className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
@@ -390,8 +386,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </NavLink>
         </div>
 
-        {/* Menu */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {/* Menu - onMouseLeave aqui no NAV */}
+        <nav 
+          className="flex-1 px-3 py-4 space-y-1 overflow-y-auto"
+          onMouseLeave={handleNavLeave}
+          onMouseEnter={handleNavEnter}
+        >
           {renderMenuItem(menuItems[0])}
           {renderCadastrosMenu()}
           {menuItems.slice(1).map(renderMenuItem)}
