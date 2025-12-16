@@ -1,7 +1,7 @@
 // =============================================
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
-// Ajustado: 16/12/2025 - Menus abrem no hover
+// Ajustado: 16/12/2025 - Menus hover com delay para fechar
 // =============================================
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -197,6 +197,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const categoryRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   cadastroCategorias.forEach(cat => {
     if (!categoryRefs.current[cat.id]) {
@@ -204,15 +205,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   });
 
-  // Expandir menu (por clique ou hover)
-  const expandMenu = (menuId: string) => {
-    if (!expandedMenus.includes(menuId)) {
-      setExpandedMenus([menuId]); // Só um menu aberto por vez
+  // Limpar timeout ao desmontar
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Expandir menu imediatamente ao hover
+  const handleMenuEnter = (menuId: string) => {
+    // Cancelar qualquer fechamento pendente
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
     }
+    // Abrir o novo menu
+    setExpandedMenus([menuId]);
+  };
+
+  // Fechar menu com delay ao sair
+  const handleMenuLeave = () => {
+    // Aguardar 200ms antes de fechar
+    closeTimeoutRef.current = setTimeout(() => {
+      setExpandedMenus([]);
+    }, 200);
   };
 
   // Toggle por clique (fecha se já estiver aberto)
   const toggleMenu = (menuId: string) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
     setExpandedMenus((prev) => 
       prev.includes(menuId) ? [] : [menuId]
     );
@@ -263,7 +289,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     return (
       <div
-        onMouseEnter={() => expandMenu('cadastros')}
+        onMouseEnter={() => handleMenuEnter('cadastros')}
+        onMouseLeave={handleMenuLeave}
       >
         <button
           onClick={() => toggleMenu('cadastros')}
@@ -308,7 +335,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     return (
       <div 
         key={item.id}
-        onMouseEnter={() => expandMenu(item.id)}
+        onMouseEnter={() => handleMenuEnter(item.id)}
+        onMouseLeave={handleMenuLeave}
       >
         <button
           onClick={() => toggleMenu(item.id)}
