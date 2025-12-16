@@ -236,7 +236,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Flyout Box - aparece à direita no hover */}
         {isHovered && (
           <div
-            className="absolute left-full top-0 ml-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-2 min-w-48 z-50"
+            className="absolute left-full top-0 ml-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-2 min-w-48 z-[9999]"
             style={{ marginTop: '-4px' }}
           >
             {category.items.map((item) => (
@@ -425,3 +425,4 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 }
 
 export default Sidebar;
+
