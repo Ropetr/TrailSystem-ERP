@@ -1,7 +1,7 @@
 // =============================================
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
-// Ajustado: 16/12/2025 - Hover abre, sair do sidebar fecha (exceto flyout)
+// Ajustado: 16/12/2025 - Flyout alinhado com item selecionado
 // =============================================
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -154,7 +154,7 @@ const menuItems: MenuItem[] = [
   ]},
 ];
 
-// Componente Flyout com Portal
+// Componente Flyout com Portal - ALINHADO com o item
 function FlyoutPortal({ children, targetRef, isVisible, onMouseEnter, onMouseLeave }: { 
   children: React.ReactNode; 
   targetRef: React.RefObject<HTMLDivElement>; 
@@ -168,7 +168,8 @@ function FlyoutPortal({ children, targetRef, isVisible, onMouseEnter, onMouseLea
     if (targetRef.current && isVisible) {
       const rect = targetRef.current.getBoundingClientRect();
       setPosition({
-        top: rect.top,
+        // Alinha o TOPO do flyout com o TOPO do item (menos o padding do py-1)
+        top: rect.top - 4,
         left: rect.right + 4,
       });
     }
@@ -227,10 +228,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   // Sair do sidebar - fecha tudo (exceto se estiver no flyout)
   const handleSidebarLeave = () => {
-    // Se o mouse está indo para o flyout, não fecha
     if (isInFlyout || hoveredCategory) return;
     
-    // Pequeno delay para verificar se foi pro flyout
     setTimeout(() => {
       if (!isInFlyout) {
         setExpandedMenus([]);
@@ -256,7 +255,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         ref={ref}
         onMouseEnter={() => setHoveredCategory(categoria.id)}
         onMouseLeave={() => {
-          // Não limpa imediatamente - deixa o flyout decidir
           setTimeout(() => {
             if (!isInFlyout) {
               setHoveredCategory(null);
