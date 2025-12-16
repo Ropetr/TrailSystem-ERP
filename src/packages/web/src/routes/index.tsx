@@ -1,9 +1,9 @@
 // =============================================
 // PLANAC ERP - Routes Completas
-// Todos os módulos do sistema
+// Atualizado: 15/12/2025 - Rotas alinhadas com Sidebar
 // =============================================
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/stores/auth.store';
 
@@ -140,13 +140,13 @@ function PageLoading() {
 function EmDesenvolvimento({ titulo }: { titulo: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-64 text-center">
-      <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
-        <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mb-4">
+        <svg className="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       </div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-2">{titulo}</h2>
-      <p className="text-gray-500">Esta funcionalidade está em desenvolvimento.</p>
+      <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">{titulo}</h2>
+      <p className="text-gray-500 dark:text-gray-400">Esta funcionalidade está em desenvolvimento.</p>
     </div>
   );
 }
@@ -208,33 +208,92 @@ export function AppRoutes() {
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
 
+                  {/* ========================================== */}
+                  {/* CADASTROS - Módulo Central de Dados Base   */}
+                  {/* ========================================== */}
+                  
+                  {/* --- Entidades --- */}
+                  <Route path="/cadastros/clientes" element={<ClientesPage />} />
+                  <Route path="/cadastros/clientes/novo" element={<ClienteFormPage />} />
+                  <Route path="/cadastros/clientes/:id" element={<ClienteFormPage />} />
+                  
+                  <Route path="/cadastros/fornecedores" element={<FornecedoresPage />} />
+                  <Route path="/cadastros/fornecedores/novo" element={<EmDesenvolvimento titulo="Novo Fornecedor" />} />
+                  <Route path="/cadastros/fornecedores/:id" element={<EmDesenvolvimento titulo="Editar Fornecedor" />} />
+                  
+                  <Route path="/cadastros/transportadoras" element={<EmDesenvolvimento titulo="Transportadoras" />} />
+                  <Route path="/cadastros/transportadoras/novo" element={<EmDesenvolvimento titulo="Nova Transportadora" />} />
+                  <Route path="/cadastros/transportadoras/:id" element={<EmDesenvolvimento titulo="Editar Transportadora" />} />
+                  
+                  <Route path="/cadastros/colaboradores" element={<FuncionariosPage />} />
+                  <Route path="/cadastros/colaboradores/novo" element={<EmDesenvolvimento titulo="Novo Colaborador" />} />
+                  <Route path="/cadastros/colaboradores/:id" element={<EmDesenvolvimento titulo="Editar Colaborador" />} />
+                  
+                  <Route path="/cadastros/parceiros" element={<EmDesenvolvimento titulo="Parceiros de Negócio" />} />
+                  <Route path="/cadastros/parceiros/novo" element={<EmDesenvolvimento titulo="Novo Parceiro" />} />
+                  <Route path="/cadastros/parceiros/:id" element={<EmDesenvolvimento titulo="Editar Parceiro" />} />
+
+                  {/* --- Produtos --- */}
+                  <Route path="/cadastros/produtos" element={<ProdutosPage />} />
+                  <Route path="/cadastros/produtos/novo" element={<ProdutoFormPage />} />
+                  <Route path="/cadastros/produtos/:id" element={<ProdutoFormPage />} />
+
+                  {/* --- Empresa --- */}
+                  <Route path="/cadastros/empresas" element={<EmpresasPage />} />
+                  <Route path="/cadastros/empresas/novo" element={<EmpresaFormPage />} />
+                  <Route path="/cadastros/empresas/:id" element={<EmpresaFormPage />} />
+
+                  {/* --- Financeiro (Cadastros) --- */}
+                  <Route path="/cadastros/contas-bancarias" element={<EmDesenvolvimento titulo="Contas Bancárias" />} />
+                  <Route path="/cadastros/contas-bancarias/novo" element={<EmDesenvolvimento titulo="Nova Conta Bancária" />} />
+                  <Route path="/cadastros/contas-bancarias/:id" element={<EmDesenvolvimento titulo="Editar Conta Bancária" />} />
+                  
+                  <Route path="/cadastros/plano-contas" element={<PlanoContasPage />} />
+                  
+                  <Route path="/cadastros/centros-custo" element={<EmDesenvolvimento titulo="Centros de Custo" />} />
+                  <Route path="/cadastros/centros-custo/novo" element={<EmDesenvolvimento titulo="Novo Centro de Custo" />} />
+                  <Route path="/cadastros/centros-custo/:id" element={<EmDesenvolvimento titulo="Editar Centro de Custo" />} />
+                  
+                  <Route path="/cadastros/condicoes-pagamento" element={<EmDesenvolvimento titulo="Condições de Pagamento" />} />
+                  <Route path="/cadastros/condicoes-pagamento/novo" element={<EmDesenvolvimento titulo="Nova Condição" />} />
+                  <Route path="/cadastros/condicoes-pagamento/:id" element={<EmDesenvolvimento titulo="Editar Condição" />} />
+
+                  {/* --- Comercial (Cadastros) --- */}
+                  <Route path="/cadastros/tabelas-preco" element={<EmDesenvolvimento titulo="Tabelas de Preço" />} />
+                  <Route path="/cadastros/tabelas-preco/novo" element={<EmDesenvolvimento titulo="Nova Tabela" />} />
+                  <Route path="/cadastros/tabelas-preco/:id" element={<EmDesenvolvimento titulo="Editar Tabela" />} />
+
+                  {/* --- Patrimônio (Cadastros) --- */}
+                  <Route path="/cadastros/veiculos" element={<EmDesenvolvimento titulo="Veículos" />} />
+                  <Route path="/cadastros/veiculos/novo" element={<EmDesenvolvimento titulo="Novo Veículo" />} />
+                  <Route path="/cadastros/veiculos/:id" element={<EmDesenvolvimento titulo="Editar Veículo" />} />
+                  
+                  <Route path="/cadastros/bens" element={<AtivosPage />} />
+                  <Route path="/cadastros/bens/novo" element={<EmDesenvolvimento titulo="Novo Bem" />} />
+                  <Route path="/cadastros/bens/:id" element={<EmDesenvolvimento titulo="Editar Bem" />} />
+
+                  {/* --- Acessos (Cadastros) --- */}
+                  <Route path="/cadastros/usuarios" element={<UsuariosPage />} />
+                  <Route path="/cadastros/usuarios/novo" element={<UsuarioFormPage />} />
+                  <Route path="/cadastros/usuarios/:id" element={<UsuarioFormPage />} />
+                  
+                  <Route path="/cadastros/perfis" element={<PerfisPage />} />
+                  <Route path="/cadastros/perfis/novo" element={<EmDesenvolvimento titulo="Novo Perfil" />} />
+                  <Route path="/cadastros/perfis/:id" element={<EmDesenvolvimento titulo="Editar Perfil" />} />
+
                   {/* ========== COMERCIAL ========== */}
-                  {/* Clientes */}
-                  <Route path="/clientes" element={<ClientesPage />} />
-                  <Route path="/clientes/novo" element={<ClienteFormPage />} />
-                  <Route path="/clientes/:id" element={<ClienteFormPage />} />
-
-                  {/* Produtos */}
-                  <Route path="/produtos" element={<ProdutosPage />} />
-                  <Route path="/produtos/novo" element={<ProdutoFormPage />} />
-                  <Route path="/produtos/:id" element={<ProdutoFormPage />} />
-
-                  {/* Orçamentos */}
-                  <Route path="/orcamentos" element={<OrcamentosPage />} />
-                  <Route path="/orcamentos/novo" element={<OrcamentoFormPage />} />
-                  <Route path="/orcamentos/:id" element={<OrcamentoFormPage />} />
-
-                  {/* Vendas */}
-                  <Route path="/vendas" element={<VendasPage />} />
-                  <Route path="/vendas/novo" element={<VendaFormPage />} />
-                  <Route path="/vendas/:id" element={<VendaFormPage />} />
-
-                  {/* Tabelas de Preço */}
-                  <Route path="/tabelas-preco" element={<EmDesenvolvimento titulo="Tabelas de Preço" />} />
+                  <Route path="/comercial/orcamentos" element={<OrcamentosPage />} />
+                  <Route path="/comercial/orcamentos/novo" element={<OrcamentoFormPage />} />
+                  <Route path="/comercial/orcamentos/:id" element={<OrcamentoFormPage />} />
+                  
+                  <Route path="/comercial/vendas" element={<VendasPage />} />
+                  <Route path="/comercial/vendas/novo" element={<VendaFormPage />} />
+                  <Route path="/comercial/vendas/:id" element={<VendaFormPage />} />
 
                   {/* ========== ESTOQUE ========== */}
                   <Route path="/estoque/saldos" element={<SaldosPage />} />
                   <Route path="/estoque/movimentacoes" element={<MovimentacoesPage />} />
+                  <Route path="/estoque/movimentacoes/novo" element={<EmDesenvolvimento titulo="Nova Movimentação" />} />
                   <Route path="/estoque/transferencias" element={<TransferenciasPage />} />
                   <Route path="/estoque/inventario" element={<InventarioPage />} />
 
@@ -246,7 +305,6 @@ export function AppRoutes() {
                   <Route path="/fiscal/nfse" element={<EmDesenvolvimento titulo="NFS-e (Serviços)" />} />
                   <Route path="/fiscal/cte" element={<EmDesenvolvimento titulo="CT-e / MDF-e" />} />
                   <Route path="/fiscal/sped" element={<EmDesenvolvimento titulo="SPED Fiscal" />} />
-                  <Route path="/fiscal/configuracoes" element={<ConfigFiscalPage />} />
 
                   {/* ========== FINANCEIRO ========== */}
                   <Route path="/financeiro/receber" element={<ContasReceberPage />} />
@@ -254,10 +312,8 @@ export function AppRoutes() {
                   <Route path="/financeiro/fluxo-caixa" element={<FluxoCaixaPage />} />
                   <Route path="/financeiro/boletos" element={<BoletosPage />} />
                   <Route path="/financeiro/conciliacao" element={<ConciliacaoPage />} />
-                  <Route path="/financeiro/contas" element={<EmDesenvolvimento titulo="Contas Bancárias" />} />
 
                   {/* ========== COMPRAS ========== */}
-                  <Route path="/fornecedores" element={<FornecedoresPage />} />
                   <Route path="/compras/cotacoes" element={<CotacoesPage />} />
                   <Route path="/compras/pedidos" element={<PedidosCompraPage />} />
 
@@ -279,23 +335,19 @@ export function AppRoutes() {
                   <Route path="/ecommerce/pedidos" element={<PedidosOnlinePage />} />
                   <Route path="/ecommerce/banners" element={<EmDesenvolvimento titulo="Banners" />} />
                   <Route path="/ecommerce/cupons" element={<EmDesenvolvimento titulo="Cupons" />} />
-                  <Route path="/ecommerce/integracoes" element={<IntegracaoPage />} />
 
                   {/* ========== CONTÁBIL ========== */}
-                  <Route path="/contabil/plano-contas" element={<PlanoContasPage />} />
                   <Route path="/contabil/lancamentos" element={<LancamentosPage />} />
                   <Route path="/contabil/fechamento" element={<EmDesenvolvimento titulo="Fechamento Contábil" />} />
                   <Route path="/contabil/dre" element={<DREPage />} />
                   <Route path="/contabil/balanco" element={<BalancoPage />} />
 
                   {/* ========== RH ========== */}
-                  <Route path="/rh/colaboradores" element={<FuncionariosPage />} />
                   <Route path="/rh/folha" element={<FolhaPage />} />
                   <Route path="/rh/ponto" element={<PontoPage />} />
                   <Route path="/rh/ferias" element={<EmDesenvolvimento titulo="Férias" />} />
 
                   {/* ========== PATRIMÔNIO ========== */}
-                  <Route path="/patrimonio/bens" element={<AtivosPage />} />
                   <Route path="/patrimonio/depreciacao" element={<DepreciacaoPage />} />
                   <Route path="/patrimonio/manutencao" element={<EmDesenvolvimento titulo="Manutenção" />} />
 
@@ -308,18 +360,33 @@ export function AppRoutes() {
                   <Route path="/suporte/tickets" element={<TicketsPage />} />
                   <Route path="/suporte/base" element={<BaseConhecimentoPage />} />
 
-                  {/* ========== ADMINISTRAÇÃO ========== */}
-                  <Route path="/empresas" element={<EmpresasPage />} />
-                  <Route path="/empresas/novo" element={<EmpresaFormPage />} />
-                  <Route path="/empresas/:id" element={<EmpresaFormPage />} />
-                  <Route path="/filiais" element={<FiliaisPage />} />
-                  <Route path="/usuarios" element={<UsuariosPage />} />
-                  <Route path="/usuarios/novo" element={<UsuarioFormPage />} />
-                  <Route path="/usuarios/:id" element={<UsuarioFormPage />} />
-                  <Route path="/perfis" element={<PerfisPage />} />
-                  <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+                  {/* ========== CONFIGURAÇÕES ========== */}
+                  <Route path="/configuracoes/geral" element={<ConfiguracoesPage />} />
+                  <Route path="/configuracoes/fiscal" element={<ConfigFiscalPage />} />
+                  <Route path="/configuracoes/impostos" element={<EmDesenvolvimento titulo="Configuração de Impostos" />} />
+                  <Route path="/configuracoes/comercial" element={<EmDesenvolvimento titulo="Configurações Comerciais" />} />
+                  <Route path="/configuracoes/email" element={<EmDesenvolvimento titulo="Configurações de E-mail" />} />
+                  <Route path="/configuracoes/integracoes" element={<IntegracaoPage />} />
 
-                  {/* Catch all */}
+                  {/* ========== REDIRECTS LEGADOS ========== */}
+                  {/* Mantém compatibilidade com URLs antigas */}
+                  <Route path="/clientes" element={<Navigate to="/cadastros/clientes" replace />} />
+                  <Route path="/clientes/*" element={<Navigate to="/cadastros/clientes" replace />} />
+                  <Route path="/fornecedores" element={<Navigate to="/cadastros/fornecedores" replace />} />
+                  <Route path="/produtos" element={<Navigate to="/cadastros/produtos" replace />} />
+                  <Route path="/produtos/*" element={<Navigate to="/cadastros/produtos" replace />} />
+                  <Route path="/empresas" element={<Navigate to="/cadastros/empresas" replace />} />
+                  <Route path="/empresas/*" element={<Navigate to="/cadastros/empresas" replace />} />
+                  <Route path="/usuarios" element={<Navigate to="/cadastros/usuarios" replace />} />
+                  <Route path="/usuarios/*" element={<Navigate to="/cadastros/usuarios" replace />} />
+                  <Route path="/perfis" element={<Navigate to="/cadastros/perfis" replace />} />
+                  <Route path="/orcamentos" element={<Navigate to="/comercial/orcamentos" replace />} />
+                  <Route path="/orcamentos/*" element={<Navigate to="/comercial/orcamentos" replace />} />
+                  <Route path="/vendas" element={<Navigate to="/comercial/vendas" replace />} />
+                  <Route path="/vendas/*" element={<Navigate to="/comercial/vendas" replace />} />
+                  <Route path="/configuracoes" element={<Navigate to="/configuracoes/geral" replace />} />
+
+                  {/* Catch all - redireciona para dashboard */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Routes>
               </Suspense>
