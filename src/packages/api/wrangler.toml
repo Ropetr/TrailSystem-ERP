@@ -1,15 +1,19 @@
 # PLANAC ERP - Wrangler Configuration
+# Atualizado: 16/12/2025 - Correcao de IDs e adicao de bindings
 name = "planac-erp-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Variáveis de ambiente
+# Variaveis de ambiente
 [vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"
+NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br"
 
-# D1 Databases
+# =============================================
+# D1 DATABASES
+# =============================================
 [[d1_databases]]
 binding = "DB"
 database_name = "Planac-erp-database"
@@ -20,7 +24,24 @@ binding = "DB_IBPT"
 database_name = "planac-erp-ibpt"
 database_id = "556b7a7a-0ddd-43b7-8b64-f4ea3ebd9966"
 
-# R2 Buckets
+# =============================================
+# KV NAMESPACES (IDs CORRIGIDOS)
+# =============================================
+[[kv_namespaces]]
+binding = "CACHE"
+id = "d053dab81a554dc6961884eae41f75f7"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "80c6322699844ba1bb99e841f0c84306"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "f9991a8379d74873a8030e42dad416bd"
+
+# =============================================
+# R2 BUCKETS
+# =============================================
 [[r2_buckets]]
 binding = "STORAGE"
 bucket_name = "planac-erp-storage"
@@ -29,7 +50,27 @@ bucket_name = "planac-erp-storage"
 binding = "CERTIFICADOS_BUCKET"
 bucket_name = "planac-erp-certificados"
 
-# KV Namespaces
-[[kv_namespaces]]
-binding = "CACHE"
-id = "5706642392dc4af1ba7eef4a3a0e2322"
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "planac-images"
+
+[[r2_buckets]]
+binding = "CMS_MEDIA"
+bucket_name = "planac-cms-media"
+
+# =============================================
+# SCHEDULED JOBS (CRON)
+# =============================================
+[triggers]
+crons = [
+  "0 6 * * *",
+  "0 7 * * *",
+  "0 8 * * 1",
+  "0 9 1 * *"
+]
+
+# =============================================
+# OBSERVABILITY
+# =============================================
+[observability]
+enabled = true
