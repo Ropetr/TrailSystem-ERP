@@ -21,6 +21,13 @@ import produtos from './routes/produtos';
 import orcamentos from './routes/orcamentos';
 import vendas from './routes/vendas';
 
+// Routes - Financeiro
+import contasPagar from './routes/contas-pagar';
+import contasReceber from './routes/contas-receber';
+
+// Routes - Estoque
+import estoque from './routes/estoque';
+
 // Routes - Fiscal/Integracao
 import fiscal from './routes/fiscal';
 import ibpt from './routes/ibpt';
@@ -72,7 +79,7 @@ app.use('*', async (c, next) => {
 app.get('/health', (c) => {
   return c.json({
     status: 'healthy',
-    version: '2.0.0',
+    version: '2.1.0',
     timestamp: new Date().toISOString(),
     environment: c.env.ENVIRONMENT || 'development',
     routes: {
@@ -99,6 +106,13 @@ app.route('/v1/produtos', produtos);
 app.route('/v1/orcamentos', orcamentos);
 app.route('/v1/vendas', vendas);
 
+// ===== API v1 - Financeiro =====
+app.route('/v1/contas-pagar', contasPagar);
+app.route('/v1/contas-receber', contasReceber);
+
+// ===== API v1 - Estoque =====
+app.route('/v1/estoque', estoque);
+
 // ===== API v1 - Fiscal/Integracao =====
 app.route('/v1/fiscal', fiscal);
 app.route('/v1/ibpt', ibpt);
@@ -110,7 +124,7 @@ app.route('/v1/jobs', jobs);
 app.get('/', (c) => {
   return c.json({
     name: 'PLANAC ERP API',
-    version: '2.0.0',
+    version: '2.1.0',
     description: 'API do sistema ERP PLANAC',
     docs: '/v1/docs',
     health: '/health',
@@ -118,6 +132,8 @@ app.get('/', (c) => {
     modules: {
       core: 'Usuarios, Perfis, Autenticacao',
       comercial: 'Clientes, Fornecedores, Produtos, Orcamentos, Vendas',
+      financeiro: 'Contas a Pagar, Contas a Receber',
+      estoque: 'Saldos, Movimentacoes, Locais',
       fiscal: 'NF-e, NFC-e, NFS-e, CT-e, MDF-e, IBPT',
       config: 'Empresas, Certificados, Jobs'
     }
@@ -139,6 +155,9 @@ app.notFound((c) => {
       '/v1/produtos',
       '/v1/orcamentos',
       '/v1/vendas',
+      '/v1/contas-pagar/*',
+      '/v1/contas-receber/*',
+      '/v1/estoque/*',
       '/v1/fiscal/*',
       '/v1/ibpt/*',
       '/v1/certificados/*',
