@@ -39,7 +39,7 @@ const menuItems: MenuItem[] = [
   // ========================================
   // CADASTROS - Módulo Central de Dados Base
   // Aprovado: 15/12/2025 - 57 Especialistas
-  // Ajustado: Categorias com chevron
+  // Ajustado: Categorias com chevron + indentação itens
   // ========================================
   { id: 'cadastros', label: 'Cadastros', icon: Icons.database, children: [
     // Entidades
@@ -234,9 +234,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       return null;
     }
     
+    // Adiciona indentação extra para itens dentro de categorias
+    const itemIndent = child.categoryId ? 'ml-3' : '';
+    
     return (
       <NavLink key={child.path} to={child.path} onClick={onClose}
-        className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-sm transition-colors ${
+        className={({ isActive }) => `block px-3 py-1.5 rounded-lg text-sm transition-colors ${itemIndent} ${
           isActive
             ? 'bg-red-500/20 text-red-500 dark:text-red-400 font-medium'
             : 'text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white'
