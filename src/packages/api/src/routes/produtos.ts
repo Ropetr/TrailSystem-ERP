@@ -60,7 +60,7 @@ produtos.get('/', async (c) => {
         um.sigla as unidade_sigla
       FROM produtos p
       LEFT JOIN categorias c ON c.id = p.categoria_id
-      LEFT JOIN unidades um ON um.id = p.unidade_id
+      LEFT JOIN unidades_medida um ON um.id = p.unidade_id
       ${where}
       ORDER BY p.nome
       LIMIT ? OFFSET ?
@@ -96,7 +96,7 @@ produtos.get('/:id', async (c) => {
         um.nome as unidade_nome, um.sigla as unidade_sigla
       FROM produtos p
       LEFT JOIN categorias c ON c.id = p.categoria_id
-      LEFT JOIN unidades um ON um.id = p.unidade_id
+      LEFT JOIN unidades_medida um ON um.id = p.unidade_id
       WHERE p.id = ?
     `).bind(id).first();
 
