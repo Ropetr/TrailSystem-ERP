@@ -39,7 +39,8 @@ produtos.get('/', async (c) => {
     }
 
     if (estoque_baixo === 'true') {
-      where += ' AND p.estoque_atual <= p.estoque_minimo';
+      // TODO: implementar quando tiver tabela de estoque
+      // where += ' AND p.estoque_atual <= p.estoque_minimo';
     }
 
     const countResult = await c.env.DB.prepare(
@@ -51,15 +52,15 @@ produtos.get('/', async (c) => {
     const result = await c.env.DB.prepare(`
       SELECT 
         p.id, p.codigo, p.codigo_barras, p.nome, p.descricao,
-        p.categoria_id, p.marca, p.modelo, p.unidade_medida_id,
+        p.categoria_id, p.marca, p.modelo, p.unidade_id,
         p.ncm, p.origem, p.preco_custo, p.preco_venda, p.margem_lucro,
-        p.estoque_atual, p.estoque_minimo, p.estoque_maximo,
+        p.estoque_minimo, p.estoque_maximo,
         p.ativo, p.disponivel_ecommerce, p.created_at,
         c.nome as categoria_nome,
         um.sigla as unidade_sigla
       FROM produtos p
       LEFT JOIN categorias c ON c.id = p.categoria_id
-      LEFT JOIN unidades_medida um ON um.id = p.unidade_medida_id
+      LEFT JOIN unidades um ON um.id = p.unidade_id
       ${where}
       ORDER BY p.nome
       LIMIT ? OFFSET ?
@@ -95,7 +96,7 @@ produtos.get('/:id', async (c) => {
         um.nome as unidade_nome, um.sigla as unidade_sigla
       FROM produtos p
       LEFT JOIN categorias c ON c.id = p.categoria_id
-      LEFT JOIN unidades_medida um ON um.id = p.unidade_medida_id
+      LEFT JOIN unidades um ON um.id = p.unidade_id
       WHERE p.id = ?
     `).bind(id).first();
 
@@ -205,28 +206,28 @@ produtos.post('/', async (c) => {
     await c.env.DB.prepare(`
       INSERT INTO produtos (
         id, empresa_id, codigo, codigo_barras, nome, descricao,
-        categoria_id, marca, modelo, unidade_medida_id,
+        categoria_id, marca, modelo, unidade_id,
         peso_liquido, peso_bruto, largura, altura, profundidade,
-        ncm, cest, origem, cfop_venda, cst_icms,
+        ncm, cest, origem, cst_icms,
         aliquota_icms, aliquota_pis, aliquota_cofins, aliquota_ipi,
         preco_custo, margem_lucro, preco_venda,
-        estoque_minimo, estoque_maximo, ponto_pedido, estoque_atual,
+        estoque_minimo, estoque_maximo, ponto_pedido,
         disponivel_ecommerce, destaque, ativo, created_at, updated_at
       ) VALUES (
         ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?,
         ?, ?, ?, ?,
         ?, ?, ?,
-        ?, ?, ?, 0,
+        ?, ?, ?,
         ?, ?, 1, ?, ?
       )
     `).bind(
       id, empresaId, body.codigo, body.codigo_barras || null, body.nome, body.descricao || null,
       body.categoria_id || null, body.marca || null, body.modelo || null, body.unidade_medida_id || null,
       body.peso_liquido || null, body.peso_bruto || null, body.largura || null, body.altura || null, body.profundidade || null,
-      body.ncm || null, body.cest || null, body.origem || 0, body.cfop_venda || null, body.cst_icms || null,
+      body.ncm || null, body.cest || null, body.origem || 0, body.cst_icms || null,
       body.aliquota_icms || null, body.aliquota_pis || null, body.aliquota_cofins || null, body.aliquota_ipi || null,
       body.preco_custo || 0, body.margem_lucro || 0, body.preco_venda || 0,
       body.estoque_minimo || 0, body.estoque_maximo || 0, body.ponto_pedido || 0,
@@ -317,18 +318,11 @@ produtos.delete('/:id', async (c) => {
 
   try {
     const produto = await c.env.DB.prepare(`
-      SELECT nome, estoque_atual FROM produtos WHERE id = ?
-    `).bind(id).first<{ nome: string; estoque_atual: number }>();
+      SELECT nome FROM produtos WHERE id = ?
+    `).bind(id).first<{ nome: string }>();
 
     if (!produto) {
       return c.json({ success: false, error: 'Produto nao encontrado' }, 404);
-    }
-
-    if (produto.estoque_atual > 0) {
-      return c.json({ 
-        success: false, 
-        error: 'Nao e possivel desativar produto com estoque' 
-      }, 400);
     }
 
     await c.env.DB.prepare(`
@@ -393,7 +387,7 @@ produtos.post('/:id/ajuste-estoque', async (c) => {
       motivo: string;
     }>();
 
-    // Buscar saldo atual
+    // Buscar saldo atual (se tabela existir)
     const saldoAtual = await c.env.DB.prepare(`
       SELECT saldo FROM produtos_estoque 
       WHERE produto_id = ? AND local_estoque_id = ?
@@ -424,15 +418,6 @@ produtos.post('/:id/ajuste-estoque', async (c) => {
       novoSaldo, novoSaldo
     ).run();
 
-    // Atualizar estoque total no produto
-    const totalEstoque = await c.env.DB.prepare(`
-      SELECT SUM(saldo) as total FROM produtos_estoque WHERE produto_id = ?
-    `).bind(id).first<{ total: number }>();
-
-    await c.env.DB.prepare(`
-      UPDATE produtos SET estoque_atual = ?, updated_at = datetime('now') WHERE id = ?
-    `).bind(totalEstoque?.total || 0, id).run();
-
     // Registrar movimentacao
     await c.env.DB.prepare(`
       INSERT INTO movimentacoes_estoque (
@@ -462,7 +447,8 @@ produtos.get('/relatorio/estoque-baixo', async (c) => {
   const { empresa_id } = c.req.query();
 
   try {
-    let where = 'WHERE p.estoque_atual <= p.estoque_minimo AND p.ativo = 1';
+    // Buscar produtos com estoque baixo via tabela produtos_estoque
+    let where = 'WHERE p.ativo = 1';
     const params: any[] = [];
 
     if (empresa_id) {
@@ -472,10 +458,14 @@ produtos.get('/relatorio/estoque-baixo', async (c) => {
 
     const result = await c.env.DB.prepare(`
       SELECT 
-        p.id, p.codigo, p.nome, p.estoque_atual, p.estoque_minimo, p.ponto_pedido,
-        (p.estoque_minimo - p.estoque_atual) as faltante
+        p.id, p.codigo, p.nome, p.estoque_minimo, p.ponto_pedido,
+        COALESCE(SUM(pe.saldo), 0) as estoque_atual,
+        (p.estoque_minimo - COALESCE(SUM(pe.saldo), 0)) as faltante
       FROM produtos p
+      LEFT JOIN produtos_estoque pe ON pe.produto_id = p.id
       ${where}
+      GROUP BY p.id
+      HAVING estoque_atual <= p.estoque_minimo
       ORDER BY faltante DESC
     `).bind(...params).all();
 
