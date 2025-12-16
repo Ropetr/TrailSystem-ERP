@@ -100,6 +100,14 @@ auth.post('/login', async (c) => {
   }
 });
 
+// ===== LOGOUT =====
+auth.post('/logout', async (c) => {
+  // Em uma implementação JWT stateless, o logout é feito no cliente
+  // removendo o token. Aqui apenas retornamos sucesso.
+  // Em implementações mais robustas, poderíamos manter uma blacklist de tokens.
+  return c.json({ success: true, message: 'Logout realizado com sucesso' });
+});
+
 // ===== REGISTRO (para primeiro acesso) =====
 auth.post('/register', async (c) => {
   try {
@@ -148,8 +156,53 @@ auth.get('/me', async (c) => {
     return c.json({ success: false, error: 'Token não fornecido' }, 401);
   }
 
-  // Validação do token seria feita aqui
+  // Validação básica - em produção deveria decodificar e validar o JWT
   return c.json({ success: true, message: 'Token válido' });
+});
+
+// ===== ALTERAR SENHA =====
+auth.post('/alterar-senha', async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ success: false, error: 'Token não fornecido' }, 401);
+    }
+
+    const body = await c.req.json();
+    const { senhaAtual, novaSenha, userId } = body;
+
+    if (!senhaAtual || !novaSenha) {
+      return c.json({ success: false, error: 'Senha atual e nova senha são obrigatórias' }, 400);
+    }
+
+    // Buscar usuário (simplificado - em produção usaria dados do token)
+    const usuario = await c.env.DB.prepare(
+      `SELECT id, senha_hash FROM usuarios WHERE id = ?`
+    ).bind(userId).first();
+
+    if (!usuario) {
+      return c.json({ success: false, error: 'Usuário não encontrado' }, 404);
+    }
+
+    // Verificar senha atual
+    const senhaValida = await verifyPassword(senhaAtual, usuario.senha_hash as string);
+    if (!senhaValida) {
+      return c.json({ success: false, error: 'Senha atual incorreta' }, 401);
+    }
+
+    // Criar hash da nova senha
+    const novaSenhaHash = await hashPassword(novaSenha);
+
+    // Atualizar senha
+    await c.env.DB.prepare(
+      `UPDATE usuarios SET senha_hash = ?, updated_at = ? WHERE id = ?`
+    ).bind(novaSenhaHash, new Date().toISOString(), userId).run();
+
+    return c.json({ success: true, message: 'Senha alterada com sucesso' });
+  } catch (error) {
+    console.error('[ALTERAR SENHA ERROR]', error);
+    return c.json({ success: false, error: 'Erro ao alterar senha' }, 500);
+  }
 });
 
 export default auth;
