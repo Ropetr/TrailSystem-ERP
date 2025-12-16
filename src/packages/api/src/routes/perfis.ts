@@ -66,7 +66,7 @@ perfis.get('/:id', async (c) => {
 
     // Buscar permissoes
     const permissoes = await c.env.DB.prepare(`
-      SELECT pm.id, pm.modulo, pm.acao, pm.codigo, pm.descricao
+      SELECT pm.id, pm.modulo, pm.acao, pm.descricao
       FROM perfis_permissoes pp
       JOIN permissoes pm ON pp.permissao_id = pm.id
       WHERE pp.perfil_id = ?
@@ -290,9 +290,8 @@ perfis.delete('/:id', async (c) => {
 perfis.get('/permissoes/todas', async (c) => {
   try {
     const result = await c.env.DB.prepare(`
-      SELECT id, modulo, acao, codigo, descricao
+      SELECT id, modulo, acao, descricao
       FROM permissoes
-      WHERE ativo = 1
       ORDER BY modulo, acao
     `).all();
 
