@@ -1,6 +1,6 @@
 // =============================================
 // PLANAC ERP - Orçamentos Page
-// Atualizado: 2025-12-17 17:20
+// Atualizado: 2025-12-17 17:35
 // =============================================
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -63,6 +63,215 @@ const statusConfig: Record<string, { variant: 'default' | 'success' | 'warning' 
   convertido: { variant: 'success', label: 'Convertido' },
   expirado: { variant: 'warning', label: 'Expirado' },
 };
+
+// =============================================
+// COMPONENTE: Seletor Híbrido de Cliente
+// =============================================
+interface ClienteSearchSelectProps {
+  value: string;
+  onChange: (clienteId: string, clienteNome?: string) => void;
+  clientesPresets: Cliente[];
+  placeholder?: string;
+}
+
+function ClienteSearchSelect({ value, onChange, clientesPresets, placeholder = 'Selecione o cliente...' }: ClienteSearchSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Cliente[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Encontrar cliente selecionado
+  const selectedCliente = clientesPresets.find(c => c.id === value) || 
+    searchResults.find(c => c.id === value);
+
+  // Fechar ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setIsSearchMode(false);
+        setSearchTerm('');
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Buscar clientes na API
+  const searchClientes = async (termo: string) => {
+    if (termo.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await api.get<{ success: boolean; data: any[] }>(`/clientes?busca=${encodeURIComponent(termo)}&limit=10`);
+      if (response.success) {
+        setSearchResults(response.data.map((c: any) => ({
+          id: c.id,
+          nome: c.razao_social || c.nome,
+          cpf_cnpj: c.cpf_cnpj,
+        })));
+      }
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounce na busca
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    if (isSearchMode && searchTerm) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchClientes(searchTerm);
+      }, 300);
+    }
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm, isSearchMode]);
+
+  // Focar no input quando entrar em modo busca
+  useEffect(() => {
+    if (isSearchMode && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isSearchMode]);
+
+  const handleInputClick = () => {
+    setIsSearchMode(true);
+    setIsOpen(true);
+    setSearchTerm('');
+  };
+
+  const handleArrowClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsSearchMode(false);
+    setSearchTerm('');
+    setIsOpen(!isOpen);
+  };
+
+  const handleSelectCliente = (cliente: Cliente) => {
+    onChange(cliente.id, cliente.nome);
+    setIsOpen(false);
+    setIsSearchMode(false);
+    setSearchTerm('');
+  };
+
+  const displayList = isSearchMode && searchTerm.length >= 2 ? searchResults : clientesPresets;
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        className={`w-full px-3 py-2 bg-white border rounded-lg text-sm flex items-center justify-between cursor-pointer transition-colors ${
+          isOpen ? 'border-planac-500 ring-2 ring-planac-500/20' : 'border-gray-200 hover:border-gray-300'
+        }`}
+      >
+        {isSearchMode ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Digite para buscar cliente..."
+            className="flex-1 outline-none bg-transparent text-gray-800"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span 
+            className={`flex-1 ${selectedCliente ? 'text-gray-800' : 'text-gray-400'}`}
+            onClick={handleInputClick}
+          >
+            {selectedCliente ? `${selectedCliente.nome}${selectedCliente.cpf_cnpj ? ` (${selectedCliente.cpf_cnpj})` : ''}` : placeholder}
+          </span>
+        )}
+        
+        <button
+          type="button"
+          onClick={handleArrowClick}
+          className="ml-2 p-1 hover:bg-gray-100 rounded transition-colors"
+          title={isSearchMode ? 'Voltar para lista' : 'Abrir lista'}
+        >
+          {isSearchMode ? (
+            <Icons.x className="w-4 h-4 text-gray-400" />
+          ) : (
+            <Icons.chevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          )}
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-auto">
+          {isSearchMode && searchTerm.length < 2 && (
+            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+              Digite pelo menos 2 caracteres para buscar...
+            </div>
+          )}
+
+          {isSearchMode && isSearching && (
+            <div className="px-4 py-3 text-sm text-gray-500 text-center flex items-center justify-center gap-2">
+              <Icons.spinner className="w-4 h-4 animate-spin" />
+              Buscando...
+            </div>
+          )}
+
+          {!isSearchMode && clientesPresets.length > 0 && (
+            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase border-b border-gray-100 bg-gray-50">
+              Clientes dos orçamentos
+            </div>
+          )}
+
+          {isSearchMode && searchTerm.length >= 2 && !isSearching && searchResults.length === 0 && (
+            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+              Nenhum cliente encontrado
+            </div>
+          )}
+
+          {displayList.map((cliente) => (
+            <button
+              key={cliente.id}
+              onClick={() => handleSelectCliente(cliente)}
+              className={`w-full px-4 py-2.5 text-sm text-left flex items-center justify-between transition-colors ${
+                cliente.id === value
+                  ? 'bg-planac-50 text-planac-600 font-medium'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <div>
+                <span>{cliente.nome}</span>
+                {cliente.cpf_cnpj && (
+                  <span className="ml-2 text-xs text-gray-400 font-mono">{cliente.cpf_cnpj}</span>
+                )}
+              </div>
+              {cliente.id === value && <Icons.check className="w-4 h-4" />}
+            </button>
+          ))}
+
+          {!isSearchMode && (
+            <button
+              onClick={handleInputClick}
+              className="w-full px-4 py-2.5 text-sm text-left text-planac-600 hover:bg-planac-50 border-t border-gray-100 flex items-center gap-2"
+            >
+              <Icons.search className="w-4 h-4" />
+              Buscar outro cliente...
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // =============================================
 // COMPONENTE PRINCIPAL
@@ -527,23 +736,21 @@ export function OrcamentosPage() {
             Você está prestes a mesclar {selectedOrcamentos.length} orçamentos.
           </p>
           
-          {/* Seleção de cliente quando há clientes diferentes */}
-          {clientesDosMesclados.length > 1 && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Selecione o cliente para o novo orçamento:
-              </label>
-              <Select
-                value={clienteSelecionado}
-                onChange={setClienteSelecionado}
-                options={clientesDosMesclados.map((c) => ({
-                  value: c.id,
-                  label: `${c.nome}${c.cpf_cnpj ? ` (${c.cpf_cnpj})` : ''}`,
-                }))}
-                placeholder="Selecione o cliente..."
-              />
-            </div>
-          )}
+          {/* Seleção de cliente - sempre mostra */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Selecione o cliente para o novo orçamento:
+            </label>
+            <ClienteSearchSelect
+              value={clienteSelecionado}
+              onChange={(id) => setClienteSelecionado(id)}
+              clientesPresets={clientesDosMesclados}
+              placeholder="Selecione o cliente..."
+            />
+            <p className="text-xs text-gray-500">
+              Clique na setinha para ver os clientes dos orçamentos ou clique no campo para buscar outro cliente.
+            </p>
+          </div>
           
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -564,7 +771,7 @@ export function OrcamentosPage() {
             </Button>
             <Button 
               onClick={handleMesclar}
-              disabled={clientesDosMesclados.length > 1 && !clienteSelecionado}
+              disabled={!clienteSelecionado}
             >
               Confirmar Mesclagem
             </Button>
