@@ -3,6 +3,7 @@ export { Button } from "./Button";
 export { Input } from "./Input";
 export { Textarea } from "./Textarea";
 export { Select } from "./Select";
+export { SelectDropdown } from "./SelectDropdown";
 export { DropdownMenu } from "./DropdownMenu";
 export { Card, CardHeader, CardTitle, CardContent } from "./Card";
 export { Modal } from "./Modal";
@@ -11,4 +12,3 @@ export { Badge } from "./Badge";
 export { Spinner } from "./Spinner";
 export { ToastProvider, useToast } from "./Toast";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./Tabs";
-
