@@ -13,190 +13,211 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Icons } from '@/components/ui/Icons';
 import { useToast } from '@/components/ui/Toast';
-import { ClienteSelect } from '@/components/ui/ClienteSelect';
 import api from '@/services/api';
 
 const contaReceberSchema = z.object({
-  cliente_id: z.string().min(1, 'Selecione o cliente'),
+  cliente_id: z.string().min(1, 'Cliente é obrigatório'),
   numero_documento: z.string().optional(),
-  origem: z.string().default('manual'),
-  valor_original: z.number().min(0.01, 'Valor deve ser maior que zero'),
-  valor_juros: z.number().optional(),
-  valor_multa: z.number().optional(),
-  valor_desconto: z.number().optional(),
-  valor_acrescimo: z.number().optional(),
+  valor_original: z.number().min(0.01, 'Valor é obrigatório'),
   data_emissao: z.string().min(1, 'Data de emissão é obrigatória'),
   data_vencimento: z.string().min(1, 'Data de vencimento é obrigatória'),
+  origem: z.string().default('manual'),
   forma_pagamento_id: z.string().optional(),
   conta_bancaria_id: z.string().optional(),
   parcela_atual: z.number().default(1),
   parcelas_total: z.number().default(1),
-  nosso_numero: z.string().optional(),
-  codigo_barras: z.string().optional(),
-  pix_copia_cola: z.string().optional(),
+  gerar_boleto: z.boolean().default(false),
   observacao: z.string().optional(),
 });
 
 type ContaReceberFormData = z.infer<typeof contaReceberSchema>;
 
-const formasPagamentoOptions = [
-  { value: 'boleto', label: 'Boleto' },
-  { value: 'pix', label: 'PIX' },
-  { value: 'transferencia', label: 'Transferência' },
-  { value: 'dinheiro', label: 'Dinheiro' },
-  { value: 'cheque', label: 'Cheque' },
-  { value: 'cartao_credito', label: 'Cartão de Crédito' },
-  { value: 'cartao_debito', label: 'Cartão de Débito' },
+const tabs = [
+  { id: 'dados', label: 'Dados do Título', icon: Icons.fileText },
+  { id: 'cobranca', label: 'Cobrança', icon: Icons.creditCard },
+];
+
+const origemOptions = [
+  { value: 'manual', label: 'Lançamento Manual' },
+  { value: 'venda', label: 'Venda' },
+  { value: 'nfe', label: 'Nota Fiscal' },
+  { value: 'contrato', label: 'Contrato' },
+  { value: 'servico', label: 'Serviço' },
 ];
 
 export function ContaReceberFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { toast } = useToast();
+  const toast = useToast();
   const isEditing = Boolean(id);
-  
-  const [loading, setLoading] = useState(false);
-  const [contasBancarias, setContasBancarias] = useState<any[]>([]);
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting }, reset } = useForm<ContaReceberFormData>({
+  const [activeTab, setActiveTab] = useState('dados');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [clientes, setClientes] = useState<{ value: string; label: string }[]>([]);
+  const [formasPagamento, setFormasPagamento] = useState<{ value: string; label: string }[]>([]);
+  const [contasBancarias, setContasBancarias] = useState<{ value: string; label: string }[]>([]);
+
+  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<ContaReceberFormData>({
     resolver: zodResolver(contaReceberSchema),
     defaultValues: {
       origem: 'manual',
-      valor_original: 0,
-      valor_juros: 0,
-      valor_multa: 0,
-      valor_desconto: 0,
-      valor_acrescimo: 0,
       parcela_atual: 1,
       parcelas_total: 1,
+      gerar_boleto: false,
       data_emissao: new Date().toISOString().split('T')[0],
     },
   });
 
-  const valorOriginal = watch('valor_original') || 0;
-  const valorJuros = watch('valor_juros') || 0;
-  const valorMulta = watch('valor_multa') || 0;
-  const valorDesconto = watch('valor_desconto') || 0;
-  const valorAcrescimo = watch('valor_acrescimo') || 0;
-  const valorTotal = valorOriginal + valorJuros + valorMulta + valorAcrescimo - valorDesconto;
+  const gerarBoleto = watch('gerar_boleto');
 
   useEffect(() => {
-    loadContasBancarias();
+    loadOptions();
     if (id) loadConta();
   }, [id]);
 
-  const loadContasBancarias = async () => {
+  const loadOptions = async () => {
     try {
-      const response = await api.get('/contas-bancarias?ativo=true');
-      setContasBancarias(response.data.data || []);
-    } catch (error) {
-      console.error('Erro ao carregar contas bancárias:', error);
-    }
+      const [cliRes, formasRes, contasRes] = await Promise.all([
+        api.get('/clientes?ativo=true'),
+        api.get('/formas-pagamento'),
+        api.get('/contas-bancarias'),
+      ]);
+      if (cliRes.success) setClientes(cliRes.data.map((c: any) => ({ value: c.id, label: c.razao_social || c.nome })));
+      if (formasRes.success) setFormasPagamento(formasRes.data.map((f: any) => ({ value: f.id, label: f.nome })));
+      if (contasRes.success) setContasBancarias(contasRes.data.map((c: any) => ({ value: c.id, label: c.nome })));
+    } catch (error) { console.error('Erro ao carregar opções:', error); }
   };
 
   const loadConta = async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
       const response = await api.get(`/contas-receber/${id}`);
-      reset(response.data);
+      if (response.success) reset(response.data);
     } catch (error) {
-      toast({ title: 'Erro ao carregar conta', variant: 'destructive' });
+      toast.error('Erro ao carregar conta');
       navigate('/financeiro/receber');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   const onSubmit = async (data: ContaReceberFormData) => {
+    setIsSaving(true);
     try {
-      const payload = { ...data, valor_aberto: valorTotal };
+      const payload = {
+        ...data,
+        valor_aberto: data.valor_original,
+        valor_pago: 0,
+        status: 'aberto',
+      };
       if (isEditing) {
         await api.put(`/contas-receber/${id}`, payload);
-        toast({ title: 'Conta atualizada com sucesso!' });
+        toast.success('Conta atualizada com sucesso');
       } else {
         await api.post('/contas-receber', payload);
-        toast({ title: 'Conta cadastrada com sucesso!' });
+        toast.success('Conta cadastrada com sucesso');
       }
       navigate('/financeiro/receber');
-    } catch (error: any) {
-      toast({ title: 'Erro ao salvar conta', description: error.response?.data?.message || 'Tente novamente', variant: 'destructive' });
-    }
+    } catch (error) {
+      toast.error('Erro ao salvar conta');
+    } finally { setIsSaving(false); }
   };
 
-  const formatMoney = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-[400px]"><Icons.spinner className="w-8 h-8 animate-spin text-red-500" /></div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Icons.spinner className="w-8 h-8 animate-spin text-red-500" />
+      </div>
+    );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/financeiro/receber')}><Icons.arrowLeft className="w-4 h-4 mr-2" />Voltar</Button>
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/financeiro/receber')}>
+          <Icons.arrowLeft className="w-5 h-5" />
+        </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{isEditing ? 'Editar Conta a Receber' : 'Nova Conta a Receber'}</h1>
-          <p className="text-sm text-gray-500">{isEditing ? 'Atualize os dados' : 'Preencha os dados da nova conta'}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEditing ? 'Editar Conta a Receber' : 'Nova Conta a Receber'}
+          </h1>
+          <p className="text-gray-500">
+            {isEditing ? 'Atualize os dados do título' : 'Cadastre um novo título a receber'}
+          </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Cliente</h2>
-          <ClienteSelect value={watch('cliente_id') || ''} onChange={(id) => setValue('cliente_id', id)} label="Cliente *" placeholder="Busque o cliente..." error={errors.cliente_id?.message} showDetailsOnSelect />
-        </Card>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="flex gap-4">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-3 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === tab.id ? 'border-red-500 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}>
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Dados da Conta</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Nº Documento</label><Input {...register('numero_documento')} placeholder="Nº da NF, Pedido..." /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Emissão *</label><Input {...register('data_emissao')} type="date" error={errors.data_emissao?.message} /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Vencimento *</label><Input {...register('data_vencimento')} type="date" error={errors.data_vencimento?.message} /></div>
-          </div>
+          {activeTab === 'dados' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select label="Cliente *" options={clientes} {...register('cliente_id')} error={errors.cliente_id?.message} />
+                <Select label="Origem" options={origemOptions} {...register('origem')} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input label="Nº Documento" placeholder="Número do documento" {...register('numero_documento')} />
+                <Input label="Parcela" type="number" min="1" {...register('parcela_atual', { valueAsNumber: true })} />
+                <Input label="Total Parcelas" type="number" min="1" {...register('parcelas_total', { valueAsNumber: true })} />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input label="Valor *" type="number" step="0.01" min="0.01" {...register('valor_original', { valueAsNumber: true })} error={errors.valor_original?.message} />
+                <Input label="Data Emissão *" type="date" {...register('data_emissao')} error={errors.data_emissao?.message} />
+                <Input label="Data Vencimento *" type="date" {...register('data_vencimento')} error={errors.data_vencimento?.message} />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'cobranca' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Select label="Forma de Pagamento" options={formasPagamento} {...register('forma_pagamento_id')} />
+                <Select label="Conta Bancária" options={contasBancarias} {...register('conta_bancaria_id')} />
+              </div>
+              
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="gerar_boleto" {...register('gerar_boleto')} className="w-4 h-4 text-blue-500 rounded" />
+                  <label htmlFor="gerar_boleto" className="text-sm font-medium text-blue-800">
+                    Gerar boleto automaticamente
+                  </label>
+                </div>
+                {gerarBoleto && (
+                  <p className="text-sm text-blue-600 mt-2">
+                    O boleto será gerado automaticamente após salvar o título.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                <textarea rows={4} placeholder="Observações..." {...register('observacao')}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" />
+              </div>
+            </div>
+          )}
         </Card>
 
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Valores</h2>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Valor Original *</label><Input {...register('valor_original', { valueAsNumber: true })} type="number" step="0.01" error={errors.valor_original?.message} /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Juros</label><Input {...register('valor_juros', { valueAsNumber: true })} type="number" step="0.01" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Multa</label><Input {...register('valor_multa', { valueAsNumber: true })} type="number" step="0.01" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Acréscimo</label><Input {...register('valor_acrescimo', { valueAsNumber: true })} type="number" step="0.01" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Desconto</label><Input {...register('valor_desconto', { valueAsNumber: true })} type="number" step="0.01" /></div>
-          </div>
-          <div className="mt-4 p-4 bg-green-50 rounded-lg flex justify-between items-center">
-            <span className="text-lg font-medium text-gray-700">Total a Receber:</span>
-            <span className="text-2xl font-bold text-green-600">{formatMoney(valorTotal)}</span>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Parcelamento</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Parcela Atual</label><Input {...register('parcela_atual', { valueAsNumber: true })} type="number" min="1" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Total de Parcelas</label><Input {...register('parcelas_total', { valueAsNumber: true })} type="number" min="1" /></div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Cobrança</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label><Select {...register('forma_pagamento_id')} options={formasPagamentoOptions} placeholder="Selecione..." /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Conta Bancária</label><Select {...register('conta_bancaria_id')} options={contasBancarias.map(c => ({ value: c.id, label: `${c.banco} - ${c.agencia}/${c.conta}` }))} placeholder="Selecione..." /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Nosso Número</label><Input {...register('nosso_numero')} placeholder="Nosso número do boleto" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Código de Barras</label><Input {...register('codigo_barras')} placeholder="Código de barras" /></div>
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">PIX Copia e Cola</label><Input {...register('pix_copia_cola')} placeholder="Chave PIX" /></div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Observações</h2>
-          <textarea {...register('observacao')} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Observações..." />
-        </Card>
-
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-3 mt-6">
           <Button type="button" variant="outline" onClick={() => navigate('/financeiro/receber')}>Cancelar</Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? <><Icons.spinner className="w-4 h-4 mr-2 animate-spin" />Salvando...</> : <><Icons.check className="w-4 h-4 mr-2" />{isEditing ? 'Atualizar' : 'Cadastrar'}</>}
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? (<><Icons.spinner className="w-4 h-4 animate-spin mr-2" />Salvando...</>) : (<><Icons.check className="w-4 h-4 mr-2" />{isEditing ? 'Atualizar' : 'Cadastrar'}</>)}
           </Button>
         </div>
       </form>
