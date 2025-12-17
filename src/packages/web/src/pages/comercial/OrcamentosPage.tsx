@@ -1,6 +1,6 @@
 // =============================================
 // PLANAC ERP - Orçamentos Page
-// Atualizado: 2025-12-17 16:00
+// Atualizado: 2025-12-17 16:55
 // =============================================
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -157,7 +157,14 @@ export function OrcamentosPage() {
         : '/orcamentos';
       const response = await api.get<{ success: boolean; data: Orcamento[] }>(url);
       if (response.success) {
-        setOrcamentos(response.data);
+        // Parsear orcamentos_mesclados se for string JSON
+        const data = response.data.map((o: any) => ({
+          ...o,
+          orcamentos_mesclados: typeof o.orcamentos_mesclados === 'string' 
+            ? JSON.parse(o.orcamentos_mesclados) 
+            : o.orcamentos_mesclados
+        }));
+        setOrcamentos(data);
       }
     } catch (error) {
       toast.error('Erro ao carregar orçamentos');
