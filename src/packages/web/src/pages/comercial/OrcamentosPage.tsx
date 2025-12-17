@@ -322,7 +322,7 @@ export function OrcamentosPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-[calc(100vh-140px)] space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -413,7 +413,7 @@ export function OrcamentosPage() {
       </div>
 
       {/* Table */}
-      <Card padding="none">
+      <Card padding="none" className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <DataTable
           data={filteredOrcamentos}
           columns={columns}
