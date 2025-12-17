@@ -138,9 +138,9 @@ export function VendasPage() {
 
   const filteredVendas = vendas.filter((v) => {
     const matchSearch =
-      v.numero?.toLowerCase().includes(search.toLowerCase()) ||
-      v.cliente_nome?.toLowerCase().includes(search.toLowerCase()) ||
-      v.orcamento_numero?.toLowerCase().includes(search.toLowerCase());
+      String(v.numero || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(v.cliente_nome || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(v.orcamento_numero || "").toLowerCase().includes(search.toLowerCase());
 
     const matchStatus = !statusFilter || v.status === statusFilter;
     const matchStatusPag = !statusPagFilter || v.status_pagamento === statusPagFilter;
