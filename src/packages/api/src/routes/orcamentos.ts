@@ -513,4 +513,136 @@ orcamentos.post('/:id/duplicar', async (c) => {
   }
 });
 
+
+// =============================================
+// POST /orcamentos/mesclar - Mesclar orçamentos
+// =============================================
+orcamentos.post('/mesclar', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { orcamentos_ids, cliente_id } = body;
+    
+    if (!orcamentos_ids || orcamentos_ids.length < 2) {
+      return c.json({ success: false, error: 'Selecione pelo menos 2 orçamentos para mesclar' }, 400);
+    }
+    
+    if (!cliente_id) {
+      return c.json({ success: false, error: 'Cliente é obrigatório' }, 400);
+    }
+    
+    // Buscar todos os orçamentos
+    const placeholders = orcamentos_ids.map(() => '?').join(',');
+    const orcamentosResult = await c.env.DB.prepare(`
+      SELECT * FROM orcamentos WHERE id IN (${placeholders})
+    `).bind(...orcamentos_ids).all();
+    
+    if (!orcamentosResult.results || orcamentosResult.results.length !== orcamentos_ids.length) {
+      return c.json({ success: false, error: 'Um ou mais orçamentos não encontrados' }, 404);
+    }
+    
+    const orcamentosData = orcamentosResult.results as any[];
+    
+    // Buscar dados do cliente selecionado
+    const cliente = await c.env.DB.prepare(`
+      SELECT id, razao_social, cpf_cnpj FROM clientes WHERE id = ?
+    `).bind(cliente_id).first();
+    
+    if (!cliente) {
+      return c.json({ success: false, error: 'Cliente não encontrado' }, 404);
+    }
+    
+    // Obter próximo número
+    const primeiro = orcamentosData[0];
+    const maxNumero = await c.env.DB.prepare(`
+      SELECT MAX(numero) as max FROM orcamentos WHERE empresa_id = ?
+    `).bind(primeiro.empresa_id).first<{ max: number }>();
+    const novoNumero = (maxNumero?.max || 0) + 1;
+    
+    // Buscar todos os itens dos orçamentos
+    const itensResult = await c.env.DB.prepare(`
+      SELECT oi.*, p.codigo, p.descricao, p.unidade
+      FROM orcamentos_itens oi
+      LEFT JOIN produtos p ON p.id = oi.produto_id
+      WHERE oi.orcamento_id IN (${placeholders})
+      ORDER BY oi.ordem
+    `).bind(...orcamentos_ids).all();
+    
+    // Agrupar itens por produto, pegando o menor preço
+    const itensAgrupados = new Map<string, any>();
+    for (const item of (itensResult.results || []) as any[]) {
+      const key = item.produto_id;
+      if (itensAgrupados.has(key)) {
+        const existing = itensAgrupados.get(key);
+        existing.quantidade += item.quantidade;
+        // Usar o menor valor unitário
+        if (item.valor_unitario < existing.valor_unitario) {
+          existing.valor_unitario = item.valor_unitario;
+        }
+        existing.valor_total = existing.quantidade * existing.valor_unitario;
+      } else {
+        itensAgrupados.set(key, {
+          ...item,
+          quantidade: item.quantidade,
+          valor_total: item.quantidade * item.valor_unitario
+        });
+      }
+    }
+    
+    // Calcular totais
+    let subtotal = 0;
+    const itensFinais = Array.from(itensAgrupados.values());
+    itensFinais.forEach((item, index) => {
+      item.ordem = index + 1;
+      subtotal += item.valor_total;
+    });
+    
+    // Criar registro de orçamentos mesclados
+    const mesclados = orcamentosData.map(o => ({ id: o.id, numero: String(o.numero) }));
+    
+    const now = new Date().toISOString();
+    const novoId = crypto.randomUUID();
+    const dataValidade = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    // Inserir novo orçamento
+    await c.env.DB.prepare(`
+      INSERT INTO orcamentos (
+        id, empresa_id, filial_id, numero, cliente_id, cliente_nome, cliente_cpf_cnpj,
+        vendedor_id, vendedor_nome, status, data_emissao, validade_dias, data_validade,
+        subtotal, valor_total, observacao_interna, orcamentos_mesclados, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'rascunho', ?, 30, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      novoId, primeiro.empresa_id, primeiro.filial_id, novoNumero,
+      cliente.id, cliente.razao_social, cliente.cpf_cnpj,
+      primeiro.vendedor_id, primeiro.vendedor_nome,
+      now.split('T')[0], dataValidade, subtotal, subtotal,
+      `Orçamento mesclado de: ${mesclados.map(m => m.numero).join(', ')}`,
+      JSON.stringify(mesclados), now, now
+    ).run();
+    
+    // Inserir itens
+    for (const item of itensFinais) {
+      await c.env.DB.prepare(`
+        INSERT INTO orcamentos_itens (
+          id, orcamento_id, produto_id, ordem, quantidade, valor_unitario,
+          desconto_percentual, desconto_valor, valor_total, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        crypto.randomUUID(), novoId, item.produto_id, item.ordem,
+        item.quantidade, item.valor_unitario, item.desconto_percentual || 0,
+        item.desconto_valor || 0, item.valor_total, now
+      ).run();
+    }
+    
+    return c.json({
+      success: true,
+      data: { id: novoId, numero: novoNumero },
+      message: `Orçamento ${novoNumero} criado com ${itensFinais.length} itens`
+    });
+  } catch (error: any) {
+    console.error('Erro ao mesclar orçamentos:', error);
+    return c.json({ success: false, error: 'Erro ao mesclar orçamentos' }, 500);
+  }
+});
+
 export default orcamentos;
+
