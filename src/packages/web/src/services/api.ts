@@ -1,5 +1,6 @@
 // =============================================
 // PLANAC ERP - API Client
+// Rebuild: 17/12/2025 - Fix VITE_API_URL /v1
 // =============================================
 
 // Em produção (pages.dev), usa a URL completa do worker
