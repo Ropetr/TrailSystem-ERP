@@ -8,7 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
+import { SelectDropdown } from '@/components/ui/SelectDropdown';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Icons } from '@/components/ui/Icons';
@@ -596,28 +596,28 @@ export function OrcamentoFormPage() {
 
           {/* Linha 2: Comercial */}
           <div className="grid grid-cols-4 gap-3">
-            <Select
+            <SelectDropdown
               label="Vendedor"
               value={orcamento.vendedor_id}
               onChange={(v) => setOrcamento(prev => ({ ...prev, vendedor_id: v }))}
               options={vendedores}
               placeholder="Selecione..."
             />
-            <Select
+            <SelectDropdown
               label="Tabela Preço"
               value={orcamento.tabela_preco_id}
               onChange={(v) => setOrcamento(prev => ({ ...prev, tabela_preco_id: v }))}
               options={tabelas}
               placeholder="Selecione..."
             />
-            <Select
+            <SelectDropdown
               label="Cond. Pagamento"
               value={orcamento.condicao_pagamento_id}
               onChange={(v) => setOrcamento(prev => ({ ...prev, condicao_pagamento_id: v }))}
               options={condicoes}
               placeholder="Selecione..."
             />
-            <Select
+            <SelectDropdown
               label="Parcelamento"
               value={orcamento.parcelamento}
               onChange={(v) => setOrcamento(prev => ({ ...prev, parcelamento: v }))}
@@ -966,7 +966,7 @@ export function OrcamentoFormPage() {
                         {formatCurrency(parcela.valor)}
                       </td>
                       <td className="px-3 py-2">
-                        <Select
+                        <SelectDropdown
                           value={parcela.forma_pagamento}
                           onChange={(v) => {
                             setOrcamento(prev => ({
