@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Icons } from '@/components/ui/Icons';
+import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { useToast } from '@/components/ui/Toast';
 import { Spinner } from '@/components/ui/Spinner';
 import api from '@/services/api';
@@ -457,6 +458,39 @@ export function OrcamentoFormPage() {
     }
   };
 
+  const handleDuplicate = async () => {
+    try {
+      const response = await api.post(`/orcamentos/${id}/duplicar`);
+      toast.success('Orçamento duplicado com sucesso!');
+      navigate(`/comercial/orcamentos/${response.data.id}`);
+    } catch (error) {
+      toast.error('Erro ao duplicar orçamento');
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!confirm('Deseja realmente cancelar este orçamento?')) return;
+    try {
+      await api.patch(`/orcamentos/${id}`, { status: 'cancelado' });
+      toast.success('Orçamento cancelado');
+      navigate('/comercial/orcamentos');
+    } catch (error) {
+      toast.error('Erro ao cancelar orçamento');
+    }
+  };
+
+  // Menu de ações (3 pontinhos)
+  const menuItems = isEditing ? [
+    { icon: <Icons.copy className="w-4 h-4" />, label: 'Duplicar', onClick: handleDuplicate },
+    { icon: <Icons.mail className="w-4 h-4" />, label: 'Enviar Email', onClick: handleSendEmail },
+    { icon: <Icons.whatsapp className="w-4 h-4" />, label: 'WhatsApp', onClick: handleSendWhatsApp },
+    { icon: <Icons.printer className="w-4 h-4" />, label: 'Imprimir', onClick: handlePrint },
+    { type: 'separator' as const },
+    ...(orcamento.status === 'aprovado' ? [{ icon: <Icons.cart className="w-4 h-4" />, label: 'Gerar Venda', variant: 'success' as const, onClick: handleConvertToSale }] : []),
+    ...(itensSelecionados > 0 ? [{ icon: <Icons.scissors className="w-4 h-4" />, label: `Desmembrar (${itensSelecionados})`, onClick: () => setShowDesmembrarModal(true) }] : []),
+    { icon: <Icons.x className="w-4 h-4" />, label: 'Cancelar Orçamento', variant: 'danger' as const, onClick: handleCancel },
+  ] : [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -505,31 +539,7 @@ export function OrcamentoFormPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {isEditing && (
-              <>
-                <Button variant="secondary" size="sm" onClick={handlePrint}>
-                  <Icons.printer className="w-4 h-4" />
-                </Button>
-                <Button variant="secondary" size="sm" onClick={handleSendEmail}>
-                  <Icons.mail className="w-4 h-4" />
-                </Button>
-                <Button variant="secondary" size="sm" onClick={handleSendWhatsApp}>
-                  <Icons.messageCircle className="w-4 h-4" />
-                </Button>
-                {itensSelecionados > 0 && (
-                  <Button variant="secondary" size="sm" onClick={() => setShowDesmembrarModal(true)}>
-                    <Icons.split className="w-4 h-4 mr-1" />
-                    Desmembrar ({itensSelecionados})
-                  </Button>
-                )}
-                {orcamento.status === 'aprovado' && (
-                  <Button variant="success" size="sm" onClick={handleConvertToSale}>
-                    <Icons.shoppingCart className="w-4 h-4 mr-1" />
-                    Gerar Pedido
-                  </Button>
-                )}
-              </>
-            )}
+            {isEditing && <DropdownMenu items={menuItems} />}
             <Button onClick={handleSave} isLoading={isSaving}>
               Salvar
             </Button>
