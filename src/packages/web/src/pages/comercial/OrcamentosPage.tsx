@@ -1,9 +1,9 @@
 // =============================================
 // PLANAC ERP - Orçamentos Page
-// Atualizado: 2025-12-17 15:07
+// Atualizado: 2025-12-17 16:00
 // =============================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -30,7 +30,13 @@ interface Orcamento {
   valor_total: number;
   itens_count: number;
   observacao?: string;
-  orcamentos_mesclados?: string[];
+  orcamentos_mesclados?: { id: string; numero: string }[];
+}
+
+interface Cliente {
+  id: string;
+  nome: string;
+  cpf_cnpj?: string;
 }
 
 const statusOptions = [
@@ -52,6 +58,60 @@ const statusConfig: Record<string, { variant: 'default' | 'success' | 'warning' 
   expirado: { variant: 'warning', label: 'Expirado' },
 };
 
+// Componente para mostrar orçamentos mesclados com dropdown
+function MescladosDropdown({ mesclados, navigate }: { mesclados: { id: string; numero: string }[]; navigate: (path: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative inline-flex" ref={dropdownRef}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="flex items-center gap-1 text-xs text-gray-500 hover:text-planac-600 transition-colors"
+        title={`Mesclado de ${mesclados.length} orçamentos`}
+      >
+        <Icons.chevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="font-medium">{mesclados.length}</span>
+      </button>
+      
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[180px]">
+          <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase border-b border-gray-100">
+            Orçamentos mesclados
+          </div>
+          {mesclados.map((m) => (
+            <button
+              key={m.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/comercial/orcamentos/${m.id}`);
+                setIsOpen(false);
+              }}
+              className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
+            >
+              <Icons.fileText className="w-4 h-4 text-gray-400" />
+              <span className="font-mono">{m.numero}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function OrcamentosPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -64,6 +124,27 @@ export function OrcamentosPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrcamentos, setSelectedOrcamentos] = useState<string[]>([]);
   const [showMesclarModal, setShowMesclarModal] = useState(false);
+  
+  // Estados para modal de mesclar com seleção de cliente
+  const [clientesDosMesclados, setClientesDosMesclados] = useState<Cliente[]>([]);
+  const [clienteSelecionado, setClienteSelecionado] = useState<string>('');
+
+  // Atalho de teclado "+" para novo orçamento
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Verifica se não está em um input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      
+      if (e.key === '+' || (e.key === '=' && !e.shiftKey)) {
+        e.preventDefault();
+        navigate('/comercial/orcamentos/novo');
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   useEffect(() => {
     loadOrcamentos();
@@ -97,14 +178,50 @@ export function OrcamentosPage() {
     }
   };
 
+  // Abre modal de mesclar e prepara lista de clientes
+  const abrirModalMesclar = () => {
+    const clientesUnicos = new Map<string, Cliente>();
+    
+    selectedOrcamentos.forEach((id) => {
+      const orc = orcamentos.find((o) => o.id === id);
+      if (orc && !clientesUnicos.has(orc.cliente_id)) {
+        clientesUnicos.set(orc.cliente_id, {
+          id: orc.cliente_id,
+          nome: orc.cliente_nome,
+          cpf_cnpj: orc.cliente_cpf_cnpj,
+        });
+      }
+    });
+    
+    const clientes = Array.from(clientesUnicos.values());
+    setClientesDosMesclados(clientes);
+    
+    // Se todos são do mesmo cliente, seleciona automaticamente
+    if (clientes.length === 1) {
+      setClienteSelecionado(clientes[0].id);
+    } else {
+      setClienteSelecionado('');
+    }
+    
+    setShowMesclarModal(true);
+  };
+
   const handleMesclar = async () => {
     if (selectedOrcamentos.length < 2) {
       toast.error('Selecione pelo menos 2 orçamentos para mesclar');
       return;
     }
+    
+    if (!clienteSelecionado) {
+      toast.error('Selecione o cliente para o novo orçamento');
+      return;
+    }
 
     try {
-      await api.post('/orcamentos/mesclar', { orcamentos_ids: selectedOrcamentos });
+      await api.post('/orcamentos/mesclar', { 
+        orcamentos_ids: selectedOrcamentos,
+        cliente_id: clienteSelecionado,
+      });
       toast.success('Orçamentos mesclados com sucesso');
       setSelectedOrcamentos([]);
       setShowMesclarModal(false);
@@ -129,23 +246,15 @@ export function OrcamentosPage() {
   const handleEnviarEmail = async (id: string) => {
     try {
       await api.post(`/orcamentos/${id}/enviar-email`);
-      toast.success('Orçamento enviado por e-mail');
-      loadOrcamentos();
+      toast.success('E-mail enviado com sucesso');
     } catch (error) {
       toast.error('Erro ao enviar e-mail');
     }
   };
 
-  const handleEnviarWhatsApp = async (orcamento: Orcamento) => {
-    // Abrir WhatsApp com mensagem pré-formatada
-    const mensagem = `Olá! Segue seu orçamento #${orcamento.numero} no valor de R$ ${orcamento.valor_total.toFixed(2)}`;
+  const handleEnviarWhatsApp = (orcamento: Orcamento) => {
+    const mensagem = `Olá! Segue seu orçamento ${orcamento.numero} no valor de R$ ${orcamento.valor_total.toFixed(2)}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, '_blank');
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedOrcamentos((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
   };
 
   const filteredOrcamentos = orcamentos
@@ -181,7 +290,14 @@ export function OrcamentosPage() {
         <input
           type="checkbox"
           checked={selectedOrcamentos.includes(o.id)}
-          onChange={() => toggleSelect(o.id)}
+          onChange={(e) => {
+            e.stopPropagation();
+            if (e.target.checked) {
+              setSelectedOrcamentos([...selectedOrcamentos, o.id]);
+            } else {
+              setSelectedOrcamentos(selectedOrcamentos.filter((id) => id !== o.id));
+            }
+          }}
           className="w-4 h-4 rounded border-gray-300 text-planac-500 focus:ring-planac-500"
           onClick={(e) => e.stopPropagation()}
         />
@@ -189,16 +305,14 @@ export function OrcamentosPage() {
     },
     {
       key: 'numero',
-      header: 'Nº',
-      width: '100px',
+      header: 'Número',
+      width: '120px',
       sortable: true,
       render: (o: Orcamento) => (
         <div className="flex items-center gap-2">
-          <span className="font-mono font-medium text-planac-600">#{o.numero}</span>
+          <span className="font-mono font-medium text-planac-600">{o.numero}</span>
           {o.orcamentos_mesclados && o.orcamentos_mesclados.length > 0 && (
-            <Badge variant="info" size="sm" title={`Mesclado de ${o.orcamentos_mesclados.length} orçamentos`}>
-              +{o.orcamentos_mesclados.length}
-            </Badge>
+            <MescladosDropdown mesclados={o.orcamentos_mesclados} navigate={navigate} />
           )}
         </div>
       ),
@@ -211,29 +325,25 @@ export function OrcamentosPage() {
         <div>
           <p className="font-medium text-gray-900">{o.cliente_nome}</p>
           {o.cliente_cpf_cnpj && (
-            <p className="text-sm text-gray-500">{o.cliente_cpf_cnpj}</p>
+            <p className="text-xs text-gray-500 font-mono">{o.cliente_cpf_cnpj}</p>
           )}
         </div>
       ),
     },
     {
-      key: 'vendedor_nome',
-      header: 'Vendedor',
-      width: '150px',
-      render: (o: Orcamento) => o.vendedor_nome || '-',
-    },
-    {
       key: 'data_emissao',
       header: 'Emissão',
       width: '100px',
+      sortable: true,
       render: (o: Orcamento) => formatDate(o.data_emissao),
     },
     {
       key: 'data_validade',
       header: 'Validade',
       width: '100px',
+      sortable: true,
       render: (o: Orcamento) => {
-        const isExpired = new Date(o.data_validade) < new Date();
+        const isExpired = new Date(o.data_validade) < new Date() && o.status !== 'convertido';
         return (
           <span className={isExpired ? 'text-red-600' : ''}>
             {formatDate(o.data_validade)}
@@ -249,12 +359,11 @@ export function OrcamentosPage() {
     },
     {
       key: 'valor_total',
-      header: 'Total',
+      header: 'Valor',
       width: '120px',
+      sortable: true,
       render: (o: Orcamento) => (
-        <span className="font-medium text-green-600">
-          {formatCurrency(o.valor_total)}
-        </span>
+        <span className="font-medium text-gray-900">{formatCurrency(o.valor_total)}</span>
       ),
     },
     {
@@ -262,7 +371,7 @@ export function OrcamentosPage() {
       header: 'Status',
       width: '110px',
       render: (o: Orcamento) => {
-        const config = statusConfig[o.status] || statusConfig.rascunho;
+        const config = statusConfig[o.status] || { variant: 'default', label: o.status };
         return <Badge variant={config.variant}>{config.label}</Badge>;
       },
     },
@@ -275,10 +384,9 @@ export function OrcamentosPage() {
     const isSelected = selectedOrcamentos.includes(orcamento.id);
     if (isSelected && selectedOrcamentos.length >= 2) {
       items.push({
-        label: `Mesclar (${selectedOrcamentos.length} selecionados)`,
+        label: 'Mesclar',
         icon: <Icons.merge className="w-4 h-4" />,
-        variant: 'success' as const,
-        onClick: () => setShowMesclarModal(true),
+        onClick: () => abrirModalMesclar(),
       });
       items.push({ type: 'separator' as const });
     }
@@ -307,7 +415,7 @@ export function OrcamentosPage() {
       },
       {
         label: 'Enviar WhatsApp',
-        icon: <Icons.messageCircle className="w-4 h-4" />,
+        icon: <Icons.whatsapp className="w-4 h-4" />,
         onClick: () => handleEnviarWhatsApp(orcamento),
       }
     );
@@ -346,12 +454,13 @@ export function OrcamentosPage() {
           <p className="text-gray-500">Gerencie seus orçamentos</p>
         </div>
         <div className="flex gap-3">
-          <Button
-            leftIcon={<Icons.plus className="w-5 h-5" />}
+          <button
             onClick={() => navigate('/comercial/orcamentos/novo')}
+            className="p-2 text-gray-600 hover:text-planac-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Novo Orçamento (tecla +)"
           >
-            Novo Orçamento
-          </Button>
+            <Icons.plus className="w-6 h-6" />
+          </button>
         </div>
       </div>
 
@@ -441,6 +550,25 @@ export function OrcamentosPage() {
           <p className="text-gray-600">
             Você está prestes a mesclar {selectedOrcamentos.length} orçamentos.
           </p>
+          
+          {/* Seleção de cliente quando há clientes diferentes */}
+          {clientesDosMesclados.length > 1 && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Selecione o cliente para o novo orçamento:
+              </label>
+              <Select
+                value={clienteSelecionado}
+                onChange={setClienteSelecionado}
+                options={clientesDosMesclados.map((c) => ({
+                  value: c.id,
+                  label: `${c.nome}${c.cpf_cnpj ? ` (${c.cpf_cnpj})` : ''}`,
+                }))}
+                placeholder="Selecione o cliente..."
+              />
+            </div>
+          )}
+          
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <Icons.alertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
@@ -448,8 +576,8 @@ export function OrcamentosPage() {
                 <p className="font-medium">Atenção:</p>
                 <ul className="list-disc ml-4 mt-1">
                   <li>Os orçamentos selecionados serão combinados em um único</li>
-                  <li>O cliente do primeiro orçamento será mantido</li>
                   <li>Itens duplicados terão o menor preço aplicado</li>
+                  <li>Você poderá ver quais orçamentos foram mesclados</li>
                 </ul>
               </div>
             </div>
@@ -458,7 +586,10 @@ export function OrcamentosPage() {
             <Button variant="secondary" onClick={() => setShowMesclarModal(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleMesclar}>
+            <Button 
+              onClick={handleMesclar}
+              disabled={clientesDosMesclados.length > 1 && !clienteSelecionado}
+            >
               Confirmar Mesclagem
             </Button>
           </div>
@@ -469,4 +600,3 @@ export function OrcamentosPage() {
 }
 
 export default OrcamentosPage;
-
