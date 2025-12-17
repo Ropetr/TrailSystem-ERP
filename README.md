@@ -1,181 +1,210 @@
-# 🏢 ERP PLANAC - Sistema de Gestão Empresarial
+# PLANAC ERP
 
-[![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow)]()
-[![Versão](https://img.shields.io/badge/Versão-5.0-blue)]()
-[![Documentação](https://img.shields.io/badge/Docs-28%20Capítulos-green)]()
+Sistema de Gestão Empresarial completo para distribuidoras de materiais de construção.
+
+![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Status](https://img.shields.io/badge/status-production-green)
+![License](https://img.shields.io/badge/license-proprietary-red)
 
 ---
 
 ## 📋 Sobre o Projeto
 
-Sistema ERP completo, multi-empresas, multi-integrações, desenvolvido em módulos para gerir empresas de **atacado**, **varejo** e **atacarejo**.
+O **PLANAC ERP** é um sistema de gestão empresarial desenvolvido para a PLANAC Distribuidora de Materiais para Construção. O sistema é completo e abrange todos os módulos necessários para a operação de uma distribuidora.
 
-**Empresa:** PLANAC Distribuidora  
-**Segmento:** Materiais para Construção (Drywall, Steel Frame, etc.)
+### Stack Tecnológica
+
+| Camada | Tecnologia |
+|--------|------------|
+| **Linguagem** | TypeScript |
+| **Frontend** | React + Tailwind CSS |
+| **Backend** | Hono Framework |
+| **Runtime** | Cloudflare Workers |
+| **Banco de Dados** | Cloudflare D1 (SQLite) |
+| **Storage** | Cloudflare R2 |
+| **Cache** | Cloudflare KV |
 
 ---
 
-## 📁 Estrutura do Repositório
+## 📊 Status do Projeto (17/12/2025)
+
+| Recurso | Status | Progresso |
+|---------|--------|-----------|
+| Infraestrutura Cloudflare | ✅ Completo | 100% |
+| Backend (207 tabelas D1) | ✅ Completo | 100% |
+| API Routes | ✅ Funcionando | 85% |
+| Frontend Pages | ✅ 54+ páginas | 80% |
+| FormPages | ✅ 25 formulários | 100% |
+| Integrações Fiscais | ✅ Nuvem Fiscal | 100% |
+| Deploy Produção | ✅ Workers.dev | Online |
+
+---
+
+## ☁️ Infraestrutura Cloudflare
+
+### Databases D1
+- `Planac-erp-database` - 207 tabelas, 4.2MB (Principal)
+- `planac-erp-ibpt` - Cache IBPT
+- `orquestrador-database` - DEV.com Especialistas
+
+### Storage R2
+- `planac-erp-storage` - Arquivos gerais
+- `planac-erp-certificados` - Certificados A1
+- `planac-images` - Imagens produtos
+- `planac-cms-media` - Mídia e-commerce
+
+### KV Namespaces
+- `Planac-erp-cache` - Cache geral
+- `Planac-erp-sessions` - Sessões usuários
+- `Planac-erp-rate-limit` - Rate limiting
+
+### Workers
+- `planac-erp-api` - API Principal (production)
+
+---
+
+## 🌐 API Endpoints
+
+**Base URL:** `https://planac-erp-api.planacacabamentos.workers.dev`
+
+### Endpoints Disponíveis
+
+| Rota | Método | Descrição |
+|------|--------|-----------|
+| `/health` | GET | Health check |
+| `/v1/usuarios` | GET, POST | Usuários |
+| `/v1/perfis` | GET, POST | Perfis de acesso |
+| `/v1/clientes` | GET, POST | Clientes |
+| `/v1/fornecedores` | GET, POST | Fornecedores |
+| `/v1/produtos` | GET, POST | Produtos |
+| `/v1/orcamentos` | GET, POST | Orçamentos |
+| `/v1/vendas` | GET, POST | Vendas |
+| `/v1/fiscal/*` | * | Módulo Fiscal |
+| `/v1/ibpt/*` | * | IBPT |
+| `/v1/certificados/*` | * | Certificados A1 |
+
+---
+
+## 📁 Estrutura do Projeto
 
 ```
-📁 Planac/
-├── 📁 docs/                          # Documentação completa
-│   ├── 📁 01-sumario/                # Estrutura de módulos (28 capítulos)
-│   ├── 📁 02-regras-negocio/         # 313 regras por módulo
-│   ├── 📁 03-casos-uso/              # 185 casos de uso
-│   ├── 📁 04-fluxogramas/            # 25 fluxogramas em Mermaid
-│   ├── 📁 05-modelo-dados/           # 207 tabelas
-│   ├── 📁 06-especificacao-telas/    # 203 telas especificadas
-│   ├── 📁 07-apis/                   # Endpoints e integrações
-│   ├── 📁 08-integracoes/            # 10 sistemas externos
-│   ├── 📁 09-manuais/                # Usuário e Admin
-│   └── 📁 10-anexos/                 # Arquitetura, Glossário, Roadmap
-├── 📁 src/                           # Código-fonte (futuro)
-├── CHECKLIST.md                      # Status de cada documento
-└── README.md                         # Este arquivo
-```
-
----
-
-## 🎯 Módulos do Sistema
-
-### Estrutura de Partes (13 Partes)
-
-| Parte | Nome | Capítulos |
-|:-----:|------|:---------:|
-| 1 | Módulos Core | 01-03 |
-| 2 | Módulo Comercial (12 submódulos) | 04 |
-| 3 | Módulo Compras (12 submódulos) | 05 |
-| 4 | Módulos Financeiros | 06-09 |
-| 5 | Módulos Fiscais e Contábeis | 10-14 |
-| 6 | Separação e Expedição | 15 |
-| 7 | Módulos de Inteligência | 16 |
-| 8 | Marketing, E-commerce e Atendimento | 17-19 |
-| 9 | Módulos de Integração | 20-21 |
-| 10 | Módulos de Interface | 22-23 |
-| 11 | Módulos de Suporte | 24-25 |
-| 12 | Recursos Humanos | 26-27 |
-| 13 | Contratos | 28 |
-
-### Menus Principais
-
-| Menu | Submódulos |
-|------|------------|
-| **📁 COMERCIAL** | CRM, CalcPro, Orçamentos, Pedido de Venda, PDV, Programa de Indicações, Devolução, Troca, Serviços, Consignação, Garantia, Gamificação |
-| **📁 COMPRAS** | Cotações, Pedido de Compra, Recebimento, Devolução, Troca, Importação NF, Análise de Preços, Estoque, WMS, Produção/PCP, Kits, Custos/Precificação |
-| **📁 FINANCEIRO** | Contas a Receber, Contas a Pagar, Fluxo de Caixa, Bancos e Tesouraria |
-| **📁 FISCAL** | Tributário, Documentos Fiscais, Obrigações, Contabilidade, Patrimônio |
-| **📁 RH** | Colaboradores, Ponto, Férias, Folha, Benefícios, App do Colaborador |
-
----
-
-## 📊 Status da Documentação
-
-| Fase | Documentos | Progresso |
-|------|------------|-----------|
-| 1 - Negócio | Sumário, Regras, Casos de Uso | ✅ **100%** |
-| 2 - Funcional | Fluxogramas, Telas, Relatórios | 🟡 **60%** |
-| 3 - Técnica | Modelo de Dados, APIs, Integrações | ⏳ **20%** |
-| 4 - Implantação | Manuais, Testes | ⏳ **0%** |
-
-### Documentos Completos
-
-| Documento | Quantidade | Status |
-|-----------|------------|--------|
-| ✅ Sumário Geral | 28 capítulos | Completo |
-| ✅ Regras de Negócio | 313 regras | Completo |
-| ✅ Casos de Uso | 185 casos | Completo |
-| ✅ Fluxogramas | 25 fluxos | Completo |
-| ✅ Modelo de Dados | 207 tabelas | Completo |
-| ✅ Telas | 203 telas | Completo |
-| ✅ Integrações | 10 APIs | Completo |
-
-**Detalhes:** [CHECKLIST.md](./CHECKLIST.md)
-
----
-
-## 🚀 Funcionalidades Principais
-
-### Comercial
-- ✅ Vendas com entregas fracionadas (.E1, .E2, .E3)
-- ✅ Orçamentos com mesclar/desmembrar
-- ✅ Programa de indicações com crédito
-- ✅ Consignação com acerto automático
-- ✅ Garantia de produtos
-- ✅ Gamificação para vendedores
-
-### E-commerce
-- ✅ Loja B2B + B2C integrada
-- ✅ Aprovação de cadastro B2B
-- ✅ Rastreamento GPS em tempo real
-- ✅ Área do cliente completa
-
-### Financeiro
-- ✅ Múltiplas formas de pagamento por venda
-- ✅ Régua de cobrança automática
-- ✅ Limite de crédito com compromisso na venda
-
-### RH
-- ✅ App do Colaborador
-- ✅ Ponto com geolocalização
-- ✅ Folha de pagamento integrada
-
----
-
-
-## 🤖 Sistema de Governança (Orquestrador DEV.com)
-
-O desenvolvimento do PLANAC ERP é governado pelo **Orquestrador DEV.com**, um sistema de IA que coordena **57 especialistas virtuais**.
-
-### Infraestrutura
-
-| Componente | Recurso | URL |
-|------------|---------|-----|
-| **API do ERP** | `planac-erp-api` | https://planac-erp-api.planacacabamentos.workers.dev |
-| **Orquestrador** | `devcom-orchestrator` | https://devcom-orchestrator.planacacabamentos.workers.dev |
-
-### Capacidades
-
-- 🧠 **57 Especialistas Virtuais** - CEO, CTO, DBA, Frontend, Backend, QA, etc.
-- 🔄 **Arquitetura Duas Cabeças** - Claude (análise) + GPT (validação)
-- 💾 **Memória Ampliada** - Persiste decisões e contexto entre sessões
-- 📊 **Governança Automatizada** - Documenta e rastreia todas as decisões
-
-### Documentação Relacionada
-
-| Documento | Descrição |
-|-----------|-----------|
-| [DEV.com.md](./DEV.com.md) | Estrutura da fábrica de software virtual |
-| [docs/00-devcom/ORQUESTRADOR.md](./docs/00-devcom/ORQUESTRADOR.md) | Detalhes técnicos do orquestrador |
-| [docs/00-devcom/WORKFLOW.md](./docs/00-devcom/WORKFLOW.md) | Fluxos de trabalho |
-
-### Repositórios
-
-```
-📁 Ropetr/Planac-Revisado      ← ERP (este repositório)
-📁 Ropetr/dev.com-orquestrador ← Orquestrador
+src/
+├── packages/
+│   ├── api/                    # Backend Hono
+│   │   └── src/
+│   │       ├── routes/         # Rotas API
+│   │       ├── services/       # Serviços
+│   │       └── middleware/     # Middlewares
+│   └── web/                    # Frontend React
+│       └── src/
+│           ├── pages/          # Páginas
+│           ├── components/     # Componentes
+│           └── hooks/          # React Hooks
+└── shared/                     # Código compartilhado
 ```
 
 ---
+
+## 🔧 Módulos do Sistema
+
+### ✅ Implementados
+
+- **Core** - Empresas, Filiais, Usuários, Perfis
+- **Comercial** - Clientes, Produtos, Orçamentos, Vendas
+- **Estoque** - Movimentações, Transferências, Inventário
+- **Fiscal** - NF-e, NFC-e, NFS-e, CT-e, MDF-e
+- **Financeiro** - Contas a Pagar/Receber, Boletos
+- **Compras** - Pedidos, Cotações, Fornecedores
+- **Logística** - Entregas, Rotas, Rastreamento
+- **CRM** - Leads, Oportunidades, Pipeline
+- **Contábil** - Plano de Contas, Lançamentos, DRE
+- **RH** - Colaboradores, Folha, Ponto
+- **Patrimônio** - Bens, Depreciação
+- **Suporte** - Tickets, Base de Conhecimento
+- **BI** - Dashboards, Relatórios
+
+### ⏳ Em Desenvolvimento
+
+- **CalcPro** - Calculadora técnica drywall
+- **PDV** - Ponto de venda offline-first
+- **E-commerce** - Loja virtual integrada
+
+---
+
+## 🔗 Integrações
+
+### ✅ Ativas
+
+| Integração | Uso | Status |
+|------------|-----|--------|
+| **Nuvem Fiscal** | Emissão NF-e/NFC-e/NFS-e | ✅ Configurado |
+| **IBPT** | Impostos (Lei 12.741) | ✅ Implementado |
+| **ViaCEP** | Consulta CEP | ✅ Funcionando |
+| **CNPJá** | Consulta CNPJ | ✅ Configurado |
+| **cpf.CNPJ** | Consulta CPF/CNPJ | ✅ Configurado |
+
+### ⏳ Planejadas
+
+- TecnoSpeed (Boletos, PIX)
+- Nuvemshop (E-commerce)
+- Gateway de Pagamento
+
+---
+
+## 🚀 Deploy
+
+### Produção
+
+```bash
+# Deploy do Worker
+wrangler deploy
+
+# Configurar secrets
+wrangler secret put JWT_SECRET
+wrangler secret put NUVEM_FISCAL_CLIENT_ID
+wrangler secret put NUVEM_FISCAL_CLIENT_SECRET
+```
+
+### Desenvolvimento Local
+
+```bash
+# Instalar dependências
+npm install
+
+# Rodar em desenvolvimento
+npm run dev
+
+# Build
+npm run build
+```
+
+---
+
+## 📄 Documentação
+
+- [Auditoria Cloudflare 17/12/2025](./PLANAC_ERP_AUDITORIA_2025-12-17.md)
+- [Mapeamento de Telas](./MAPEAMENTO_TELAS_PLANAC_ERP.md)
+- [Status do Projeto 14/12/2025](./STATUS_PLANAC_ERP_2025-12-14.md)
+- [Realinhamento DEV.com](./REALINHAMENTO_PLANAC_2025-12-14.md)
+
+---
+
 ## 👥 Equipe
 
-- **Rodrigo** - Product Owner / PLANAC
-- **Claude AI** - Assistente de Documentação
-- **DEV.com** - Fábrica de Software Virtual
+Desenvolvido pela **DEV.com** com governança de 57 Especialistas IA.
+
+- **CEO:** Rodrigo
+- **CTO Virtual:** Claude (Anthropic)
+- **Arquitetura:** DEV.com Especialistas
 
 ---
 
-## 📅 Histórico
+## 📞 Suporte
 
-| Data | Versão | Descrição |
-|------|--------|-----------|
-| 07/12/2025 | 5.0 | Revisão completa: correção de métricas (313 regras, 185 casos, 207 tabelas, 10 integrações) |
-| 06/12/2025 | 4.0 | Varredura completa, IDs Cloudflare, Nuvem Fiscal |
-| 01/12/2025 | 3.0 | Documentação completa: 295 regras, 145 casos de uso, 25 fluxogramas |
-| 29/11/2025 | 2.1 | Adicionado: E-commerce, RH, GPS, Custos, Contratos |
-| 28/11/2025 | 2.0 | Reorganização: 23 capítulos |
-| 28/11/2025 | 1.0 | Estrutura inicial: 34 capítulos |
+- **Email:** rodrigo@planacdivisorias.com.br
+- **Cliente:** PLANAC Distribuidora
 
 ---
 
-*Documentação gerada com auxílio de IA - Anthropic Claude*
+**Última atualização:** 17/12/2025  
+**Versão:** 2.1.0
