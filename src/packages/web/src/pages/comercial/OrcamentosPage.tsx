@@ -1,9 +1,9 @@
 // =============================================
 // PLANAC ERP - Orçamentos Page
-// Atualizado: 2025-12-17 16:55
+// Atualizado: 2025-12-17 17:20
 // =============================================
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +16,9 @@ import { Icons } from '@/components/ui/Icons';
 import { useToast } from '@/components/ui/Toast';
 import api from '@/services/api';
 
+// =============================================
+// INTERFACES
+// =============================================
 interface Orcamento {
   id: string;
   numero: string;
@@ -39,6 +42,9 @@ interface Cliente {
   cpf_cnpj?: string;
 }
 
+// =============================================
+// CONSTANTES
+// =============================================
 const statusOptions = [
   { value: '', label: 'Todos' },
   { value: 'rascunho', label: 'Rascunho' },
@@ -58,81 +64,32 @@ const statusConfig: Record<string, { variant: 'default' | 'success' | 'warning' 
   expirado: { variant: 'warning', label: 'Expirado' },
 };
 
-// Componente para mostrar orçamentos mesclados com dropdown
-function MescladosDropdown({ mesclados, navigate }: { mesclados: { id: string; numero: string }[]; navigate: (path: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative inline-flex" ref={dropdownRef}>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        className="flex items-center gap-1 text-xs text-gray-500 hover:text-planac-600 transition-colors"
-        title={`Mesclado de ${mesclados.length} orçamentos`}
-      >
-        <Icons.chevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        <span className="font-medium">{mesclados.length}</span>
-      </button>
-      
-      {isOpen && (
-        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[180px]">
-          <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase border-b border-gray-100">
-            Orçamentos mesclados
-          </div>
-          {mesclados.map((m) => (
-            <button
-              key={m.id}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/comercial/orcamentos/${m.id}`);
-                setIsOpen(false);
-              }}
-              className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
-            >
-              <Icons.fileText className="w-4 h-4 text-gray-400" />
-              <span className="font-mono">{m.numero}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
+// =============================================
+// COMPONENTE PRINCIPAL
+// =============================================
 export function OrcamentosPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const clienteIdParam = searchParams.get('cliente');
   const toast = useToast();
 
+  // Estados
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrcamentos, setSelectedOrcamentos] = useState<string[]>([]);
   const [showMesclarModal, setShowMesclarModal] = useState(false);
-  
-  // Estados para modal de mesclar com seleção de cliente
   const [clientesDosMesclados, setClientesDosMesclados] = useState<Cliente[]>([]);
   const [clienteSelecionado, setClienteSelecionado] = useState<string>('');
 
+  // =============================================
+  // EFEITOS
+  // =============================================
+  
   // Atalho de teclado "+" para novo orçamento
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Verifica se não está em um input/textarea
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
       
@@ -150,6 +107,9 @@ export function OrcamentosPage() {
     loadOrcamentos();
   }, [clienteIdParam]);
 
+  // =============================================
+  // FUNÇÕES DE CARREGAMENTO
+  // =============================================
   const loadOrcamentos = async () => {
     try {
       const url = clienteIdParam 
@@ -157,7 +117,6 @@ export function OrcamentosPage() {
         : '/orcamentos';
       const response = await api.get<{ success: boolean; data: Orcamento[] }>(url);
       if (response.success) {
-        // Parsear orcamentos_mesclados se for string JSON
         const data = response.data.map((o: any) => ({
           ...o,
           orcamentos_mesclados: typeof o.orcamentos_mesclados === 'string' 
@@ -173,6 +132,9 @@ export function OrcamentosPage() {
     }
   };
 
+  // =============================================
+  // HANDLERS
+  // =============================================
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja realmente excluir este orçamento?')) return;
 
@@ -185,8 +147,7 @@ export function OrcamentosPage() {
     }
   };
 
-  // Abre modal de mesclar e prepara lista de clientes
-  const abrirModalMesclar = () => {
+  const handleAbrirModalMesclar = useCallback(() => {
     const clientesUnicos = new Map<string, Cliente>();
     
     selectedOrcamentos.forEach((id) => {
@@ -211,7 +172,7 @@ export function OrcamentosPage() {
     }
     
     setShowMesclarModal(true);
-  };
+  }, [selectedOrcamentos, orcamentos]);
 
   const handleMesclar = async () => {
     if (selectedOrcamentos.length < 2) {
@@ -264,6 +225,9 @@ export function OrcamentosPage() {
     window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, '_blank');
   };
 
+  // =============================================
+  // DADOS FILTRADOS
+  // =============================================
   const filteredOrcamentos = orcamentos
     .filter((o) => {
       const searchLower = (search || '').toLowerCase();
@@ -275,7 +239,7 @@ export function OrcamentosPage() {
 
       return matchSearch && matchStatus;
     })
-    .sort((a, b) => Number(a.numero) - Number(b.numero)); // Ordem crescente
+    .sort((a, b) => Number(a.numero) - Number(b.numero));
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -288,6 +252,9 @@ export function OrcamentosPage() {
     return new Date(dateStr).toLocaleDateString('pt-BR');
   };
 
+  // =============================================
+  // COLUNAS DA TABELA
+  // =============================================
   const columns = [
     {
       key: 'select',
@@ -313,13 +280,13 @@ export function OrcamentosPage() {
     {
       key: 'numero',
       header: 'Número',
-      width: '120px',
+      width: '140px',
       sortable: true,
       render: (o: Orcamento) => (
         <div className="flex items-center gap-2">
           <span className="font-mono font-medium text-planac-600">{o.numero}</span>
           {o.orcamentos_mesclados && o.orcamentos_mesclados.length > 0 && (
-            <MescladosDropdown mesclados={o.orcamentos_mesclados} navigate={navigate} />
+            <MescladosIndicator mesclados={o.orcamentos_mesclados} onNavigate={(id) => navigate(`/comercial/orcamentos/${id}`)} />
           )}
         </div>
       ),
@@ -350,19 +317,15 @@ export function OrcamentosPage() {
       width: '100px',
       sortable: true,
       render: (o: Orcamento) => {
-        const isExpired = new Date(o.data_validade) < new Date() && o.status !== 'convertido';
+        const validade = new Date(o.data_validade);
+        const hoje = new Date();
+        const expirado = validade < hoje && o.status !== 'convertido';
         return (
-          <span className={isExpired ? 'text-red-600' : ''}>
+          <span className={expirado ? 'text-red-600 font-medium' : ''}>
             {formatDate(o.data_validade)}
           </span>
         );
       },
-    },
-    {
-      key: 'itens_count',
-      header: 'Itens',
-      width: '60px',
-      render: (o: Orcamento) => o.itens_count,
     },
     {
       key: 'valor_total',
@@ -376,7 +339,7 @@ export function OrcamentosPage() {
     {
       key: 'status',
       header: 'Status',
-      width: '110px',
+      width: '120px',
       render: (o: Orcamento) => {
         const config = statusConfig[o.status] || { variant: 'default', label: o.status };
         return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -384,7 +347,10 @@ export function OrcamentosPage() {
     },
   ];
 
-  const actions = (orcamento: Orcamento) => {
+  // =============================================
+  // AÇÕES DO MENU
+  // =============================================
+  const getActions = useCallback((orcamento: Orcamento) => {
     const items: { label?: string; icon?: React.ReactNode; onClick?: () => void; variant?: 'default' | 'danger' | 'success'; type?: 'separator' }[] = [];
     
     // Mesclar - só aparece se este orçamento está selecionado E há 2+ selecionados
@@ -393,7 +359,7 @@ export function OrcamentosPage() {
       items.push({
         label: 'Mesclar',
         icon: <Icons.merge className="w-4 h-4" />,
-        onClick: () => abrirModalMesclar(),
+        onClick: handleAbrirModalMesclar,
       });
       items.push({ type: 'separator' as const });
     }
@@ -450,8 +416,11 @@ export function OrcamentosPage() {
     );
 
     return items;
-  };
+  }, [selectedOrcamentos, handleAbrirModalMesclar, navigate]);
 
+  // =============================================
+  // RENDER
+  // =============================================
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] space-y-4">
       {/* Header */}
@@ -540,7 +509,7 @@ export function OrcamentosPage() {
         <DataTable
           data={filteredOrcamentos}
           columns={columns}
-          actions={actions}
+          actions={getActions}
           isLoading={isLoading}
           emptyMessage="Nenhum orçamento encontrado"
           onRowClick={(o) => navigate(`/comercial/orcamentos/${o.id}`)}
@@ -602,6 +571,68 @@ export function OrcamentosPage() {
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+// =============================================
+// COMPONENTE: Indicador de Mesclados
+// =============================================
+function MescladosIndicator({ 
+  mesclados, 
+  onNavigate 
+}: { 
+  mesclados: { id: string; numero: string }[]; 
+  onNavigate: (id: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative inline-flex" ref={dropdownRef}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="flex items-center gap-1 text-xs text-gray-500 hover:text-planac-600 transition-colors"
+        title={`Mesclado de ${mesclados.length} orçamentos`}
+      >
+        <Icons.chevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="font-medium">{mesclados.length}</span>
+      </button>
+      
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[180px]">
+          <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase border-b border-gray-100">
+            Orçamentos mesclados
+          </div>
+          {mesclados.map((m) => (
+            <button
+              key={m.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate(m.id);
+                setIsOpen(false);
+              }}
+              className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
+            >
+              <Icons.fileText className="w-4 h-4 text-gray-400" />
+              <span className="font-mono">{m.numero}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
