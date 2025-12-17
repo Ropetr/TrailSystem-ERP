@@ -4,6 +4,8 @@ export { Input } from "./Input";
 export { Textarea } from "./Textarea";
 export { Select } from "./Select";
 export { SelectDropdown } from "./SelectDropdown";
+export { ClienteSelect } from "./ClienteSelect";
+export type { ClienteData, ClienteOption } from "./ClienteSelect";
 export { DropdownMenu } from "./DropdownMenu";
 export { Card, CardHeader, CardTitle, CardContent } from "./Card";
 export { Modal } from "./Modal";
