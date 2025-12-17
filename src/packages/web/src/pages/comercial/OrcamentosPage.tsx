@@ -149,9 +149,10 @@ export function OrcamentosPage() {
   };
 
   const filteredOrcamentos = orcamentos.filter((o) => {
+    const searchLower = (search || '').toLowerCase();
     const matchSearch =
-      o.numero?.toLowerCase().includes(search.toLowerCase()) ||
-      o.cliente_nome?.toLowerCase().includes(search.toLowerCase());
+      String(o.numero || '').toLowerCase().includes(searchLower) ||
+      String(o.cliente_nome || '').toLowerCase().includes(searchLower);
 
     const matchStatus = !statusFilter || o.status === statusFilter;
 
