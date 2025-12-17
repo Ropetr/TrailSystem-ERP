@@ -1,169 +1,686 @@
-// =============================================
-// PLANAC ERP - Cotação de Compra Form Page
-// =============================================
+import React, { useState, useRef, useEffect } from 'react';
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Icons } from '@/components/ui/Icons';
-import { useToast } from '@/components/ui/Toast';
-import api from '@/services/api';
+// ===========================================
+// ESTILOS GLOBAIS
+// ===========================================
+const globalStyles = `
+  input:focus, textarea:focus, select:focus {
+    outline: none !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  }
+`;
 
-const cotacaoSchema = z.object({
-  descricao: z.string().min(3, 'Descrição é obrigatória'),
-  data_abertura: z.string().min(1, 'Data de abertura é obrigatória'),
-  data_limite_resposta: z.string().optional(),
-  comprador_id: z.string().optional(),
-  observacao: z.string().optional(),
-});
+// ===========================================
+// ÍCONES SVG
+// ===========================================
+const Icons = {
+  back: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>,
+  save: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>,
+  trash: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+  plus: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+  clipboard: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
+  chevronDown: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
+  chevronUp: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>,
+  check: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>,
+  dots: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>,
+  search: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+  mail: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  printer: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
+  shoppingCart: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  star: <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>,
+  starOutline: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>,
+  building: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
+};
 
-type CotacaoFormData = z.infer<typeof cotacaoSchema>;
-
-interface ItemCotacao { id: string; produto_id: string; produto_codigo: string; produto_nome: string; quantidade: number; unidade: string; }
-interface FornecedorCotacao { id: string; fornecedor_id: string; fornecedor_nome: string; status: string; }
-
-export function CotacaoFormPage() {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const { toast } = useToast();
-  const isEditing = Boolean(id);
-  
-  const [loading, setLoading] = useState(false);
-  const [fornecedores, setFornecedores] = useState<any[]>([]);
-  const [produtos, setProdutos] = useState<any[]>([]);
-  const [compradores, setCompradores] = useState<any[]>([]);
-  const [itens, setItens] = useState<ItemCotacao[]>([]);
-  const [fornecedoresCotacao, setFornecedoresCotacao] = useState<FornecedorCotacao[]>([]);
-  
-  const [modalProduto, setModalProduto] = useState(false);
-  const [buscaProduto, setBuscaProduto] = useState('');
-  const [produtosFiltrados, setProdutosFiltrados] = useState<any[]>([]);
-  const [quantidadeAdd, setQuantidadeAdd] = useState(1);
-  const [produtoSelecionado, setProdutoSelecionado] = useState<any>(null);
-  const [modalFornecedor, setModalFornecedor] = useState(false);
-
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<CotacaoFormData>({
-    resolver: zodResolver(cotacaoSchema),
-    defaultValues: { data_abertura: new Date().toISOString().split('T')[0] },
-  });
-
-  useEffect(() => { loadFornecedores(); loadProdutos(); loadCompradores(); if (id) loadCotacao(); }, [id]);
+// ===========================================
+// COMPONENTE: SELECT DROPDOWN
+// ===========================================
+function SelectDropdown({ value, onChange, options = [], placeholder = 'Selecione...', disabled = false, className = '' }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
-    if (buscaProduto.length >= 2) {
-      setProdutosFiltrados(produtos.filter(p => p.nome?.toLowerCase().includes(buscaProduto.toLowerCase()) || p.codigo?.toLowerCase().includes(buscaProduto.toLowerCase())).slice(0, 10));
-    } else { setProdutosFiltrados([]); }
-  }, [buscaProduto, produtos]);
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const loadFornecedores = async () => { try { const r = await api.get('/fornecedores?ativo=true&limit=1000'); setFornecedores(r.data.data || []); } catch (e) { console.error(e); } };
-  const loadProdutos = async () => { try { const r = await api.get('/produtos?ativo=true&limit=5000'); setProdutos(r.data.data || []); } catch (e) { console.error(e); } };
-  const loadCompradores = async () => { try { const r = await api.get('/usuarios?ativo=true'); setCompradores(r.data.data || []); } catch (e) { console.error(e); } };
-  const loadCotacao = async () => { try { setLoading(true); const r = await api.get(`/cotacoes/${id}`); reset(r.data); setItens(r.data.itens || []); setFornecedoresCotacao(r.data.fornecedores || []); } catch (e) { toast({ title: 'Erro', variant: 'destructive' }); navigate('/compras/cotacoes'); } finally { setLoading(false); } };
-
-  const adicionarItem = () => {
-    if (!produtoSelecionado || quantidadeAdd <= 0) { toast({ title: 'Selecione produto e quantidade', variant: 'destructive' }); return; }
-    setItens([...itens, { id: `t-${Date.now()}`, produto_id: produtoSelecionado.id, produto_codigo: produtoSelecionado.codigo || '', produto_nome: produtoSelecionado.nome, quantidade: quantidadeAdd, unidade: produtoSelecionado.unidade || 'UN' }]);
-    setModalProduto(false); setBuscaProduto(''); setProdutoSelecionado(null); setQuantidadeAdd(1);
-  };
-
-  const removerItem = (itemId: string) => setItens(itens.filter(i => i.id !== itemId));
-
-  const adicionarFornecedor = (fid: string) => {
-    const f = fornecedores.find(x => x.id === fid);
-    if (!f) return;
-    if (fornecedoresCotacao.some(x => x.fornecedor_id === fid)) { toast({ title: 'Já adicionado', variant: 'destructive' }); return; }
-    setFornecedoresCotacao([...fornecedoresCotacao, { id: `t-${Date.now()}`, fornecedor_id: fid, fornecedor_nome: f.razao_social, status: 'pendente' }]);
-    setModalFornecedor(false);
-  };
-
-  const removerFornecedor = (id: string) => setFornecedoresCotacao(fornecedoresCotacao.filter(f => f.id !== id));
-
-  const onSubmit = async (data: CotacaoFormData) => {
-    if (itens.length === 0) { toast({ title: 'Adicione itens', variant: 'destructive' }); return; }
-    if (fornecedoresCotacao.length === 0) { toast({ title: 'Adicione fornecedores', variant: 'destructive' }); return; }
-    try {
-      const payload = { ...data, itens: itens.map(i => ({ produto_id: i.produto_id, produto_codigo: i.produto_codigo, produto_nome: i.produto_nome, quantidade: i.quantidade, unidade: i.unidade })), fornecedores: fornecedoresCotacao.map(f => ({ fornecedor_id: f.fornecedor_id, fornecedor_nome: f.fornecedor_nome })) };
-      if (isEditing) { await api.put(`/cotacoes/${id}`, payload); toast({ title: 'Atualizada!' }); }
-      else { await api.post('/cotacoes', payload); toast({ title: 'Cadastrada!' }); }
-      navigate('/compras/cotacoes');
-    } catch (e: any) { toast({ title: 'Erro', description: e.response?.data?.message || 'Tente novamente', variant: 'destructive' }); }
-  };
-
-  if (loading) return <div className="flex items-center justify-center min-h-[400px]"><Icons.spinner className="w-8 h-8 animate-spin text-red-500" /></div>;
+  const selectedOption = options.find(opt => opt.value === value);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/compras/cotacoes')}><Icons.arrowLeft className="w-4 h-4 mr-2" />Voltar</Button>
-        <div><h1 className="text-2xl font-bold text-gray-900">{isEditing ? 'Editar Cotação' : 'Nova Cotação'}</h1><p className="text-sm text-gray-500">{isEditing ? 'Atualize' : 'Preencha os dados'}</p></div>
-      </div>
+    <div className={`relative ${className}`} ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-left flex items-center justify-between transition-colors ${
+          disabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'hover:border-gray-300 cursor-pointer'
+        } ${isOpen ? 'border-red-500 ring-2 ring-red-500/20' : ''}`}
+      >
+        <span className={selectedOption ? 'text-gray-800' : 'text-gray-400'}>
+          {selectedOption?.label || placeholder}
+        </span>
+        {isOpen ? Icons.chevronUp : Icons.chevronDown}
+      </button>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Dados da Cotação</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Descrição *</label><Input {...register('descricao')} placeholder="Ex: Cotação materiais obra X" error={errors.descricao?.message} /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Abertura *</label><Input {...register('data_abertura')} type="date" error={errors.data_abertura?.message} /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Limite Resposta</label><Input {...register('data_limite_resposta')} type="date" /></div>
-            <div><label className="block text-sm font-medium text-gray-700 mb-1">Comprador</label><Select {...register('comprador_id')} options={compradores.map(c => ({ value: c.id, label: c.nome }))} placeholder="Selecione..." /></div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-semibold text-gray-900">Itens</h2><Button type="button" onClick={() => setModalProduto(true)}><Icons.plus className="w-4 h-4 mr-2" />Adicionar</Button></div>
-          {itens.length === 0 ? <div className="text-center py-8 text-gray-500"><Icons.package className="w-12 h-12 mx-auto mb-2 opacity-50" /><p>Nenhum item</p></div> : (
-            <table className="w-full"><thead><tr className="bg-gray-50 border-b"><th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Código</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Produto</th><th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Qtde</th><th className="px-4 py-2 text-center text-xs font-semibold text-gray-600">Un</th><th className="px-4 py-2 text-center text-xs font-semibold text-gray-600">Ação</th></tr></thead>
-            <tbody className="divide-y">{itens.map(i => <tr key={i.id} className="hover:bg-gray-50"><td className="px-4 py-2 text-sm font-mono">{i.produto_codigo}</td><td className="px-4 py-2 text-sm">{i.produto_nome}</td><td className="px-4 py-2 text-sm text-right">{i.quantidade}</td><td className="px-4 py-2 text-sm text-center">{i.unidade}</td><td className="px-4 py-2 text-center"><Button type="button" variant="ghost" size="sm" onClick={() => removerItem(i.id)}><Icons.trash className="w-4 h-4 text-red-500" /></Button></td></tr>)}</tbody></table>
-          )}
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-semibold text-gray-900">Fornecedores</h2><Button type="button" onClick={() => setModalFornecedor(true)}><Icons.plus className="w-4 h-4 mr-2" />Adicionar</Button></div>
-          {fornecedoresCotacao.length === 0 ? <div className="text-center py-8 text-gray-500"><Icons.building className="w-12 h-12 mx-auto mb-2 opacity-50" /><p>Nenhum fornecedor</p></div> : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{fornecedoresCotacao.map(f => <div key={f.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"><div><p className="font-medium text-sm">{f.fornecedor_nome}</p><span className={`text-xs px-2 py-0.5 rounded ${f.status === 'pendente' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{f.status}</span></div><Button type="button" variant="ghost" size="sm" onClick={() => removerFornecedor(f.id)}><Icons.x className="w-4 h-4 text-gray-500" /></Button></div>)}</div>
-          )}
-        </Card>
-
-        <Card className="p-6"><h2 className="text-lg font-semibold text-gray-900 mb-4">Observações</h2><textarea {...register('observacao')} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Observações..." /></Card>
-
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate('/compras/cotacoes')}>Cancelar</Button>
-          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <><Icons.spinner className="w-4 h-4 mr-2 animate-spin" />Salvando...</> : <><Icons.check className="w-4 h-4 mr-2" />{isEditing ? 'Atualizar' : 'Criar'}</>}</Button>
-        </div>
-      </form>
-
-      {modalProduto && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
-            <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-semibold">Adicionar Item</h3><Button type="button" variant="ghost" size="sm" onClick={() => setModalProduto(false)}><Icons.x className="w-5 h-5" /></Button></div>
-            <div className="space-y-4">
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Buscar Produto</label><Input value={buscaProduto} onChange={(e) => setBuscaProduto(e.target.value)} placeholder="Nome ou código..." />
-                {produtosFiltrados.length > 0 && <div className="mt-2 border rounded-lg max-h-40 overflow-auto">{produtosFiltrados.map(p => <button key={p.id} type="button" onClick={() => { setProdutoSelecionado(p); setBuscaProduto(p.nome); setProdutosFiltrados([]); }} className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b last:border-b-0"><span className="font-mono text-gray-500">{p.codigo}</span> - {p.nome}</button>)}</div>}
-              </div>
-              {produtoSelecionado && (<><div className="p-3 bg-gray-50 rounded-lg text-sm"><p><strong>Produto:</strong> {produtoSelecionado.nome}</p><p><strong>Un:</strong> {produtoSelecionado.unidade || 'UN'}</p></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label><Input type="number" min="1" value={quantidadeAdd} onChange={(e) => setQuantidadeAdd(Number(e.target.value))} /></div></>)}
-            </div>
-            <div className="flex justify-end gap-2 mt-6"><Button type="button" variant="outline" onClick={() => setModalProduto(false)}>Cancelar</Button><Button type="button" onClick={adicionarItem} disabled={!produtoSelecionado}>Adicionar</Button></div>
-          </div>
-        </div>
-      )}
-
-      {modalFornecedor && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
-            <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-semibold">Adicionar Fornecedor</h3><Button type="button" variant="ghost" size="sm" onClick={() => setModalFornecedor(false)}><Icons.x className="w-5 h-5" /></Button></div>
-            <div className="max-h-96 overflow-auto space-y-2">{fornecedores.filter(f => !fornecedoresCotacao.some(fc => fc.fornecedor_id === f.id)).map(f => <button key={f.id} type="button" onClick={() => adicionarFornecedor(f.id)} className="w-full px-4 py-3 text-left hover:bg-gray-50 rounded-lg border"><p className="font-medium">{f.razao_social}</p><p className="text-sm text-gray-500">{f.cpf_cnpj}</p></button>)}</div>
-            <div className="flex justify-end mt-6"><Button type="button" variant="outline" onClick={() => setModalFornecedor(false)}>Fechar</Button></div>
-          </div>
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50 max-h-60 overflow-auto">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`w-full px-4 py-2 text-sm text-left flex items-center justify-between transition-colors ${
+                option.value === value
+                  ? 'bg-red-50 text-red-600 font-medium'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <span>{option.label}</span>
+              {option.value === value && Icons.check}
+            </button>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-export default CotacaoFormPage;
+// ===========================================
+// COMPONENTE: DROPDOWN MENU
+// ===========================================
+function DropdownMenu({ items }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getItemClasses = (variant) => {
+    const base = 'w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors';
+    switch (variant) {
+      case 'success': return `${base} text-green-600 hover:bg-green-50`;
+      case 'danger': return `${base} text-red-600 hover:bg-red-50`;
+      default: return `${base} text-gray-700 hover:bg-gray-50`;
+    }
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-gray-600"
+      >
+        {Icons.dots}
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg py-2 min-w-48 z-50">
+          {items.map((item, index) => {
+            if (item.type === 'separator') {
+              return <div key={index} className="border-t border-gray-100 my-2" />;
+            }
+            return (
+              <button
+                key={index}
+                onClick={() => {
+                  item.onClick?.();
+                  setIsOpen(false);
+                }}
+                className={getItemClasses(item.variant)}
+              >
+                {item.icon && <span className="w-5 h-5">{item.icon}</span>}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===========================================
+// OPTIONS
+// ===========================================
+const statusOptions = [
+  { value: 'ABERTA', label: 'Aberta' },
+  { value: 'EM_ANALISE', label: 'Em Análise' },
+  { value: 'FINALIZADA', label: 'Finalizada' },
+  { value: 'CANCELADA', label: 'Cancelada' },
+];
+
+const prioridadeOptions = [
+  { value: 'BAIXA', label: 'Baixa' },
+  { value: 'NORMAL', label: 'Normal' },
+  { value: 'ALTA', label: 'Alta' },
+  { value: 'URGENTE', label: 'Urgente' },
+];
+
+const compradorOptions = [
+  { value: 'JOAO', label: 'João Silva' },
+  { value: 'MARIA', label: 'Maria Santos' },
+  { value: 'CARLOS', label: 'Carlos Oliveira' },
+];
+
+// ===========================================
+// DADOS MOCK - ITENS
+// ===========================================
+const itensMock = [
+  { id: 1, codigo: '7890000010696', descricao: 'PLACA DE GESSO STANDARD 1200x1800x12.5MM', unidade: 'UN', quantidade: 500 },
+  { id: 2, codigo: '7890000016209', descricao: 'PERFIL MONTANTE 48x30x3000MM', unidade: 'UN', quantidade: 200 },
+  { id: 3, codigo: '7892261535758', descricao: 'PARAFUSO DRYWALL PH 3,5x25MM (CX 1000)', unidade: 'CX', quantidade: 50 },
+];
+
+// ===========================================
+// DADOS MOCK - FORNECEDORES
+// ===========================================
+const fornecedoresMock = [
+  { 
+    id: 1, 
+    nome: 'GYPSUM DO BRASIL LTDA', 
+    cnpj: '12.345.678/0001-90',
+    respondeu: true,
+    dataResposta: '2025-12-10',
+    prazoEntrega: 15,
+    condicaoPagto: '30/60/90 dias',
+    frete: 'CIF',
+    valorFrete: 0,
+    observacoes: 'Entrega em lotes',
+    precos: [
+      { itemId: 1, valorUnit: 27.50 },
+      { itemId: 2, valorUnit: 14.90 },
+      { itemId: 3, valorUnit: 40.00 },
+    ],
+    vencedor: false,
+  },
+  { 
+    id: 2, 
+    nome: 'PLACO DO BRASIL S/A', 
+    cnpj: '98.765.432/0001-10',
+    respondeu: true,
+    dataResposta: '2025-12-11',
+    prazoEntrega: 10,
+    condicaoPagto: '30/60 dias',
+    frete: 'CIF',
+    valorFrete: 0,
+    observacoes: '',
+    precos: [
+      { itemId: 1, valorUnit: 28.00 },
+      { itemId: 2, valorUnit: 15.50 },
+      { itemId: 3, valorUnit: 41.00 },
+    ],
+    vencedor: true,
+  },
+  { 
+    id: 3, 
+    nome: 'KNAUF DO BRASIL LTDA', 
+    cnpj: '11.222.333/0001-44',
+    respondeu: false,
+    dataResposta: null,
+    prazoEntrega: null,
+    condicaoPagto: '',
+    frete: '',
+    valorFrete: 0,
+    observacoes: '',
+    precos: [],
+    vencedor: false,
+  },
+];
+
+// ===========================================
+// COMPONENTE PRINCIPAL
+// ===========================================
+export default function CotacaoFormPage() {
+  const [cotacao, setCotacao] = useState({
+    numero: '000123',
+    dataEmissao: new Date().toISOString().split('T')[0],
+    dataValidade: '',
+    status: 'ABERTA',
+    prioridade: 'NORMAL',
+    comprador: 'JOAO',
+    observacoes: '',
+  });
+
+  const [itens, setItens] = useState(itensMock);
+  const [fornecedores, setFornecedores] = useState(fornecedoresMock);
+  const [buscaProduto, setBuscaProduto] = useState('');
+  const [buscaFornecedor, setBuscaFornecedor] = useState('');
+  const [viewMode, setViewMode] = useState('itens'); // 'itens' ou 'comparativo'
+
+  const formatMoney = (value) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
+  const calcularTotalFornecedor = (fornecedor) => {
+    if (!fornecedor.respondeu) return 0;
+    return fornecedor.precos.reduce((total, preco) => {
+      const item = itens.find(i => i.id === preco.itemId);
+      return total + (item ? item.quantidade * preco.valorUnit : 0);
+    }, 0) + fornecedor.valorFrete;
+  };
+
+  const removerItem = (id) => {
+    setItens(itens.filter(item => item.id !== id));
+  };
+
+  const atualizarItem = (id, campo, valor) => {
+    setItens(itens.map(item => 
+      item.id === id ? { ...item, [campo]: valor } : item
+    ));
+  };
+
+  const removerFornecedor = (id) => {
+    setFornecedores(fornecedores.filter(f => f.id !== id));
+  };
+
+  const definirVencedor = (id) => {
+    setFornecedores(fornecedores.map(f => ({
+      ...f,
+      vencedor: f.id === id
+    })));
+  };
+
+  const menuItems = [
+    { icon: Icons.save, label: 'Salvar', variant: 'success' },
+    { type: 'separator' },
+    { icon: Icons.mail, label: 'Enviar aos Fornecedores' },
+    { icon: Icons.printer, label: 'Imprimir' },
+    { type: 'separator' },
+    { icon: Icons.shoppingCart, label: 'Gerar Pedido de Compra', variant: 'success' },
+    { type: 'separator' },
+    { icon: Icons.trash, label: 'Cancelar Cotação', variant: 'danger' },
+  ];
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      ABERTA: 'bg-blue-100 text-blue-700',
+      EM_ANALISE: 'bg-yellow-100 text-yellow-700',
+      FINALIZADA: 'bg-green-100 text-green-700',
+      CANCELADA: 'bg-red-100 text-red-700',
+    };
+    return styles[status] || styles.ABERTA;
+  };
+
+  const getMenorPreco = (itemId) => {
+    const precos = fornecedores
+      .filter(f => f.respondeu)
+      .map(f => f.precos.find(p => p.itemId === itemId)?.valorUnit || Infinity);
+    return Math.min(...precos);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <style>{globalStyles}</style>
+      
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                {Icons.back}
+              </button>
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center text-white">
+                {Icons.clipboard}
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">
+                  Cotação #{cotacao.numero}
+                </h1>
+                <p className="text-sm text-gray-500">Comparativo de preços</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(cotacao.status)}`}>
+                {statusOptions.find(s => s.value === cotacao.status)?.label}
+              </span>
+              <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                {Icons.save}
+                <span>Salvar</span>
+              </button>
+              <DropdownMenu items={menuItems} />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Dados da Cotação */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Dados da Cotação</h2>
+          
+          <div className="grid grid-cols-6 gap-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Número</label>
+              <input 
+                type="text" 
+                value={cotacao.numero}
+                readOnly
+                className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Data Emissão</label>
+              <input 
+                type="date" 
+                value={cotacao.dataEmissao}
+                onChange={(e) => setCotacao({...cotacao, dataEmissao: e.target.value})}
+                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Validade</label>
+              <input 
+                type="date" 
+                value={cotacao.dataValidade}
+                onChange={(e) => setCotacao({...cotacao, dataValidade: e.target.value})}
+                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Comprador</label>
+              <SelectDropdown
+                value={cotacao.comprador}
+                onChange={(val) => setCotacao({...cotacao, comprador: val})}
+                options={compradorOptions}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Prioridade</label>
+              <SelectDropdown
+                value={cotacao.prioridade}
+                onChange={(val) => setCotacao({...cotacao, prioridade: val})}
+                options={prioridadeOptions}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Status</label>
+              <SelectDropdown
+                value={cotacao.status}
+                onChange={(val) => setCotacao({...cotacao, status: val})}
+                options={statusOptions}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="border-b border-gray-200">
+            <div className="flex">
+              <button
+                onClick={() => setViewMode('itens')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  viewMode === 'itens'
+                    ? 'border-purple-500 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Itens da Cotação
+              </button>
+              <button
+                onClick={() => setViewMode('comparativo')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  viewMode === 'comparativo'
+                    ? 'border-purple-500 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Comparativo de Preços
+              </button>
+            </div>
+          </div>
+
+          <div className="p-5">
+            {viewMode === 'itens' ? (
+              <>
+                {/* Itens */}
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-gray-700">Itens para Cotação</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        {Icons.search}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Buscar produto..."
+                        value={buscaProduto}
+                        onChange={(e) => setBuscaProduto(e.target.value)}
+                        className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-64"
+                      />
+                    </div>
+                    <button className="flex items-center gap-1 px-3 py-2 bg-purple-100 text-purple-600 rounded-lg text-sm hover:bg-purple-200">
+                      {Icons.plus}
+                      <span>Adicionar Item</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Código</th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Descrição</th>
+                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase w-16">Un</th>
+                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase w-24">Qtde</th>
+                        <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase w-16">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {itens.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2 text-sm font-mono text-gray-600">{item.codigo}</td>
+                          <td className="px-3 py-2 text-sm text-gray-800">{item.descricao}</td>
+                          <td className="px-3 py-2 text-sm text-gray-600 text-center">{item.unidade}</td>
+                          <td className="px-3 py-2 text-center">
+                            <input
+                              type="number"
+                              value={item.quantidade}
+                              onChange={(e) => atualizarItem(item.id, 'quantidade', parseInt(e.target.value) || 0)}
+                              className="w-20 px-2 py-1 text-center border border-gray-200 rounded-lg text-sm"
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <button 
+                              onClick={() => removerItem(item.id)}
+                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              {Icons.trash}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Fornecedores */}
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium text-gray-700">Fornecedores Convidados</h3>
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                          {Icons.search}
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Buscar fornecedor..."
+                          value={buscaFornecedor}
+                          onChange={(e) => setBuscaFornecedor(e.target.value)}
+                          className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-64"
+                        />
+                      </div>
+                      <button className="flex items-center gap-1 px-3 py-2 bg-purple-100 text-purple-600 rounded-lg text-sm hover:bg-purple-200">
+                        {Icons.plus}
+                        <span>Adicionar Fornecedor</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    {fornecedores.map((fornecedor) => (
+                      <div 
+                        key={fornecedor.id} 
+                        className={`border rounded-lg p-4 ${
+                          fornecedor.vencedor 
+                            ? 'border-green-500 bg-green-50' 
+                            : 'border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500">
+                              {Icons.building}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-800">{fornecedor.nome}</p>
+                              <p className="text-xs text-gray-500 font-mono">{fornecedor.cnpj}</p>
+                            </div>
+                          </div>
+                          {fornecedor.vencedor && (
+                            <span className="text-yellow-500">{Icons.star}</span>
+                          )}
+                        </div>
+
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Status:</span>
+                            <span className={`font-medium ${fornecedor.respondeu ? 'text-green-600' : 'text-yellow-600'}`}>
+                              {fornecedor.respondeu ? 'Respondeu' : 'Aguardando'}
+                            </span>
+                          </div>
+                          {fornecedor.respondeu && (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">Prazo:</span>
+                                <span className="text-gray-800">{fornecedor.prazoEntrega} dias</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-500">Pagto:</span>
+                                <span className="text-gray-800">{fornecedor.condicaoPagto}</span>
+                              </div>
+                              <div className="flex justify-between pt-2 border-t border-gray-200">
+                                <span className="text-gray-700 font-medium">Total:</span>
+                                <span className="text-gray-800 font-bold">{formatMoney(calcularTotalFornecedor(fornecedor))}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-gray-200 flex gap-2">
+                          {fornecedor.respondeu && !fornecedor.vencedor && (
+                            <button 
+                              onClick={() => definirVencedor(fornecedor.id)}
+                              className="flex-1 py-1.5 text-xs bg-green-100 text-green-600 rounded hover:bg-green-200"
+                            >
+                              Definir Vencedor
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => removerFornecedor(fornecedor.id)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded"
+                          >
+                            {Icons.trash}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Comparativo */
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Produto</th>
+                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase w-16">Qtde</th>
+                      {fornecedores.filter(f => f.respondeu).map(f => (
+                        <th key={f.id} className={`px-3 py-2 text-center text-xs font-semibold uppercase ${f.vencedor ? 'text-green-600 bg-green-50' : 'text-gray-600'}`}>
+                          {f.nome.split(' ')[0]}
+                          {f.vencedor && <span className="ml-1 text-yellow-500">★</span>}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {itens.map((item) => {
+                      const menorPreco = getMenorPreco(item.id);
+                      return (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td className="px-3 py-2">
+                            <div className="text-sm font-medium text-gray-800">{item.descricao}</div>
+                            <div className="text-xs text-gray-400 font-mono">{item.codigo}</div>
+                          </td>
+                          <td className="px-3 py-2 text-sm text-gray-600 text-center">{item.quantidade}</td>
+                          {fornecedores.filter(f => f.respondeu).map(f => {
+                            const preco = f.precos.find(p => p.itemId === item.id);
+                            const isMenor = preco?.valorUnit === menorPreco;
+                            return (
+                              <td key={f.id} className={`px-3 py-2 text-center ${f.vencedor ? 'bg-green-50' : ''}`}>
+                                <span className={`text-sm font-medium ${isMenor ? 'text-green-600' : 'text-gray-800'}`}>
+                                  {preco ? formatMoney(preco.valorUnit) : '-'}
+                                </span>
+                                {isMenor && <span className="ml-1 text-green-500 text-xs">✓</span>}
+                                <div className="text-xs text-gray-500">
+                                  {preco ? formatMoney(preco.valorUnit * item.quantidade) : '-'}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                    {/* Totais */}
+                    <tr className="bg-gray-50 font-semibold">
+                      <td className="px-3 py-3 text-sm text-gray-800" colSpan={2}>TOTAL</td>
+                      {fornecedores.filter(f => f.respondeu).map(f => (
+                        <td key={f.id} className={`px-3 py-3 text-center ${f.vencedor ? 'bg-green-100' : ''}`}>
+                          <span className={`text-sm ${f.vencedor ? 'text-green-700' : 'text-gray-800'}`}>
+                            {formatMoney(calcularTotalFornecedor(f))}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Observações */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Observações</h2>
+          <textarea
+            value={cotacao.observacoes}
+            onChange={(e) => setCotacao({...cotacao, observacoes: e.target.value})}
+            placeholder="Observações gerais da cotação..."
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none"
+          />
+        </div>
+      </main>
+    </div>
+  );
+}
