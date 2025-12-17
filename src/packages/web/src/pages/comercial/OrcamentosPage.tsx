@@ -148,16 +148,18 @@ export function OrcamentosPage() {
     );
   };
 
-  const filteredOrcamentos = orcamentos.filter((o) => {
-    const searchLower = (search || '').toLowerCase();
-    const matchSearch =
-      String(o.numero || '').toLowerCase().includes(searchLower) ||
-      String(o.cliente_nome || '').toLowerCase().includes(searchLower);
+  const filteredOrcamentos = orcamentos
+    .filter((o) => {
+      const searchLower = (search || '').toLowerCase();
+      const matchSearch =
+        String(o.numero || '').toLowerCase().includes(searchLower) ||
+        String(o.cliente_nome || '').toLowerCase().includes(searchLower);
 
-    const matchStatus = !statusFilter || o.status === statusFilter;
+      const matchStatus = !statusFilter || o.status === statusFilter;
 
-    return matchSearch && matchStatus;
-  });
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => Number(a.numero) - Number(b.numero)); // Ordem crescente
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -267,7 +269,21 @@ export function OrcamentosPage() {
   ];
 
   const actions = (orcamento: Orcamento) => {
-    const items = [
+    const items = [];
+    
+    // Mesclar - só aparece se este orçamento está selecionado E há 2+ selecionados
+    const isSelected = selectedOrcamentos.includes(orcamento.id);
+    if (isSelected && selectedOrcamentos.length >= 2) {
+      items.push({
+        label: `Mesclar (${selectedOrcamentos.length} selecionados)`,
+        icon: <Icons.merge className="w-4 h-4" />,
+        variant: 'success' as const,
+        onClick: () => setShowMesclarModal(true),
+      });
+      items.push({ type: 'separator' as const });
+    }
+    
+    items.push(
       {
         label: 'Editar',
         icon: <Icons.edit className="w-4 h-4" />,
@@ -330,15 +346,6 @@ export function OrcamentosPage() {
           <p className="text-gray-500">Gerencie seus orçamentos</p>
         </div>
         <div className="flex gap-3">
-          {selectedOrcamentos.length >= 2 && (
-            <Button
-              variant="secondary"
-              leftIcon={<Icons.merge className="w-5 h-5" />}
-              onClick={() => setShowMesclarModal(true)}
-            >
-              Mesclar ({selectedOrcamentos.length})
-            </Button>
-          )}
           <Button
             leftIcon={<Icons.plus className="w-5 h-5" />}
             onClick={() => navigate('/comercial/orcamentos/novo')}
