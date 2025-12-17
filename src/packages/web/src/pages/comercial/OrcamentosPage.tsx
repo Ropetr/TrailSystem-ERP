@@ -269,12 +269,12 @@ export function OrcamentosPage() {
       {
         label: 'Editar',
         icon: <Icons.edit className="w-4 h-4" />,
-        onClick: () => navigate(`/orcamentos/${orcamento.id}`),
+        onClick: () => navigate(`/comercial/orcamentos/${orcamento.id}`),
       },
       {
         label: 'Duplicar',
         icon: <Icons.copy className="w-4 h-4" />,
-        onClick: () => navigate(`/orcamentos/novo?duplicar=${orcamento.id}`),
+        onClick: () => navigate(`/comercial/orcamentos/novo?duplicar=${orcamento.id}`),
       },
       {
         label: 'Imprimir',
@@ -339,7 +339,7 @@ export function OrcamentosPage() {
           )}
           <Button
             leftIcon={<Icons.plus className="w-5 h-5" />}
-            onClick={() => navigate('/orcamentos/novo')}
+            onClick={() => navigate('/comercial/orcamentos/novo')}
           >
             Novo Orçamento
           </Button>
@@ -418,7 +418,7 @@ export function OrcamentosPage() {
           actions={actions}
           isLoading={isLoading}
           emptyMessage="Nenhum orçamento encontrado"
-          onRowClick={(o) => navigate(`/orcamentos/${o.id}`)}
+          onRowClick={(o) => navigate(`/comercial/orcamentos/${o.id}`)}
         />
       </Card>
 
