@@ -57,7 +57,9 @@ import {
 // Financeiro Pages
 import {
   ContasReceberPage,
+  ContaReceberFormPage,
   ContasPagarPage,
+  ContaPagarFormPage,
   FluxoCaixaPage,
   BoletosPage,
   ConciliacaoPage,
@@ -66,8 +68,11 @@ import {
 // Compras Pages
 import {
   FornecedoresPage,
+  FornecedorFormPage,
   CotacoesPage,
+  CotacaoFormPage,
   PedidosCompraPage,
+  PedidoCompraFormPage,
 } from '@/pages/compras';
 
 // Logística Pages
@@ -218,8 +223,8 @@ export function AppRoutes() {
                   <Route path="/cadastros/clientes/:id" element={<ClienteFormPage />} />
                   
                   <Route path="/cadastros/fornecedores" element={<FornecedoresPage />} />
-                  <Route path="/cadastros/fornecedores/novo" element={<EmDesenvolvimento titulo="Novo Fornecedor" />} />
-                  <Route path="/cadastros/fornecedores/:id" element={<EmDesenvolvimento titulo="Editar Fornecedor" />} />
+                  <Route path="/cadastros/fornecedores/novo" element={<FornecedorFormPage />} />
+                  <Route path="/cadastros/fornecedores/:id" element={<FornecedorFormPage />} />
                   
                   <Route path="/cadastros/transportadoras" element={<EmDesenvolvimento titulo="Transportadoras" />} />
                   <Route path="/cadastros/transportadoras/novo" element={<EmDesenvolvimento titulo="Nova Transportadora" />} />
@@ -308,14 +313,22 @@ export function AppRoutes() {
 
                   {/* ========== FINANCEIRO ========== */}
                   <Route path="/financeiro/receber" element={<ContasReceberPage />} />
+                  <Route path="/financeiro/receber/novo" element={<ContaReceberFormPage />} />
+                  <Route path="/financeiro/receber/:id" element={<ContaReceberFormPage />} />
                   <Route path="/financeiro/pagar" element={<ContasPagarPage />} />
+                  <Route path="/financeiro/pagar/novo" element={<ContaPagarFormPage />} />
+                  <Route path="/financeiro/pagar/:id" element={<ContaPagarFormPage />} />
                   <Route path="/financeiro/fluxo-caixa" element={<FluxoCaixaPage />} />
                   <Route path="/financeiro/boletos" element={<BoletosPage />} />
                   <Route path="/financeiro/conciliacao" element={<ConciliacaoPage />} />
 
                   {/* ========== COMPRAS ========== */}
                   <Route path="/compras/cotacoes" element={<CotacoesPage />} />
+                  <Route path="/compras/cotacoes/nova" element={<CotacaoFormPage />} />
+                  <Route path="/compras/cotacoes/:id" element={<CotacaoFormPage />} />
                   <Route path="/compras/pedidos" element={<PedidosCompraPage />} />
+                  <Route path="/compras/pedidos/novo" element={<PedidoCompraFormPage />} />
+                  <Route path="/compras/pedidos/:id" element={<PedidoCompraFormPage />} />
 
                   {/* ========== LOGÍSTICA ========== */}
                   <Route path="/logistica/entregas" element={<EntregasPage />} />
