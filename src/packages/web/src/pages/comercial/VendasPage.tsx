@@ -242,8 +242,8 @@ export function VendasPage() {
       header: 'Status',
       width: '110px',
       render: (v: Venda) => (
-        <Badge variant={statusColors[v.status]}>
-          {v.status.charAt(0).toUpperCase() + v.status.slice(1)}
+        <Badge variant={statusColors[v.status] || 'default'}>
+          {(v.status || 'pendente').charAt(0).toUpperCase() + (v.status || 'pendente').slice(1)}
         </Badge>
       ),
     },
@@ -252,8 +252,8 @@ export function VendasPage() {
       header: 'Pagamento',
       width: '100px',
       render: (v: Venda) => (
-        <Badge variant={statusPagColors[v.status_pagamento]} size="sm">
-          {v.status_pagamento.charAt(0).toUpperCase() + v.status_pagamento.slice(1)}
+        <Badge variant={statusPagColors[v.status_pagamento] || 'default'} size="sm">
+          {(v.status_pagamento || 'pendente').charAt(0).toUpperCase() + (v.status_pagamento || 'pendente').slice(1)}
         </Badge>
       ),
     },
