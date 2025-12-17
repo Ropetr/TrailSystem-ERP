@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card } from '@/components/ui/Card';
@@ -15,224 +15,174 @@ import { Icons } from '@/components/ui/Icons';
 import { useToast } from '@/components/ui/Toast';
 import api from '@/services/api';
 
-const itemSchema = z.object({
-  produto_id: z.string().min(1, 'Selecione o produto'),
-  produto_nome: z.string().optional(),
-  quantidade: z.number().min(1, 'Quantidade mínima é 1'),
-  unidade: z.string().default('UN'),
-  valor_unitario: z.number().min(0.01),
-  desconto_percentual: z.number().min(0).max(100).default(0),
-  valor_total: z.number(),
-});
-
 const pedidoCompraSchema = z.object({
   fornecedor_id: z.string().min(1, 'Selecione o fornecedor'),
-  cotacao_id: z.string().optional(),
-  condicao_pagamento_id: z.string().optional(),
-  data_emissao: z.string(),
-  data_entrega_prevista: z.string().optional(),
-  frete_tipo: z.enum(['cif', 'fob']).default('cif'),
-  frete_valor: z.number().default(0),
-  desconto_total: z.number().default(0),
-  itens: z.array(itemSchema).min(1, 'Adicione pelo menos um item'),
+  data_emissao: z.string().min(1, 'Data de emissão é obrigatória'),
+  data_previsao_entrega: z.string().optional(),
+  condicao_pagamento: z.string().optional(),
+  valor_frete: z.number().optional(),
+  valor_outras_despesas: z.number().optional(),
   observacao: z.string().optional(),
-  observacao_interna: z.string().optional(),
-  status: z.enum(['rascunho', 'enviado', 'confirmado', 'recebido_parcial', 'recebido', 'cancelado']).default('rascunho'),
 });
 
 type PedidoCompraFormData = z.infer<typeof pedidoCompraSchema>;
 
-const freteOptions = [
-  { value: 'cif', label: 'CIF - Frete por conta do Fornecedor' },
-  { value: 'fob', label: 'FOB - Frete por conta do Comprador' },
-];
-
-const statusOptions = [
-  { value: 'rascunho', label: 'Rascunho' },
-  { value: 'enviado', label: 'Enviado ao Fornecedor' },
-  { value: 'confirmado', label: 'Confirmado' },
-  { value: 'recebido_parcial', label: 'Recebido Parcial' },
-  { value: 'recebido', label: 'Recebido' },
-  { value: 'cancelado', label: 'Cancelado' },
-];
+interface ItemPedido {
+  id: string;
+  produto_id: string;
+  produto_codigo: string;
+  produto_nome: string;
+  quantidade: number;
+  preco_unitario: number;
+  valor_total: number;
+}
 
 export function PedidoCompraFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const toast = useToast();
+  const { toast } = useToast();
   const isEditing = Boolean(id);
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  
+  const [loading, setLoading] = useState(false);
   const [fornecedores, setFornecedores] = useState<any[]>([]);
-  const [condicoesPagamento, setCondicoesPagamento] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<any[]>([]);
-  const [searchProduto, setSearchProduto] = useState('');
+  const [itens, setItens] = useState<ItemPedido[]>([]);
+  const [fornecedorSelecionado, setFornecedorSelecionado] = useState<any>(null);
+  
+  const [modalProduto, setModalProduto] = useState(false);
+  const [buscaProduto, setBuscaProduto] = useState('');
+  const [produtosFiltrados, setProdutosFiltrados] = useState<any[]>([]);
+  const [quantidadeAdd, setQuantidadeAdd] = useState(1);
+  const [precoAdd, setPrecoAdd] = useState(0);
+  const [produtoSelecionado, setProdutoSelecionado] = useState<any>(null);
 
-  const { register, handleSubmit, setValue, watch, control, formState: { errors } } = useForm<PedidoCompraFormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting }, reset } = useForm<PedidoCompraFormData>({
     resolver: zodResolver(pedidoCompraSchema),
-    defaultValues: {
-      data_emissao: new Date().toISOString().split('T')[0],
-      frete_tipo: 'cif',
-      frete_valor: 0,
-      desconto_total: 0,
-      status: 'rascunho',
-      itens: [],
-    },
+    defaultValues: { data_emissao: new Date().toISOString().split('T')[0], valor_frete: 0, valor_outras_despesas: 0 },
   });
 
-  const { fields: itens, append, remove, update } = useFieldArray({ control, name: 'itens' });
-  const fornecedorId = watch('fornecedor_id');
-  const freteValor = watch('frete_valor') || 0;
-  const descontoTotal = watch('desconto_total') || 0;
+  const valorFrete = watch('valor_frete') || 0;
+  const valorOutras = watch('valor_outras_despesas') || 0;
+  const subtotal = itens.reduce((acc, item) => acc + item.valor_total, 0);
+  const valorTotal = subtotal + valorFrete + valorOutras;
 
-  const subtotal = itens.reduce((acc, item) => acc + (item.valor_total || 0), 0);
-  const total = subtotal + freteValor - descontoTotal;
-
-  useEffect(() => { loadFornecedores(); loadCondicoesPagamento(); loadProdutos(); if (id) loadPedido(); }, [id]);
+  useEffect(() => { loadFornecedores(); loadProdutos(); if (id) loadPedido(); }, [id]);
 
   useEffect(() => {
-    if (fornecedorId) {
-      const f = fornecedores.find((f) => f.id === fornecedorId);
-      if (f?.condicao_pagamento_padrao) setValue('condicao_pagamento_id', f.condicao_pagamento_padrao);
-    }
-  }, [fornecedorId, fornecedores]);
+    if (buscaProduto.length >= 2) {
+      setProdutosFiltrados(produtos.filter(p => p.nome?.toLowerCase().includes(buscaProduto.toLowerCase()) || p.codigo?.toLowerCase().includes(buscaProduto.toLowerCase())).slice(0, 10));
+    } else { setProdutosFiltrados([]); }
+  }, [buscaProduto, produtos]);
 
-  const loadPedido = async () => { setIsLoading(true); try { const r = await api.get(`/pedidos-compra/${id}`); Object.keys(r.data).forEach((k) => setValue(k as keyof PedidoCompraFormData, r.data[k])); } catch { toast.error('Erro'); navigate('/compras/pedidos'); } finally { setIsLoading(false); } };
-  const loadFornecedores = async () => { try { const r = await api.get('/fornecedores?status=ativo'); setFornecedores(r.data || []); } catch {} };
-  const loadCondicoesPagamento = async () => { try { const r = await api.get('/condicoes-pagamento'); setCondicoesPagamento(r.data || []); } catch {} };
-  const loadProdutos = async () => { try { const r = await api.get('/produtos?ativo=true'); setProdutos(r.data || []); } catch {} };
-
-  const adicionarItem = (produto: any) => {
-    const idx = itens.findIndex((i) => i.produto_id === produto.id);
-    if (idx >= 0) {
-      const item = itens[idx];
-      const novaQtd = item.quantidade + 1;
-      update(idx, { ...item, quantidade: novaQtd, valor_total: novaQtd * item.valor_unitario * (1 - item.desconto_percentual / 100) });
-    } else {
-      append({
-        produto_id: produto.id,
-        produto_nome: produto.descricao || produto.nome,
-        quantidade: 1,
-        unidade: produto.unidade || 'UN',
-        valor_unitario: produto.preco_custo || produto.preco || 0,
-        desconto_percentual: 0,
-        valor_total: produto.preco_custo || produto.preco || 0,
-      });
-    }
-    setSearchProduto('');
+  const loadFornecedores = async () => { try { const r = await api.get('/fornecedores?ativo=true&limit=1000'); setFornecedores(r.data.data || []); } catch (e) { console.error(e); } };
+  const loadProdutos = async () => { try { const r = await api.get('/produtos?ativo=true&limit=5000'); setProdutos(r.data.data || []); } catch (e) { console.error(e); } };
+  const loadPedido = async () => {
+    try { setLoading(true); const r = await api.get(`/pedidos-compra/${id}`); reset(r.data); setItens(r.data.itens || []); }
+    catch (e) { toast({ title: 'Erro ao carregar', variant: 'destructive' }); navigate('/compras/pedidos'); }
+    finally { setLoading(false); }
   };
 
-  const atualizarItem = (index: number, campo: string, valor: any) => {
-    const item = itens[index];
-    const novoItem = { ...item, [campo]: valor };
-    const subtotalItem = novoItem.quantidade * novoItem.valor_unitario;
-    novoItem.valor_total = subtotalItem * (1 - novoItem.desconto_percentual / 100);
-    update(index, novoItem);
+  const handleFornecedorChange = (fid: string) => {
+    setValue('fornecedor_id', fid);
+    const f = fornecedores.find(x => x.id === fid);
+    setFornecedorSelecionado(f);
+    if (f?.condicao_pagamento) setValue('condicao_pagamento', f.condicao_pagamento);
   };
+
+  const adicionarItem = () => {
+    if (!produtoSelecionado || quantidadeAdd <= 0 || precoAdd <= 0) { toast({ title: 'Preencha todos os campos', variant: 'destructive' }); return; }
+    setItens([...itens, { id: `t-${Date.now()}`, produto_id: produtoSelecionado.id, produto_codigo: produtoSelecionado.codigo || '', produto_nome: produtoSelecionado.nome, quantidade: quantidadeAdd, preco_unitario: precoAdd, valor_total: quantidadeAdd * precoAdd }]);
+    setModalProduto(false); setBuscaProduto(''); setProdutoSelecionado(null); setQuantidadeAdd(1); setPrecoAdd(0);
+  };
+
+  const removerItem = (itemId: string) => setItens(itens.filter(i => i.id !== itemId));
 
   const onSubmit = async (data: PedidoCompraFormData) => {
-    setIsSaving(true);
+    if (itens.length === 0) { toast({ title: 'Adicione itens', variant: 'destructive' }); return; }
     try {
-      const payload = { ...data, subtotal, total };
-      if (isEditing) { await api.put(`/pedidos-compra/${id}`, payload); toast.success('Atualizado!'); }
-      else { await api.post('/pedidos-compra', payload); toast.success('Cadastrado!'); }
+      const f = fornecedores.find(x => x.id === data.fornecedor_id);
+      const payload = { ...data, fornecedor_nome: f?.razao_social || '', fornecedor_cnpj: f?.cpf_cnpj || '', subtotal, valor_total: valorTotal, itens: itens.map(i => ({ produto_id: i.produto_id, produto_codigo: i.produto_codigo, produto_nome: i.produto_nome, quantidade: i.quantidade, preco_unitario: i.preco_unitario, valor_total: i.valor_total })) };
+      if (isEditing) { await api.put(`/pedidos-compra/${id}`, payload); toast({ title: 'Atualizado!' }); }
+      else { await api.post('/pedidos-compra', payload); toast({ title: 'Cadastrado!' }); }
       navigate('/compras/pedidos');
-    } catch (e: any) { toast.error(e.response?.data?.message || 'Erro'); } finally { setIsSaving(false); }
+    } catch (e: any) { toast({ title: 'Erro', description: e.response?.data?.message || 'Tente novamente', variant: 'destructive' }); }
   };
 
-  const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-  const produtosFiltrados = produtos.filter((p) => p.descricao?.toLowerCase().includes(searchProduto.toLowerCase()) || p.codigo?.toLowerCase().includes(searchProduto.toLowerCase())).slice(0, 10);
+  const formatMoney = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500" /></div>;
+  if (loading) return <div className="flex items-center justify-center min-h-[400px]"><Icons.spinner className="w-8 h-8 animate-spin text-red-500" /></div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/compras/pedidos')} className="p-2 hover:bg-gray-100 rounded-lg"><Icons.arrowLeft className="w-5 h-5" /></button>
-          <div><h1 className="text-2xl font-bold">{isEditing ? 'Editar' : 'Novo'} Pedido de Compra</h1><p className="text-gray-500">{isEditing ? 'Atualize os dados' : 'Registre um pedido ao fornecedor'}</p></div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/compras/pedidos')}>Cancelar</Button>
-          <Button onClick={handleSubmit(onSubmit)} isLoading={isSaving}><Icons.save className="w-4 h-4 mr-2" />{isEditing ? 'Atualizar' : 'Salvar'}</Button>
-        </div>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/compras/pedidos')}><Icons.arrowLeft className="w-4 h-4 mr-2" />Voltar</Button>
+        <div><h1 className="text-2xl font-bold text-gray-900">{isEditing ? 'Editar Pedido' : 'Novo Pedido de Compra'}</h1><p className="text-sm text-gray-500">{isEditing ? 'Atualize' : 'Preencha os dados'}</p></div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Dados do Pedido</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="lg:col-span-2"><Select label="Fornecedor *" {...register('fornecedor_id')} error={errors.fornecedor_id?.message} options={[{ value: '', label: 'Selecione...' }, ...fornecedores.map(f => ({ value: f.id, label: f.nome_fantasia || f.razao_social }))]} /></div>
-            <div><Input label="Data Emissão" type="date" {...register('data_emissao')} /></div>
-            <div><Input label="Previsão Entrega" type="date" {...register('data_entrega_prevista')} /></div>
-            <div><Select label="Condição de Pagamento" {...register('condicao_pagamento_id')} options={[{ value: '', label: 'Selecione...' }, ...condicoesPagamento.map(c => ({ value: c.id, label: c.nome }))]} /></div>
-            <div><Select label="Tipo de Frete" {...register('frete_tipo')} options={freteOptions} /></div>
-            <div><Input label="Valor do Frete" type="number" step="0.01" {...register('frete_valor', { valueAsNumber: true })} /></div>
-            <div><Select label="Status" {...register('status')} options={statusOptions} /></div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Fornecedor</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fornecedor *</label>
+              <Select {...register('fornecedor_id')} options={fornecedores.map(f => ({ value: f.id, label: `${f.razao_social} - ${f.cpf_cnpj}` }))} placeholder="Selecione..." error={errors.fornecedor_id?.message} onChange={(e) => handleFornecedorChange(e.target.value)} />
+            </div>
+            {fornecedorSelecionado && <div className="md:col-span-2 p-3 bg-gray-50 rounded-lg text-sm"><p><strong>Email:</strong> {fornecedorSelecionado.email || '-'}</p><p><strong>Prazo:</strong> {fornecedorSelecionado.prazo_entrega_dias || 0} dias</p></div>}
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Dados do Pedido</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Data Emissão *</label><Input {...register('data_emissao')} type="date" error={errors.data_emissao?.message} /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Previsão Entrega</label><Input {...register('data_previsao_entrega')} type="date" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Condição Pagto</label><Input {...register('condicao_pagamento')} placeholder="30/60/90" /></div>
           </div>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Itens do Pedido</h3>
-            <div className="relative w-80">
-              <Icons.search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" value={searchProduto} onChange={(e) => setSearchProduto(e.target.value)} placeholder="Buscar produto..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
-              {searchProduto.length >= 2 && produtosFiltrados.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-auto">
-                  {produtosFiltrados.map((produto) => (
-                    <button key={produto.id} type="button" onClick={() => adicionarItem(produto)} className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center justify-between">
-                      <div><p className="text-sm font-medium">{produto.descricao || produto.nome}</p><p className="text-xs text-gray-500">{produto.codigo}</p></div>
-                      <span className="text-sm text-gray-600">{formatCurrency(produto.preco_custo || produto.preco || 0)}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Itens</h2>
+            <Button type="button" onClick={() => setModalProduto(true)}><Icons.plus className="w-4 h-4 mr-2" />Adicionar</Button>
           </div>
-
-          {errors.itens && <p className="text-red-500 text-sm mb-4">{errors.itens.message}</p>}
-
-          {itens.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead><tr className="bg-gray-50 border-b"><th className="px-4 py-3 text-left text-xs font-semibold">Produto</th><th className="px-4 py-3 text-center text-xs font-semibold w-24">Qtde</th><th className="px-4 py-3 text-center text-xs font-semibold w-20">Un</th><th className="px-4 py-3 text-right text-xs font-semibold w-32">Vlr Unit</th><th className="px-4 py-3 text-center text-xs font-semibold w-24">Desc %</th><th className="px-4 py-3 text-right text-xs font-semibold w-32">Total</th><th className="px-4 py-3 text-center text-xs font-semibold w-16">Ação</th></tr></thead>
-                <tbody className="divide-y">{itens.map((item, i) => (<tr key={i} className="hover:bg-gray-50"><td className="px-4 py-3"><p className="text-sm font-medium">{item.produto_nome}</p></td><td className="px-4 py-3"><Input type="number" min={1} value={item.quantidade} onChange={(e) => atualizarItem(i, 'quantidade', parseInt(e.target.value) || 1)} className="w-20 text-center" /></td><td className="px-4 py-3 text-center text-sm">{item.unidade}</td><td className="px-4 py-3"><Input type="number" step="0.01" value={item.valor_unitario} onChange={(e) => atualizarItem(i, 'valor_unitario', parseFloat(e.target.value) || 0)} className="w-28 text-right" /></td><td className="px-4 py-3"><Input type="number" min={0} max={100} value={item.desconto_percentual} onChange={(e) => atualizarItem(i, 'desconto_percentual', parseFloat(e.target.value) || 0)} className="w-20 text-center" /></td><td className="px-4 py-3 text-right text-sm font-medium">{formatCurrency(item.valor_total)}</td><td className="px-4 py-3 text-center"><button type="button" onClick={() => remove(i)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"><Icons.trash className="w-4 h-4" /></button></td></tr>))}</tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              <Icons.package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p>Nenhum item adicionado</p><p className="text-sm">Use a busca acima para adicionar produtos</p>
-            </div>
-          )}
-
-          {itens.length > 0 && (
-            <div className="mt-4 pt-4 border-t">
-              <div className="flex justify-end">
-                <div className="w-72 space-y-2">
-                  <div className="flex justify-between text-sm"><span className="text-gray-600">Subtotal:</span><span>{formatCurrency(subtotal)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-gray-600">Frete:</span><span>{formatCurrency(freteValor)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-gray-600">Desconto:</span><span className="text-red-500">- {formatCurrency(descontoTotal)}</span></div>
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t"><span>Total:</span><span className="text-green-600">{formatCurrency(total)}</span></div>
-                </div>
-              </div>
-            </div>
+          {itens.length === 0 ? <div className="text-center py-8 text-gray-500"><Icons.package className="w-12 h-12 mx-auto mb-2 opacity-50" /><p>Nenhum item</p></div> : (
+            <table className="w-full"><thead><tr className="bg-gray-50 border-b"><th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Código</th><th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Produto</th><th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Qtde</th><th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Preço</th><th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Total</th><th className="px-4 py-2 text-center text-xs font-semibold text-gray-600">Ação</th></tr></thead>
+            <tbody className="divide-y">{itens.map(i => <tr key={i.id} className="hover:bg-gray-50"><td className="px-4 py-2 text-sm font-mono">{i.produto_codigo}</td><td className="px-4 py-2 text-sm">{i.produto_nome}</td><td className="px-4 py-2 text-sm text-right">{i.quantidade}</td><td className="px-4 py-2 text-sm text-right">{formatMoney(i.preco_unitario)}</td><td className="px-4 py-2 text-sm text-right font-medium">{formatMoney(i.valor_total)}</td><td className="px-4 py-2 text-center"><Button type="button" variant="ghost" size="sm" onClick={() => removerItem(i.id)}><Icons.trash className="w-4 h-4 text-red-500" /></Button></td></tr>)}</tbody></table>
           )}
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Observações para o Fornecedor</h3>
-            <textarea {...register('observacao')} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Informações para o fornecedor..." />
-          </Card>
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Observações Internas</h3>
-            <textarea {...register('observacao_interna')} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Notas internas..." />
-          </Card>
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Totais</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Subtotal</label><div className="px-3 py-2 bg-gray-100 rounded-lg font-medium">{formatMoney(subtotal)}</div></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Frete</label><Input {...register('valor_frete', { valueAsNumber: true })} type="number" step="0.01" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Outras Despesas</label><Input {...register('valor_outras_despesas', { valueAsNumber: true })} type="number" step="0.01" /></div>
+            <div><label className="block text-sm font-medium text-gray-700 mb-1">Total</label><div className="px-3 py-2 bg-red-50 rounded-lg font-bold text-red-600 text-lg">{formatMoney(valorTotal)}</div></div>
+          </div>
+        </Card>
+
+        <Card className="p-6"><h2 className="text-lg font-semibold text-gray-900 mb-4">Observações</h2><textarea {...register('observacao')} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" placeholder="Observações..." /></Card>
+
+        <div className="flex justify-end gap-4">
+          <Button type="button" variant="outline" onClick={() => navigate('/compras/pedidos')}>Cancelar</Button>
+          <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <><Icons.spinner className="w-4 h-4 mr-2 animate-spin" />Salvando...</> : <><Icons.check className="w-4 h-4 mr-2" />{isEditing ? 'Atualizar' : 'Cadastrar'}</>}</Button>
         </div>
       </form>
+
+      {modalProduto && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-semibold">Adicionar Produto</h3><Button type="button" variant="ghost" size="sm" onClick={() => setModalProduto(false)}><Icons.x className="w-5 h-5" /></Button></div>
+            <div className="space-y-4">
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Buscar Produto</label><Input value={buscaProduto} onChange={(e) => setBuscaProduto(e.target.value)} placeholder="Nome ou código..." />
+                {produtosFiltrados.length > 0 && <div className="mt-2 border rounded-lg max-h-40 overflow-auto">{produtosFiltrados.map(p => <button key={p.id} type="button" onClick={() => { setProdutoSelecionado(p); setPrecoAdd(p.preco_custo || p.preco_venda || 0); setBuscaProduto(p.nome); setProdutosFiltrados([]); }} className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b last:border-b-0"><span className="font-mono text-gray-500">{p.codigo}</span> - {p.nome}</button>)}</div>}
+              </div>
+              {produtoSelecionado && (<><div className="p-3 bg-gray-50 rounded-lg text-sm"><p><strong>Produto:</strong> {produtoSelecionado.nome}</p><p><strong>Código:</strong> {produtoSelecionado.codigo}</p></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label><Input type="number" min="1" value={quantidadeAdd} onChange={(e) => setQuantidadeAdd(Number(e.target.value))} /></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Preço Unit.</label><Input type="number" step="0.01" value={precoAdd} onChange={(e) => setPrecoAdd(Number(e.target.value))} /></div></div><div className="p-3 bg-red-50 rounded-lg flex justify-between"><span>Total:</span><span className="font-bold text-red-600">{formatMoney(quantidadeAdd * precoAdd)}</span></div></>)}
+            </div>
+            <div className="flex justify-end gap-2 mt-6"><Button type="button" variant="outline" onClick={() => setModalProduto(false)}>Cancelar</Button><Button type="button" onClick={adicionarItem} disabled={!produtoSelecionado}>Adicionar</Button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
