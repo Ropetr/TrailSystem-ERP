@@ -1,6 +1,6 @@
 // =============================================
 // PLANAC ERP - Orçamentos Page
-// Atualizado: 2025-12-17 17:50
+// Atualizado: 2025-12-17 18:00
 // =============================================
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -522,13 +522,13 @@ export function OrcamentosPage() {
             Você está prestes a mesclar {selectedOrcamentos.length} orçamentos.
           </p>
           
-          {/* Seleção de cliente - usando ClienteSelect */}
+          {/* Seleção de cliente - usando componente padronizado */}
           <ClienteSelect
             label="Selecione o cliente para o novo orçamento:"
             value={clienteSelecionado}
-            onChange={(id) => setClienteSelecionado(id)}
+            onChange={(cliente) => setClienteSelecionado(cliente?.id || '')}
             presets={clientesDosMesclados}
-            presetsLabel="Clientes dos orçamentos"
+            presetsHeader="Clientes dos orçamentos"
             placeholder="Selecione o cliente..."
           />
           <p className="text-xs text-gray-500">
