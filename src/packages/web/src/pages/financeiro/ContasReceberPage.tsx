@@ -150,9 +150,9 @@ export function ContasReceberPage() {
 
   const filteredContas = contas.filter((conta) => {
     const matchSearch =
-      conta.numero_documento?.toLowerCase().includes(search.toLowerCase()) ||
-      conta.cliente_nome?.toLowerCase().includes(search.toLowerCase()) ||
-      conta.descricao?.toLowerCase().includes(search.toLowerCase());
+      String(conta.numero_documento || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(conta.cliente_nome || "").toLowerCase().includes(search.toLowerCase()) ||
+      String(conta.descricao || "").toLowerCase().includes(search.toLowerCase());
 
     const matchStatus = !statusFilter || conta.status === statusFilter;
 
