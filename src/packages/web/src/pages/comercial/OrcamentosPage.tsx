@@ -309,8 +309,8 @@ export function OrcamentosPage() {
         label: 'Enviar WhatsApp',
         icon: <Icons.messageCircle className="w-4 h-4" />,
         onClick: () => handleEnviarWhatsApp(orcamento),
-      },
-    ];
+      }
+    );
 
     if (orcamento.status === 'aprovado') {
       items.push(
