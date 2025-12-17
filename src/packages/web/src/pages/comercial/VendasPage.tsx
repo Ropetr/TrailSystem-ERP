@@ -1,3 +1,4 @@
+// Build: 20251217172442
 // =============================================
 // PLANAC ERP - Vendas Page
 // Lista de Pedidos/Vendas
@@ -314,7 +315,7 @@ export function VendasPage() {
                       }
                       size="sm"
                     >
-                      {entrega.status}
+                      {entrega.status || "-"}
                     </Badge>
                   </div>
                   <p className="text-xs text-gray-500">
