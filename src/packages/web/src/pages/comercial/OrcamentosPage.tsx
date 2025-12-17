@@ -269,7 +269,7 @@ export function OrcamentosPage() {
   ];
 
   const actions = (orcamento: Orcamento) => {
-    const items = [];
+    const items: { label?: string; icon?: React.ReactNode; onClick?: () => void; variant?: 'default' | 'danger' | 'success'; type?: 'separator' }[] = [];
     
     // Mesclar - só aparece se este orçamento está selecionado E há 2+ selecionados
     const isSelected = selectedOrcamentos.includes(orcamento.id);
