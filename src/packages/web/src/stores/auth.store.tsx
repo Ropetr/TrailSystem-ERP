@@ -1,5 +1,6 @@
 // =============================================
 // PLANAC ERP - Auth Store (Context)
+// Fix: Manter sessão após F5 - 17/12/2025
 // =============================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -24,19 +25,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Verificar autenticação ao carregar
   useEffect(() => {
     const checkAuth = async () => {
-      const storedUser = authService.getStoredUser();
-      if (storedUser) {
-        setUsuario(storedUser);
-        // Validar token no backend
-        const currentUser = await authService.me();
-        if (currentUser) {
-          setUsuario(currentUser);
-        } else {
-          setUsuario(null);
+      try {
+        // 1. Verificar se há usuário e token salvos
+        const storedUser = authService.getStoredUser();
+        const hasToken = !!authService.getToken?.() || !!localStorage.getItem('planac_token');
+        
+        if (storedUser && hasToken) {
+          // 2. Confiar no usuário salvo imediatamente
+          setUsuario(storedUser);
+          
+          // 3. Tentar validar com a API em background (opcional)
+          try {
+            const currentUser = await authService.me();
+            if (currentUser) {
+              // Atualizar com dados frescos da API
+              setUsuario(currentUser);
+            }
+            // Se me() retornar null mas não der erro, mantém o storedUser
+          } catch (apiError) {
+            // Erro de rede/API - mantém o usuário logado com dados salvos
+            console.log('[Auth] API indisponível, usando dados locais');
+          }
         }
+      } catch (error) {
+        console.error('[Auth] Erro ao verificar autenticação:', error);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
+    
     checkAuth();
   }, []);
 
@@ -59,9 +76,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refresh = useCallback(async () => {
-    const currentUser = await authService.me();
-    if (currentUser) {
-      setUsuario(currentUser);
+    try {
+      const currentUser = await authService.me();
+      if (currentUser) {
+        setUsuario(currentUser);
+      }
+    } catch (error) {
+      console.error('[Auth] Erro ao atualizar usuário:', error);
     }
   }, []);
 
