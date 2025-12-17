@@ -1,5 +1,6 @@
 // =============================================
 // PLANAC ERP - Orçamentos Page
+// Atualizado: 2025-12-17 15:07
 // =============================================
 
 import React, { useState, useEffect } from 'react';
