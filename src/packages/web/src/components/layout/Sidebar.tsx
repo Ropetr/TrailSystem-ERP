@@ -2,9 +2,10 @@
 // PLANAC ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
 // Ajustado: 16/12/2025 - Flyout alinhado com item selecionado
+// Corrigido: 18/12/2025 - Fix hover do submenu (delay e ponte)
 // =============================================
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
@@ -140,10 +141,7 @@ const menuItems: MenuItem[] = [
     { label: 'Relatórios', path: '/bi/relatorios' },
     { label: 'Indicadores', path: '/bi/indicadores' },
   ]},
-  { id: 'suporte', label: 'Suporte', icon: Icons.support, children: [
-    { label: 'Tickets', path: '/suporte/tickets' },
-    { label: 'Base de Conhecimento', path: '/suporte/base' },
-  ]},
+  // Suporte movido para o rodapé
   { id: 'configuracoes', label: 'Configurações', icon: Icons.cog, children: [
     { label: 'Geral', path: '/configuracoes/geral' },
     { label: 'Fiscal', path: '/configuracoes/fiscal' },
@@ -154,23 +152,31 @@ const menuItems: MenuItem[] = [
   ]},
 ];
 
-// Componente Flyout com Portal - ALINHADO com o item
-function FlyoutPortal({ children, targetRef, isVisible, onMouseEnter, onMouseLeave }: { 
+// =============================================
+// FLYOUT PORTAL CORRIGIDO - Com ponte invisível
+// =============================================
+function FlyoutPortal({ 
+  children, 
+  targetRef, 
+  isVisible, 
+  onMouseEnter, 
+  onMouseLeave 
+}: { 
   children: React.ReactNode; 
   targetRef: React.RefObject<HTMLDivElement>; 
   isVisible: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 }) {
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [position, setPosition] = useState({ top: 0, left: 0, height: 0 });
 
   useEffect(() => {
     if (targetRef.current && isVisible) {
       const rect = targetRef.current.getBoundingClientRect();
       setPosition({
-        // Alinha o TOPO do flyout com o TOPO do item (menos o padding do py-1)
         top: rect.top - 4,
         left: rect.right,
+        height: rect.height,
       });
     }
   }, [isVisible, targetRef]);
@@ -185,11 +191,25 @@ function FlyoutPortal({ children, targetRef, isVisible, onMouseEnter, onMouseLea
         left: position.left,
         zIndex: 99999,
       }}
-      className="bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-[#3a3a3c] rounded-lg shadow-xl py-1 min-w-48"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {children}
+      {/* PONTE INVISÍVEL - Área que conecta o item ao flyout */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: -12,
+          width: 12,
+          height: Math.max(position.height + 8, 40),
+          // background: 'rgba(255,0,0,0.1)', // Descomente para debug
+        }}
+      />
+      
+      {/* FLYOUT REAL */}
+      <div className="bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-[#3a3a3c] rounded-lg shadow-xl py-1 min-w-48">
+        {children}
+      </div>
     </div>,
     document.body
   );
@@ -201,8 +221,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-  const [isInFlyout, setIsInFlyout] = useState(false);
   const categoryRefs = useRef<{ [key: string]: React.RefObject<HTMLDivElement> }>({});
+  
+  // Timeout refs para controle de delay
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   cadastroCategorias.forEach(cat => {
     if (!categoryRefs.current[cat.id]) {
@@ -210,7 +233,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   });
 
-  // HOVER: Apenas ADICIONA o menu (não remove nenhum)
+  // Limpar timeouts ao desmontar
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    };
+  }, []);
+
+  // HOVER no menu principal - abre imediatamente
   const handleMenuHover = (menuId: string) => {
     if (!expandedMenus.includes(menuId)) {
       setExpandedMenus(prev => [...prev, menuId]);
@@ -226,25 +257,75 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     );
   };
 
-  // Sair do sidebar - fecha tudo (exceto se estiver no flyout)
-  const handleSidebarLeave = () => {
-    if (isInFlyout || hoveredCategory) return;
+  // =============================================
+  // HOVER NA CATEGORIA - Com delay para abrir
+  // =============================================
+  const handleCategoryEnter = useCallback((categoryId: string) => {
+    // Cancelar qualquer timeout de saída pendente
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
     
+    // Pequeno delay para evitar flickering ao passar rápido
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredCategory(categoryId);
+    }, 50);
+  }, []);
+
+  // =============================================
+  // SAIR DA CATEGORIA - Com delay maior para dar tempo de chegar no flyout
+  // =============================================
+  const handleCategoryLeave = useCallback(() => {
+    // Cancelar timeout de entrada se houver
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    
+    // Delay de 300ms para fechar - tempo suficiente para mover o mouse
+    leaveTimeoutRef.current = setTimeout(() => {
+      setHoveredCategory(null);
+    }, 300);
+  }, []);
+
+  // =============================================
+  // ENTRAR NO FLYOUT - Cancela o fechamento
+  // =============================================
+  const handleFlyoutEnter = useCallback(() => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+  }, []);
+
+  // =============================================
+  // SAIR DO FLYOUT - Fecha imediatamente
+  // =============================================
+  const handleFlyoutLeave = useCallback(() => {
+    setHoveredCategory(null);
+  }, []);
+
+  // Sair do sidebar - fecha todos os menus
+  const handleSidebarLeave = () => {
+    // Delay para não fechar enquanto navega entre itens
     setTimeout(() => {
-      if (!isInFlyout) {
+      if (!hoveredCategory) {
         setExpandedMenus([]);
       }
-    }, 100);
+    }, 200);
   };
 
-  // Sair do flyout - fecha tudo
-  const handleFlyoutLeave = () => {
-    setIsInFlyout(false);
+  // Fechar tudo ao clicar em um item
+  const handleItemClick = () => {
     setHoveredCategory(null);
     setExpandedMenus([]);
+    onClose();
   };
 
-  // Renderizar categoria com flyout
+  // =============================================
+  // RENDERIZAR CATEGORIA COM FLYOUT CORRIGIDO
+  // =============================================
   const renderCategoriaComFlyout = (categoria: typeof cadastroCategorias[0]) => {
     const isHovered = hoveredCategory === categoria.id;
     const ref = categoryRefs.current[categoria.id];
@@ -253,18 +334,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       <div
         key={categoria.id}
         ref={ref}
-        onMouseEnter={() => setHoveredCategory(categoria.id)}
-        onMouseLeave={() => {
-          setTimeout(() => {
-            if (!isInFlyout) {
-              setHoveredCategory(null);
-            }
-          }, 100);
-        }}
+        onMouseEnter={() => handleCategoryEnter(categoria.id)}
+        onMouseLeave={handleCategoryLeave}
         className="relative"
       >
         <div
-          className="flex items-center justify-between px-3 py-1.5 ml-3 rounded-lg text-sm cursor-pointer transition-colors text-gray-600 dark:text-[#8e8e93] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-900 dark:hover:text-white"
+          className={`flex items-center justify-between px-3 py-1.5 ml-3 rounded-lg text-sm cursor-pointer transition-colors ${
+            isHovered 
+              ? 'bg-gray-100 dark:bg-[#2c2c2e] text-gray-900 dark:text-white' 
+              : 'text-gray-600 dark:text-[#8e8e93] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-900 dark:hover:text-white'
+          }`}
         >
           <span>{categoria.label}</span>
           <span className="text-gray-400">{Icons.chevronRight}</span>
@@ -273,20 +352,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <FlyoutPortal 
           targetRef={ref} 
           isVisible={isHovered}
-          onMouseEnter={() => setIsInFlyout(true)}
+          onMouseEnter={handleFlyoutEnter}
           onMouseLeave={handleFlyoutLeave}
         >
           {categoria.items.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              onClick={() => {
-                setHoveredCategory(null);
-                setIsInFlyout(false);
-                setExpandedMenus([]);
-                onClose();
-              }}
-              className="block px-4 py-2 text-sm transition-colors text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
+              onClick={handleItemClick}
+              className={({ isActive }) => `
+                block px-4 py-2 text-sm transition-colors
+                ${isActive 
+                  ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium' 
+                  : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
+                }
+              `}
             >
               {item.label}
             </NavLink>
@@ -331,11 +411,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <NavLink
           key={item.id}
           to={item.path}
-          onClick={() => {
-            setExpandedMenus([]);
-            onClose();
-          }}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]"
+          onClick={handleItemClick}
+          className={({ isActive }) => `
+            flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200
+            ${isActive 
+              ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400' 
+              : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
+            }
+          `}
         >
           {item.icon}
           <span className="font-medium">{item.label}</span>
@@ -366,11 +449,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <NavLink
                 key={child.path}
                 to={child.path}
-                onClick={() => {
-                  setExpandedMenus([]);
-                  onClose();
-                }}
-                className="block px-3 py-1.5 rounded-lg text-sm transition-colors text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white"
+                onClick={handleItemClick}
+                className={({ isActive }) => `
+                  block px-3 py-1.5 rounded-lg text-sm transition-colors
+                  ${isActive 
+                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium' 
+                    : 'text-gray-500 dark:text-[#636366] hover:bg-gray-100 dark:hover:bg-[#2c2c2e] hover:text-gray-700 dark:hover:text-white'
+                  }
+                `}
               >
                 {child.label}
               </NavLink>
@@ -410,12 +496,132 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {menuItems.slice(1).map(renderMenuItem)}
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200 dark:border-[#2c2c2e]">
-          <p className="text-xs text-gray-400 dark:text-[#636366]">PLANAC ERP v1.0.0</p>
+        {/* Footer - Suporte Fixo */}
+        <div className="border-t border-gray-200 dark:border-[#2c2c2e] p-3">
+          <FooterSuporteMenu onItemClick={handleItemClick} />
         </div>
       </aside>
     </>
+  );
+}
+
+// =============================================
+// COMPONENTE SUPORTE NO RODAPÉ COM FLYOUT
+// =============================================
+function FooterSuporteMenu({ onItemClick }: { onItemClick: () => void }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [flyoutPosition, setFlyoutPosition] = useState({ bottom: 0, left: 0 });
+  const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const suporteItems = [
+    { label: 'Tickets', path: '/suporte/tickets' },
+    { label: 'Base de Conhecimento', path: '/suporte/base' },
+  ];
+
+  useEffect(() => {
+    if (menuRef.current && isHovered) {
+      const rect = menuRef.current.getBoundingClientRect();
+      setFlyoutPosition({
+        bottom: window.innerHeight - rect.top - rect.height,
+        left: rect.right,
+      });
+    }
+  }, [isHovered]);
+
+  const handleMouseEnter = () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    leaveTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 300);
+  };
+
+  const handleFlyoutEnter = () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+  };
+
+  const handleFlyoutLeave = () => {
+    setIsHovered(false);
+  };
+
+  return (
+    <div
+      ref={menuRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="relative"
+    >
+      <div
+        className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition-all duration-200 ${
+          isHovered
+            ? 'bg-gray-100 dark:bg-[#2c2c2e] text-gray-900 dark:text-white'
+            : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
+        }`}
+      >
+        {Icons.support}
+        <span className="font-medium">Suporte</span>
+        <span className="ml-auto text-gray-400">{Icons.chevronRight}</span>
+      </div>
+
+      {/* Flyout do Suporte */}
+      {isHovered && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            bottom: flyoutPosition.bottom,
+            left: flyoutPosition.left,
+            zIndex: 99999,
+          }}
+          onMouseEnter={handleFlyoutEnter}
+          onMouseLeave={handleFlyoutLeave}
+        >
+          {/* Ponte invisível */}
+          <div 
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: -12,
+              width: 12,
+              height: 60,
+            }}
+          />
+          
+          {/* Menu flyout */}
+          <div className="bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-[#3a3a3c] rounded-lg shadow-xl py-1 min-w-48">
+            {suporteItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => {
+                  setIsHovered(false);
+                  onItemClick();
+                }}
+                className={({ isActive }) => `
+                  block px-4 py-2 text-sm transition-colors
+                  ${isActive 
+                    ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium' 
+                    : 'text-gray-700 dark:text-[#e5e5e7] hover:bg-gray-100 dark:hover:bg-[#2c2c2e]'
+                  }
+                `}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
   );
 }
 
