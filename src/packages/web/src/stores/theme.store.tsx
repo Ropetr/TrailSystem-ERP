@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - Theme Store (Context)
+// TRAILSYSTEM ERP - Theme Store (Context)
 // Gerenciamento de tema claro/escuro
 // =============================================
 
@@ -40,7 +40,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Inicializar com tema salvo ou light
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("planac_theme") as Theme;
+      const saved = localStorage.getItem("trailsystem_theme") as Theme;
       return saved || "light";
     }
     return "light";
@@ -62,7 +62,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyTheme(resolved);
     
     // Salvar preferência
-    localStorage.setItem("planac_theme", theme);
+    localStorage.setItem("trailsystem_theme", theme);
   }, [theme]);
 
   // Escutar mudanças na preferência do sistema
