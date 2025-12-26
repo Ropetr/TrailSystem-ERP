@@ -160,7 +160,7 @@ export default function CadastroPage() {
             {/* Logo Vertical sobre a faixa branca */}
             <div className="mb-8">
               <img 
-                src="/images/logo-vertical.png" 
+                src="/logo-vertical.png" 
                 alt="TrailSystem" 
                 className="h-48 mx-auto"
               />
@@ -429,3 +429,4 @@ export default function CadastroPage() {
     </div>
   );
 }
+
