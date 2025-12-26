@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* =========================================
-   PLANAC ERP - Design System Styles
+   TRAILSYSTEM ERP - Design System Styles
    iOS/Samsung Dark Mode (preto puro)
    ========================================= */
 
@@ -25,7 +25,7 @@
 /* Focus States */
 @layer base {
   input:focus, textarea:focus, select:focus, button:focus-visible {
-    @apply outline-none ring-2 ring-planac-500/20 border-planac-500;
+    @apply outline-none ring-2 ring-trailsystem-500/20 border-trailsystem-500;
   }
 }
 
