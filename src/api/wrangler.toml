@@ -13,12 +13,20 @@ compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 # =============================================
+# BUILD - Desativado (wrangler compila TS direto)
+# =============================================
+[build]
+command = ""
+
+# =============================================
 # VARIÁVEIS DE AMBIENTE
 # =============================================
 [vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"
 NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br"
+APP_NAME = "PLANAC ERP"
+APP_VERSION = "2.0.0"
 
 # =============================================
 # D1 DATABASES
@@ -85,38 +93,26 @@ crons = [
 ]
 
 # =============================================
-# OBSERVABILITY
-# =============================================
-[observability]
-enabled = true
-
-# =============================================
-# BUILD
-# =============================================
-[build]
-command = "npm run build"
-
-# =============================================
-# SECRETS (Configurar via Dashboard ou CLI)
-# =============================================
-# wrangler secret put JWT_SECRET
-# wrangler secret put ENCRYPTION_KEY
-# wrangler secret put NUVEM_FISCAL_CLIENT_ID
-# wrangler secret put NUVEM_FISCAL_CLIENT_SECRET
-# wrangler secret put EMAIL_API_KEY
-# wrangler secret put WHATSAPP_API_KEY
-
-# =============================================
 # AMBIENTES
 # =============================================
+
+# Desenvolvimento (local)
 [env.development]
 name = "planac-erp-api-dev"
-vars = { ENVIRONMENT = "development", LOG_LEVEL = "debug", NUVEM_FISCAL_URL = "https://api.sandbox.nuvemfiscal.com.br" }
+[env.development.vars]
+ENVIRONMENT = "development"
+LOG_LEVEL = "debug"
 
+# Staging
 [env.staging]
 name = "planac-erp-api-staging"
-vars = { ENVIRONMENT = "staging", LOG_LEVEL = "info", NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br" }
+[env.staging.vars]
+ENVIRONMENT = "staging"
+LOG_LEVEL = "debug"
 
+# Produção
 [env.production]
 name = "planac-erp-api"
-vars = { ENVIRONMENT = "production", LOG_LEVEL = "info", NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br" }
+[env.production.vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
