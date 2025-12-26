@@ -1,6 +1,7 @@
 // =============================================
 // 🏢 PLANAC ERP - Definições de Tipos
 // =============================================
+// Atualizado: 26/12/2025 - Unificação APIs + Integrações Fiscais
 
 // =============================================
 // Bindings do Cloudflare Worker
@@ -8,31 +9,45 @@
 export interface Bindings {
   // Database D1
   DB: D1Database;
+  DB_IBPT: D1Database; // NOVO - Banco IBPT
   
   // KV Namespaces
   KV_CACHE: KVNamespace;
   KV_SESSIONS: KVNamespace;
+  KV_RATE_LIMIT: KVNamespace; // NOVO
   
   // R2 Storage
   R2_STORAGE: R2Bucket;
-  R2_BACKUPS: R2Bucket;
+  R2_DOCS: R2Bucket;
+  R2_BACKUP: R2Bucket;
+  R2_CERTIFICADOS: R2Bucket; // NOVO - Certificados A1
   
   // Environment Variables
   ENVIRONMENT: string;
   APP_NAME: string;
   APP_VERSION: string;
   
-  // Secrets
+  // Secrets - Core
   JWT_SECRET: string;
+  ENCRYPTION_KEY: string; // NOVO - Criptografia certificados
+  
+  // Secrets - Nuvem Fiscal
+  NUVEM_FISCAL_URL?: string;
   NUVEM_FISCAL_CLIENT_ID?: string;
   NUVEM_FISCAL_CLIENT_SECRET?: string;
+  NUVEM_FISCAL_AMBIENTE?: 'homologacao' | 'producao';
+  NUVEM_FISCAL_TOKEN_CACHE?: KVNamespace;
+  
+  // Secrets - Notificações
+  EMAIL_API_KEY?: string; // Resend
+  WHATSAPP_API_KEY?: string; // API Brasil
 }
 
 // =============================================
 // Variáveis de Contexto do Hono
 // =============================================
 export interface Variables {
-  user: Usuario;
+  usuario: Usuario;
   empresa_id: string;
   filial_id?: string;
 }
@@ -304,4 +319,87 @@ export interface MovimentacaoEstoque {
   observacao?: string;
   usuario_id: string;
   created_at: string;
+}
+
+// =============================================
+// Tipos Fiscais (NOVO)
+// =============================================
+
+export interface CertificadoDigital {
+  id: string;
+  empresa_id: string;
+  tipo: 'A1' | 'A3';
+  arquivo_nome: string;
+  arquivo_r2_key: string;
+  senha_criptografada: string;
+  cnpj: string;
+  razao_social?: string;
+  data_validade: string;
+  data_upload: string;
+  sincronizado_nuvem_fiscal: boolean;
+  nuvem_fiscal_id?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IBPTAliquota {
+  id: string;
+  ncm: string;
+  ex?: string;
+  tipo: 'nacional' | 'importado';
+  descricao?: string;
+  nacional_federal: number;
+  importados_federal: number;
+  estadual: number;
+  municipal: number;
+  vigencia_inicio: string;
+  vigencia_fim: string;
+  fonte: string;
+  versao: string;
+  created_at: string;
+}
+
+export interface NotaFiscal {
+  id: string;
+  empresa_id: string;
+  filial_id: string;
+  tipo: 'nfe' | 'nfce' | 'nfse' | 'cte' | 'mdfe';
+  serie: string;
+  numero: string;
+  chave?: string;
+  status: 'rascunho' | 'validando' | 'autorizada' | 'rejeitada' | 'cancelada' | 'inutilizada';
+  ambiente: 'homologacao' | 'producao';
+  cliente_id?: string;
+  cliente_nome?: string;
+  cliente_cpf_cnpj?: string;
+  valor_total: number;
+  valor_tributos?: number;
+  xml_autorizado?: string;
+  pdf_danfe?: string;
+  protocolo?: string;
+  data_emissao: string;
+  data_autorizacao?: string;
+  data_cancelamento?: string;
+  motivo_cancelamento?: string;
+  documento_origem_tipo?: string;
+  documento_origem_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// =============================================
+// Jobs Agendados (NOVO)
+// =============================================
+
+export interface JobExecucao {
+  id: string;
+  job_nome: string;
+  tipo: 'certificados' | 'ibpt' | 'relatorio' | 'limpeza' | string;
+  status: 'iniciado' | 'sucesso' | 'erro' | 'parcial';
+  detalhes?: any;
+  erro?: string;
+  iniciado_em: string;
+  finalizado_em?: string;
+  duracao_ms?: number;
 }
