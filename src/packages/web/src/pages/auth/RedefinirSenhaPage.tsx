@@ -108,7 +108,7 @@ export default function RedefinirSenhaPage() {
         <div className="text-center mb-8">
           <Link to="/">
             <img 
-              src="/images/logo-horizontal.png" 
+              src="/logo-horizontal.png" 
               alt="TrailSystem" 
               className="h-12 mx-auto"
             />
@@ -195,3 +195,4 @@ export default function RedefinirSenhaPage() {
     </div>
   );
 }
+
