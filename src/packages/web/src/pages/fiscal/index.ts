@@ -2,7 +2,7 @@
 // PLANAC ERP - Módulo Fiscal
 // =============================================
 
-export { NotasPage } from './NotasPage';
-export { NotaFormPage } from './NotaFormPage';
-export { NFCePage } from './NFCePage';
-export { ConfigFiscalPage } from './ConfigFiscalPage';
+export { default as NotasPage } from "./NotasPage";
+export { default as NotaFormPage } from "./NotaFormPage";
+export { default as NFCePage } from "./NFCePage";
+export { default as ConfigFiscalPage } from "./ConfigFiscalPage";
