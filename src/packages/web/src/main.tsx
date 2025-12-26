@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - Entry Point
+// TRAILSYSTEM ERP - Entry Point
 // =============================================
 
 import React from 'react';
