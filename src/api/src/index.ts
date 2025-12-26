@@ -1,53 +1,193 @@
 // =============================================
-// 🚀 PLANAC ERP - API Principal
+// 🚀 PLANAC ERP - API Principal (Unificada)
 // =============================================
 // Arquivo: src/api/src/index.ts
-// Atualizado: 10/12/2025 - Adicionadas 6 novas rotas
+// Atualizado: 26/12/2025 - Unificação APIs + Integrações Fiscais
+// 
+// HISTÓRICO:
+// - 10/12/2025: Versão inicial com 16 rotas
+// - 26/12/2025: Unificação com packages/api + Nuvem Fiscal, IBPT, Certificados
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { HTTPException } from 'hono/http-exception';
 
-// Rotas - Core
+// =============================================
+// ROTAS - CORE
+// =============================================
 import auth from './routes/auth.routes';
 import usuarios from './routes/usuarios.routes';
 import perfis from './routes/perfis.routes';
 
-// Rotas - Empresa & Config (NOVAS)
+// =============================================
+// ROTAS - EMPRESA & CONFIG
+// =============================================
 import empresas from './routes/empresas.routes';
 import filiais from './routes/filiais.routes';
 import configuracoes from './routes/configuracoes.routes';
+import empresasConfig from './routes/empresas-config.routes'; // NOVO
 
-// Rotas - Cadastros
+// =============================================
+// ROTAS - CADASTROS
+// =============================================
 import clientes from './routes/clientes.routes';
 import fornecedores from './routes/fornecedores.routes';
 import produtos from './routes/produtos.routes';
+import categorias from './routes/categorias.routes';
+import marcas from './routes/marcas.routes';
+import unidades from './routes/unidades.routes';
+import transportadoras from './routes/transportadoras.routes';
+import motoristas from './routes/motoristas.routes';
+import veiculos from './routes/veiculos.routes';
+import vendedores from './routes/vendedores.routes';
 
-// Rotas - Comercial
+// =============================================
+// ROTAS - COMERCIAL
+// =============================================
 import tabelasPreco from './routes/tabelas-preco.routes';
 import condicoesPagamento from './routes/condicoes-pagamento.routes';
 import orcamentos from './routes/orcamentos.routes';
 import pedidos from './routes/pedidos.routes';
+import comissoes from './routes/comissoes.routes';
 
-// Rotas - Operações
+// =============================================
+// ROTAS - ESTOQUE
+// =============================================
 import estoque from './routes/estoque.routes';
-import transportadoras from './routes/transportadoras.routes';
+import inventarios from './routes/inventarios.routes';
+import transferencias from './routes/transferencias.routes';
+import locaisEstoque from './routes/locais-estoque.routes';
 
-// Tipos
+// =============================================
+// ROTAS - FISCAL (NOVO - Nuvem Fiscal + IBPT)
+// =============================================
+import fiscal from './routes/fiscal.routes';           // NF-e, NFC-e, NFS-e, CT-e, MDF-e
+import ibpt from './routes/ibpt.routes';               // Lei da Transparência
+import certificados from './routes/certificados.routes'; // Certificados A1
+import notasFiscais from './routes/notas-fiscais.routes';
+
+// =============================================
+// ROTAS - FINANCEIRO
+// =============================================
+import contasPagar from './routes/contas-pagar.routes';
+import contasReceber from './routes/contas-receber.routes';
+import bancos from './routes/bancos.routes';
+import caixas from './routes/caixas.routes';
+
+// =============================================
+// ROTAS - COMPRAS
+// =============================================
+import compras from './routes/compras.routes';
+import consignacoes from './routes/consignacoes.routes';
+
+// =============================================
+// ROTAS - LOGÍSTICA
+// =============================================
+import entregas from './routes/entregas.routes';
+import rotas from './routes/rotas.routes';
+import rastreamento from './routes/rastreamento.routes';
+
+// =============================================
+// ROTAS - CRM
+// =============================================
+import crm from './routes/crm.routes';
+import tarefas from './routes/tarefas.routes';
+
+// =============================================
+// ROTAS - PDV
+// =============================================
+import pdv from './routes/pdv.routes';
+
+// =============================================
+// ROTAS - RH
+// =============================================
+import rh from './routes/rh.routes';
+import folhaPagamento from './routes/folha-pagamento.routes';
+
+// =============================================
+// ROTAS - PATRIMÔNIO
+// =============================================
+import patrimonio from './routes/patrimonio.routes';
+
+// =============================================
+// ROTAS - CONTÁBIL
+// =============================================
+import contabilidade from './routes/contabilidade.routes';
+
+// =============================================
+// ROTAS - E-COMMERCE
+// =============================================
+import ecommerce from './routes/ecommerce.routes';
+
+// =============================================
+// ROTAS - BI
+// =============================================
+import bi from './routes/bi.routes';
+
+// =============================================
+// ROTAS - SUPORTE
+// =============================================
+import tickets from './routes/tickets.routes';
+import ocorrencias from './routes/ocorrencias.routes';
+
+// =============================================
+// ROTAS - SERVIÇOS
+// =============================================
+import ordensServico from './routes/ordens-servico.routes';
+import contratos from './routes/contratos.routes';
+import garantias from './routes/garantias.routes';
+import devolucoes from './routes/devolucoes.routes';
+import trocas from './routes/trocas.routes';
+
+// =============================================
+// ROTAS - SISTEMA
+// =============================================
+import auditoria from './routes/auditoria.routes';
+import notificacoes from './routes/notificacoes.routes';
+import arquivos from './routes/arquivos.routes';
+import importExport from './routes/import-export.routes';
+import workflows from './routes/workflows.routes';
+import agenda from './routes/agenda.routes';
+import jobs from './routes/jobs.routes'; // NOVO - Jobs agendados
+import configSistema from './routes/configuracoes-sistema.routes';
+
+// =============================================
+// TIPOS
+// =============================================
 interface Env {
+  // Databases D1
   DB: D1Database;
+  DB_IBPT: D1Database; // NOVO - Banco IBPT
+  
+  // KV Namespaces
   KV_CACHE: KVNamespace;
   KV_SESSIONS: KVNamespace;
   KV_RATE_LIMIT: KVNamespace;
+  
+  // R2 Buckets
   R2_STORAGE: R2Bucket;
   R2_DOCS: R2Bucket;
   R2_BACKUP: R2Bucket;
+  R2_CERTIFICADOS: R2Bucket; // NOVO - Certificados A1
+  
+  // Secrets
   JWT_SECRET: string;
+  ENCRYPTION_KEY: string; // NOVO - Criptografia certificados
+  
+  // Config
   ENVIRONMENT: string;
+  
+  // Nuvem Fiscal
   NUVEM_FISCAL_URL: string;
   NUVEM_FISCAL_CLIENT_ID: string;
   NUVEM_FISCAL_CLIENT_SECRET: string;
+  
+  // Email (Resend)
+  EMAIL_API_KEY: string;
+  
+  // WhatsApp (API Brasil)
+  WHATSAPP_API_KEY: string;
 }
 
 // Criar aplicação
@@ -64,6 +204,11 @@ app.use('*', cors({
     'http://localhost:5173', 
     'https://planac.com.br', 
     'https://*.planac.com.br',
+    'https://planacdistribuidora.com.br',
+    'https://*.planacdistribuidora.com.br',
+    'https://trailsystem.com.br',
+    'https://*.trailsystem.com.br',
+    'https://app.trailsystem.com.br',
     'https://claude.ai'
   ],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -89,125 +234,192 @@ app.use('*', async (c, next) => {
 app.use('*', secureHeaders());
 
 // =============================================
-// ROTAS
+// ROTAS - REGISTRO
 // =============================================
 
 // Health check
 app.get('/', (c) => {
   return c.json({
     name: 'PLANAC ERP API',
-    version: '1.1.0',
+    version: '2.0.0',
     status: 'online',
     timestamp: new Date().toISOString(),
-    modules: {
-      core: {
-        auth: '/api/auth',
-        usuarios: '/api/usuarios',
-        perfis: '/api/perfis'
-      },
-      empresa: {
-        empresas: '/api/empresas',
-        filiais: '/api/filiais',
-        configuracoes: '/api/configuracoes'
-      },
-      cadastros: {
-        clientes: '/api/clientes',
-        fornecedores: '/api/fornecedores',
-        produtos: '/api/produtos'
-      },
-      comercial: {
-        tabelasPreco: '/api/tabelas-preco',
-        condicoesPagamento: '/api/condicoes-pagamento',
-        orcamentos: '/api/orcamentos',
-        pedidos: '/api/pedidos'
-      },
-      operacoes: {
-        estoque: '/api/estoque',
-        transportadoras: '/api/transportadoras'
-      }
-    },
-    stats: {
-      totalEndpoints: 15,
-      totalRoutes: '~95'
+    environment: c.env.ENVIRONMENT,
+    routes: {
+      core: ['/api/auth', '/api/usuarios', '/api/perfis'],
+      empresa: ['/api/empresas', '/api/filiais', '/api/configuracoes', '/api/empresas-config'],
+      cadastros: ['/api/clientes', '/api/fornecedores', '/api/produtos', '/api/categorias', '/api/marcas', '/api/unidades', '/api/transportadoras', '/api/motoristas', '/api/veiculos', '/api/vendedores'],
+      comercial: ['/api/tabelas-preco', '/api/condicoes-pagamento', '/api/orcamentos', '/api/pedidos', '/api/comissoes'],
+      estoque: ['/api/estoque', '/api/inventarios', '/api/transferencias', '/api/locais-estoque'],
+      fiscal: ['/api/fiscal', '/api/ibpt', '/api/certificados', '/api/notas-fiscais'],
+      financeiro: ['/api/contas-pagar', '/api/contas-receber', '/api/bancos', '/api/caixas'],
+      compras: ['/api/compras', '/api/consignacoes'],
+      logistica: ['/api/entregas', '/api/rotas', '/api/rastreamento'],
+      crm: ['/api/crm', '/api/tarefas'],
+      pdv: ['/api/pdv'],
+      rh: ['/api/rh', '/api/folha-pagamento'],
+      patrimonio: ['/api/patrimonio'],
+      contabil: ['/api/contabilidade'],
+      ecommerce: ['/api/ecommerce'],
+      bi: ['/api/bi'],
+      suporte: ['/api/tickets', '/api/ocorrencias'],
+      servicos: ['/api/ordens-servico', '/api/contratos', '/api/garantias', '/api/devolucoes', '/api/trocas'],
+      sistema: ['/api/auditoria', '/api/notificacoes', '/api/arquivos', '/api/import-export', '/api/workflows', '/api/agenda', '/api/jobs', '/api/config-sistema']
     }
   });
 });
 
 // Health check detalhado
-app.get('/health', async (c) => {
-  try {
-    // Testar conexão com D1
-    const dbTest = await c.env.DB.prepare('SELECT 1 as ok').first();
-    
-    // Contar registros principais
-    const stats = await c.env.DB.prepare(`
-      SELECT 
-        (SELECT COUNT(*) FROM empresas) as empresas,
-        (SELECT COUNT(*) FROM usuarios) as usuarios,
-        (SELECT COUNT(*) FROM clientes) as clientes,
-        (SELECT COUNT(*) FROM produtos) as produtos,
-        (SELECT COUNT(*) FROM pedidos_venda) as pedidos
-    `).first<any>();
-    
-    return c.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      services: {
-        api: 'up',
-        database: dbTest ? 'up' : 'down',
-        cache: 'up',
-        storage: 'up'
-      },
-      database: {
-        empresas: stats?.empresas || 0,
-        usuarios: stats?.usuarios || 0,
-        clientes: stats?.clientes || 0,
-        produtos: stats?.produtos || 0,
-        pedidos: stats?.pedidos || 0
-      },
-      version: '1.1.0',
-      environment: c.env.ENVIRONMENT || 'production'
-    });
-  } catch (error) {
-    return c.json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, 500);
-  }
+app.get('/health', (c) => {
+  return c.json({
+    status: 'healthy',
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime?.() || 'N/A'
+  });
 });
 
 // =============================================
-// MONTAR ROTAS DA API
+// ROTAS - CORE
 // =============================================
-
-// Core
 app.route('/api/auth', auth);
 app.route('/api/usuarios', usuarios);
 app.route('/api/perfis', perfis);
 
-// Empresa & Config (NOVAS)
+// =============================================
+// ROTAS - EMPRESA & CONFIG
+// =============================================
 app.route('/api/empresas', empresas);
 app.route('/api/filiais', filiais);
 app.route('/api/configuracoes', configuracoes);
+app.route('/api/empresas-config', empresasConfig); // NOVO
 
-// Cadastros
+// =============================================
+// ROTAS - CADASTROS
+// =============================================
 app.route('/api/clientes', clientes);
 app.route('/api/fornecedores', fornecedores);
 app.route('/api/produtos', produtos);
+app.route('/api/categorias', categorias);
+app.route('/api/marcas', marcas);
+app.route('/api/unidades', unidades);
+app.route('/api/transportadoras', transportadoras);
+app.route('/api/motoristas', motoristas);
+app.route('/api/veiculos', veiculos);
+app.route('/api/vendedores', vendedores);
 
-// Comercial (NOVAS: tabelas-preco, condicoes-pagamento)
+// =============================================
+// ROTAS - COMERCIAL
+// =============================================
 app.route('/api/tabelas-preco', tabelasPreco);
 app.route('/api/condicoes-pagamento', condicoesPagamento);
 app.route('/api/orcamentos', orcamentos);
 app.route('/api/pedidos', pedidos);
-
-// Operações (NOVA: transportadoras)
-app.route('/api/estoque', estoque);
-app.route('/api/transportadoras', transportadoras);
+app.route('/api/comissoes', comissoes);
 
 // =============================================
-// TRATAMENTO DE ERROS
+// ROTAS - ESTOQUE
+// =============================================
+app.route('/api/estoque', estoque);
+app.route('/api/inventarios', inventarios);
+app.route('/api/transferencias', transferencias);
+app.route('/api/locais-estoque', locaisEstoque);
+
+// =============================================
+// ROTAS - FISCAL (NOVO)
+// =============================================
+app.route('/api/fiscal', fiscal);             // Nuvem Fiscal - NF-e, NFC-e, NFS-e, CT-e, MDF-e
+app.route('/api/ibpt', ibpt);                 // IBPT - Lei da Transparência
+app.route('/api/certificados', certificados); // Certificados A1
+app.route('/api/notas-fiscais', notasFiscais);
+
+// =============================================
+// ROTAS - FINANCEIRO
+// =============================================
+app.route('/api/contas-pagar', contasPagar);
+app.route('/api/contas-receber', contasReceber);
+app.route('/api/bancos', bancos);
+app.route('/api/caixas', caixas);
+
+// =============================================
+// ROTAS - COMPRAS
+// =============================================
+app.route('/api/compras', compras);
+app.route('/api/consignacoes', consignacoes);
+
+// =============================================
+// ROTAS - LOGÍSTICA
+// =============================================
+app.route('/api/entregas', entregas);
+app.route('/api/rotas', rotas);
+app.route('/api/rastreamento', rastreamento);
+
+// =============================================
+// ROTAS - CRM
+// =============================================
+app.route('/api/crm', crm);
+app.route('/api/tarefas', tarefas);
+
+// =============================================
+// ROTAS - PDV
+// =============================================
+app.route('/api/pdv', pdv);
+
+// =============================================
+// ROTAS - RH
+// =============================================
+app.route('/api/rh', rh);
+app.route('/api/folha-pagamento', folhaPagamento);
+
+// =============================================
+// ROTAS - PATRIMÔNIO
+// =============================================
+app.route('/api/patrimonio', patrimonio);
+
+// =============================================
+// ROTAS - CONTÁBIL
+// =============================================
+app.route('/api/contabilidade', contabilidade);
+
+// =============================================
+// ROTAS - E-COMMERCE
+// =============================================
+app.route('/api/ecommerce', ecommerce);
+
+// =============================================
+// ROTAS - BI
+// =============================================
+app.route('/api/bi', bi);
+
+// =============================================
+// ROTAS - SUPORTE
+// =============================================
+app.route('/api/tickets', tickets);
+app.route('/api/ocorrencias', ocorrencias);
+
+// =============================================
+// ROTAS - SERVIÇOS
+// =============================================
+app.route('/api/ordens-servico', ordensServico);
+app.route('/api/contratos', contratos);
+app.route('/api/garantias', garantias);
+app.route('/api/devolucoes', devolucoes);
+app.route('/api/trocas', trocas);
+
+// =============================================
+// ROTAS - SISTEMA
+// =============================================
+app.route('/api/auditoria', auditoria);
+app.route('/api/notificacoes', notificacoes);
+app.route('/api/arquivos', arquivos);
+app.route('/api/import-export', importExport);
+app.route('/api/workflows', workflows);
+app.route('/api/agenda', agenda);
+app.route('/api/jobs', jobs); // NOVO
+app.route('/api/config-sistema', configSistema);
+
+// =============================================
+// ERROR HANDLING
 // =============================================
 
 // 404 - Rota não encontrada
