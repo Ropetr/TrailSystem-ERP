@@ -2,11 +2,11 @@
 // PLANAC ERP - CRM Module Exports
 // =============================================
 
-export { CRMDashboardPage } from './CRMDashboardPage';
-export { PipelinePage } from './PipelinePage';
-export { LeadsPage } from './LeadsPage';
-export { OportunidadesPage } from './OportunidadesPage';
-export { AtividadesPage } from './AtividadesPage';
+export { default as CRMDashboardPage } from "./CRMDashboardPage";
+export { default as PipelinePage } from "./PipelinePage";
+export { default as LeadsPage } from "./LeadsPage";
+export { default as OportunidadesPage } from "./OportunidadesPage";
+export { default as AtividadesPage } from "./AtividadesPage";
 
 // Default export for lazy loading
 export default {
