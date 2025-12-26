@@ -2,8 +2,7 @@
 // PLANAC ERP - Comercial Pages Export
 // =============================================
 
-export { default as ClientesPage } from "./ClientesPage";
-export { default as ClienteFormPage } from "./ClienteFormPage";
+export { default as ClientesPage, SmartSearch, smartSearchMatch } from "./ClientesPage";
 export { default as ProdutosPage } from "./ProdutosPage";
 export { default as ProdutoFormPage } from "./ProdutoFormPage";
 export { default as OrcamentosPage } from "./OrcamentosPage";
