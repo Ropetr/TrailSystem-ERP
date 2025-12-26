@@ -200,12 +200,12 @@ export default function LoginPage() {
         {/* Conteúdo */}
         <div className="relative z-10 flex flex-col items-center justify-center w-full p-12">
           <div className="max-w-lg text-center">
-            {/* Logo Vertical sobre a faixa branca */}
-            <div className="mb-8">
+            {/* Logo Vertical - centralizada na faixa branca */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-[29%] h-52 flex items-center justify-center w-full">
               <img 
                 src="/logo-vertical.png" 
                 alt="TrailSystem" 
-                className="h-48 mx-auto"
+                className="h-44"
               />
             </div>
             <h2 className="text-3xl font-bold text-white mb-4">
@@ -235,5 +235,6 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
