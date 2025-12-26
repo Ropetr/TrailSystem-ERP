@@ -1,6 +1,6 @@
 // =============================================
 // TRAILSYSTEM ERP - Routes Completas
-// Atualizado: 25/12/2025 - Com Auth Completo
+// Atualizado: 26/12/2025 - Clientes usando Modal Popup
 // =============================================
 
 import React, { Suspense } from 'react';
@@ -32,10 +32,9 @@ import {
   ConfiguracoesPage,
 } from '@/pages/core';
 
-// Comercial Pages
+// Comercial Pages (ClienteFormPage removido - agora usa Modal Popup)
 import {
   ClientesPage,
-  ClienteFormPage,
   ProdutosPage,
   ProdutoFormPage,
   OrcamentosPage,
@@ -263,10 +262,10 @@ export function AppRoutes() {
                   {/* CADASTROS - Módulo Central de Dados Base   */}
                   {/* ========================================== */}
                   
-                  {/* --- Entidades --- */}
+                  {/* --- Clientes (Modal Popup - sem página de formulário separada) --- */}
                   <Route path="/cadastros/clientes" element={<ClientesPage />} />
-                  <Route path="/cadastros/clientes/novo" element={<ClienteFormPage />} />
-                  <Route path="/cadastros/clientes/:id" element={<ClienteFormPage />} />
+                  <Route path="/cadastros/clientes/novo" element={<Navigate to="/cadastros/clientes" replace />} />
+                  <Route path="/cadastros/clientes/:id" element={<Navigate to="/cadastros/clientes" replace />} />
                   
                   <Route path="/cadastros/fornecedores" element={<FornecedoresPage />} />
                   <Route path="/cadastros/fornecedores/novo" element={<FornecedorFormPage />} />
