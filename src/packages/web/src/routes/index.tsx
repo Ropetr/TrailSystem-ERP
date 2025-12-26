@@ -1,6 +1,6 @@
 // =============================================
-// PLANAC ERP - Routes Completas
-// Atualizado: 15/12/2025 - Rotas alinhadas com Sidebar
+// TRAILSYSTEM ERP - Routes Completas
+// Atualizado: 25/12/2025 - Com Auth Completo
 // =============================================
 
 import React, { Suspense } from 'react';
@@ -12,7 +12,13 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 
 // Auth Pages
-import { LoginPage } from '@/pages/auth/LoginPage';
+import {
+  LoginPage,
+  CadastroPage,
+  VerificarEmailPage,
+  EsqueciSenhaPage,
+  RedefinirSenhaPage,
+} from '@/pages/auth';
 
 // Core Pages
 import {
@@ -189,7 +195,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* ========== AUTH ROUTES (Public) ========== */}
       <Route
         path="/login"
         element={
@@ -200,8 +206,48 @@ export function AppRoutes() {
           </PublicRoute>
         }
       />
+      
+      <Route
+        path="/cadastro"
+        element={
+          <PublicRoute>
+            <AuthLayout>
+              <CadastroPage />
+            </AuthLayout>
+          </PublicRoute>
+        }
+      />
+      
+      <Route
+        path="/verificar-email"
+        element={
+          <AuthLayout>
+            <VerificarEmailPage />
+          </AuthLayout>
+        }
+      />
+      
+      <Route
+        path="/esqueci-senha"
+        element={
+          <PublicRoute>
+            <AuthLayout>
+              <EsqueciSenhaPage />
+            </AuthLayout>
+          </PublicRoute>
+        }
+      />
+      
+      <Route
+        path="/redefinir-senha"
+        element={
+          <AuthLayout>
+            <RedefinirSenhaPage />
+          </AuthLayout>
+        }
+      />
 
-      {/* Protected Routes */}
+      {/* ========== PROTECTED ROUTES ========== */}
       <Route
         path="/*"
         element={
