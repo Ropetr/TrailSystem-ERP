@@ -256,3 +256,9 @@ export function multiTenantMiddleware() {
     await next();
   };
 }
+
+
+// =============================================
+// ALIAS para compatibilidade
+// =============================================
+export const requireAuth = authMiddleware;
