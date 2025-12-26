@@ -2,7 +2,7 @@
 // PLANAC ERP - Módulo de Estoque
 // =============================================
 
-export { MovimentacoesPage } from './MovimentacoesPage';
-export { TransferenciasPage } from './TransferenciasPage';
-export { InventarioPage } from './InventarioPage';
-export { SaldosPage } from './SaldosPage';
+export { default as MovimentacoesPage } from "./MovimentacoesPage";
+export { default as TransferenciasPage } from "./TransferenciasPage";
+export { default as InventarioPage } from "./InventarioPage";
+export { default as SaldosPage } from "./SaldosPage";
