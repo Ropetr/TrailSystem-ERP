@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api } from @/services/api';
+import { api } from '@/services/api';
 
 export default function VerificarEmailPage() {
   const [searchParams] = useSearchParams();
