@@ -1,462 +1,348 @@
 // =============================================
-// PLANAC ERP - IBPT Routes v2
-// API com cache inteligente + importação CSV
+// PLANAC ERP - Rotas IBPT (Lei da Transparência)
 // =============================================
+// Lei 12.741 - Informação de Tributos em Documentos Fiscais
+// Atualizado: 26/12/2025 - Adaptado para API Unificada
 
 import { Hono } from 'hono';
-import { createIBPTApiService } from '../services/ibpt/ibpt-api-service';
-import { importarCSVIBPT, listarImportacoes } from '../services/ibpt/ibpt-csv-importer';
-import { jobAtualizarTabelaIBPT, verificarNecessidadeAtualizacao } from '../services/ibpt/ibpt-auto-update-job';
+import { z } from 'zod';
+import type { Bindings, Variables } from '../types';
+import { requireAuth, requirePermission } from '../middleware/auth';
+import { registrarAuditoria } from '../utils/auditoria';
+import { 
+  IBPTApiService, 
+  IBPTService, 
+  IBPTCSVImporter,
+  IBPTAutoUpdateJob 
+} from '../services/ibpt';
 
-interface Env {
-  DB: D1Database;
-  DB_IBPT: D1Database;
-  IBPT_TOKEN?: string;
-}
+const ibpt = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-const ibpt = new Hono<{ Bindings: Env }>();
+// Middleware de autenticação para todas as rotas
+ibpt.use('/*', requireAuth());
 
-// ===== CONSULTAS =====
+// =============================================
+// CONSULTAS DE ALÍQUOTAS
+// =============================================
 
-/**
- * Consulta alíquota IBPT por NCM
- * GET /ibpt/consultar/:ncm?uf=PR&ex=0&descricao=Produto&valor=100
- */
-ibpt.get('/consultar/:ncm', async (c) => {
+// GET /ibpt/consultar/:ncm - Consultar alíquota por NCM
+ibpt.get('/consultar/:ncm', requirePermission('fiscal', 'consultar'), async (c) => {
   try {
     const { ncm } = c.req.param();
-    const { uf, ex, descricao, valor, unidade, origem } = c.req.query();
-
-    // Buscar token da empresa
-    const config = await buscarConfigIBPT(c.env);
-    if (!config) {
-      return c.json({ error: 'Token IBPT não configurado. Configure em Empresas > Configurações > IBPT' }, 400);
-    }
-
-    const service = createIBPTApiService(c.env.DB_IBPT, config);
-
-    const resultado = await service.calcularTributosCompleto(
-      {
-        codigo: ncm,
-        uf: uf || config.uf,
-        ex: ex ? parseInt(ex) : 0,
-        descricao: descricao || 'Produto',
-        unidadeMedida: unidade || 'UN',
-        valor: valor ? parseFloat(valor) : 100,
-      },
-      (origem as 'nacional' | 'importado') || 'nacional'
-    );
-
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Consulta alíquota IBPT por NBS (serviços)
- * GET /ibpt/servico/:nbs?uf=PR&descricao=Servico&valor=100
- */
-ibpt.get('/servico/:nbs', async (c) => {
-  try {
-    const { nbs } = c.req.param();
-    const { uf, descricao, valor, unidade } = c.req.query();
-
-    const config = await buscarConfigIBPT(c.env);
-    if (!config) {
-      return c.json({ error: 'Token IBPT não configurado' }, 400);
-    }
-
-    const service = createIBPTApiService(c.env.DB_IBPT, config);
-
-    const resultado = await service.consultarServico({
-      codigo: nbs,
-      uf: uf || config.uf,
-      descricao: descricao || 'Serviço',
-      unidadeMedida: unidade || 'UN',
-      valor: valor ? parseFloat(valor) : 100,
-    });
-
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Calcula tributos para múltiplos itens
- * POST /ibpt/calcular/lote
- * Body: { uf: "PR", itens: [{ codigo, descricao, unidadeMedida, valor, origem? }] }
- */
-ibpt.post('/calcular/lote', async (c) => {
-  try {
-    const body = await c.req.json<{
-      uf: string;
-      itens: Array<{
-        codigo: string;
-        descricao: string;
-        unidadeMedida: string;
-        valor: number;
-        origem?: 'nacional' | 'importado';
-      }>;
-    }>();
-
-    if (!body.itens || !Array.isArray(body.itens)) {
-      return c.json({ error: 'Array de itens é obrigatório' }, 400);
-    }
-
-    const config = await buscarConfigIBPT(c.env);
-    if (!config) {
-      return c.json({ error: 'Token IBPT não configurado' }, 400);
-    }
-
-    const service = createIBPTApiService(c.env.DB_IBPT, config);
-    const resultado = await service.consultarLote(body.itens, body.uf || config.uf);
-
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ===== IMPORTAÇÃO CSV =====
-
-/**
- * Importa arquivo CSV do IBPT
- * POST /ibpt/importar/csv
- * Body: multipart/form-data com arquivo CSV
- */
-ibpt.post('/importar/csv', async (c) => {
-  try {
-    const formData = await c.req.formData();
-    const arquivo = formData.get('arquivo') as File | null;
-    const uf = formData.get('uf') as string | null;
-
-    if (!arquivo) {
-      return c.json({ error: 'Arquivo CSV é obrigatório' }, 400);
-    }
-
-    if (!uf) {
-      return c.json({ error: 'UF é obrigatória' }, 400);
-    }
-
-    // Ler conteúdo do arquivo
-    const csvContent = await arquivo.text();
-
-    // Importar
-    const resultado = await importarCSVIBPT(c.env.DB_IBPT, csvContent, uf);
-
-    if (!resultado.sucesso) {
+    const { ex, uf } = c.req.query();
+    
+    const service = new IBPTApiService(c.env.DB_IBPT, c.env.KV_CACHE);
+    const resultado = await service.consultarNCM(ncm, ex, uf || 'PR');
+    
+    if (!resultado) {
       return c.json({
-        error: 'Falha na importação',
-        detalhes: resultado,
+        success: false,
+        error: 'NCM não encontrado na base IBPT'
+      }, 404);
+    }
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[IBPT] Erro ao consultar NCM:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar NCM'
+    }, 500);
+  }
+});
+
+// GET /ibpt/consultar/lote - Consultar múltiplos NCMs
+ibpt.post('/consultar/lote', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { ncms, uf } = await c.req.json();
+    
+    if (!Array.isArray(ncms) || ncms.length === 0) {
+      return c.json({
+        success: false,
+        error: 'Lista de NCMs inválida'
       }, 400);
     }
-
-    return c.json({
-      success: true,
-      message: `Importação concluída: ${resultado.registros_inseridos} registros`,
-      ...resultado,
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Lista histórico de importações
- * GET /ibpt/importacoes?uf=PR
- */
-ibpt.get('/importacoes', async (c) => {
-  try {
-    const { uf } = c.req.query();
-    const importacoes = await listarImportacoes(c.env.DB_IBPT, uf);
-    return c.json({ data: importacoes });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ===== ATUALIZAÇÃO AUTOMÁTICA =====
-
-/**
- * Verifica se precisa atualizar a tabela
- * GET /ibpt/status/atualizacao
- */
-ibpt.get('/status/atualizacao', async (c) => {
-  try {
-    const status = await verificarNecessidadeAtualizacao(c.env as any);
-    return c.json(status);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Força atualização manual da tabela
- * POST /ibpt/atualizar
- */
-ibpt.post('/atualizar', async (c) => {
-  try {
-    // Verificar se é admin ou cron
-    const authHeader = c.req.header('Authorization');
-    const cronSecret = c.req.header('X-Cron-Secret');
     
-    // Em produção, validar autenticação
-    
-    const resultado = await jobAtualizarTabelaIBPT(c.env as any);
-
-    return c.json({
-      success: resultado.sucesso,
-      message: resultado.sucesso 
-        ? `Atualização concluída: ${resultado.registros_atualizados} registros`
-        : 'Falha na atualização',
-      ...resultado,
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ===== CACHE =====
-
-/**
- * Estatísticas do cache
- * GET /ibpt/cache/estatisticas
- */
-ibpt.get('/cache/estatisticas', async (c) => {
-  try {
-    const config = await buscarConfigIBPT(c.env);
-    if (!config) {
-      // Retornar estatísticas mesmo sem token
-      const stats = await c.env.DB_IBPT.prepare(`
-        SELECT 
-          COUNT(*) as total,
-          SUM(CASE WHEN vigencia_fim >= date('now') THEN 1 ELSE 0 END) as validos,
-          SUM(CASE WHEN vigencia_fim < date('now') THEN 1 ELSE 0 END) as expirados,
-          MAX(atualizado_em) as ultima_atualizacao
-        FROM ibpt_cache
-      `).first<any>();
-
+    if (ncms.length > 100) {
       return c.json({
-        total_registros: stats?.total || 0,
-        registros_validos: stats?.validos || 0,
-        registros_expirados: stats?.expirados || 0,
-        ultima_atualizacao: stats?.ultima_atualizacao,
-        token_configurado: false,
-      });
+        success: false,
+        error: 'Máximo de 100 NCMs por consulta'
+      }, 400);
     }
-
-    const service = createIBPTApiService(c.env.DB_IBPT, config);
-    const estatisticas = await service.obterEstatisticasCache();
-
-    return c.json({
-      ...estatisticas,
-      token_configurado: true,
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Busca registro específico do cache
- * GET /ibpt/cache/:codigo?uf=PR&ex=0
- */
-ibpt.get('/cache/:codigo', async (c) => {
-  try {
-    const { codigo } = c.req.param();
-    const { uf, ex } = c.req.query();
-
-    const result = await c.env.DB_IBPT
-      .prepare(`
-        SELECT * FROM ibpt_cache 
-        WHERE codigo = ? AND uf = ? AND ex = ?
-      `)
-      .bind(codigo, uf || 'PR', ex ? parseInt(ex) : 0)
-      .first();
-
-    if (!result) {
-      return c.json({ error: 'Registro não encontrado no cache' }, 404);
-    }
-
-    return c.json(result);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Limpa cache antigo
- * DELETE /ibpt/cache/antigos?dias=180
- */
-ibpt.delete('/cache/antigos', async (c) => {
-  try {
-    const { dias } = c.req.query();
-    const diasRetencao = dias ? parseInt(dias) : 180;
-
-    const result = await c.env.DB_IBPT
-      .prepare(`
-        DELETE FROM ibpt_cache 
-        WHERE vigencia_fim < date('now', '-' || ? || ' days')
-      `)
-      .bind(diasRetencao)
-      .run();
-
+    
+    const service = new IBPTApiService(c.env.DB_IBPT, c.env.KV_CACHE);
+    const resultados = await Promise.all(
+      ncms.map(ncm => service.consultarNCM(ncm, undefined, uf || 'PR'))
+    );
+    
     return c.json({
       success: true,
-      registros_removidos: result.meta?.changes || 0,
+      data: resultados.filter(Boolean),
+      total: resultados.filter(Boolean).length
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    console.error('[IBPT] Erro ao consultar lote:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar lote'
+    }, 500);
   }
 });
 
-// ===== CONFIGURAÇÃO =====
+// =============================================
+// CACHE E ATUALIZAÇÃO
+// =============================================
 
-/**
- * Verifica configuração IBPT da empresa
- * GET /ibpt/config
- */
-ibpt.get('/config', async (c) => {
+// GET /ibpt/cache/status - Status do cache
+ibpt.get('/cache/status', requirePermission('fiscal', 'configurar'), async (c) => {
   try {
-    const config = await buscarConfigIBPT(c.env);
+    const service = new IBPTService(c.env.DB_IBPT);
+    const status = await service.getStatusCache();
     
     return c.json({
-      configurado: !!config,
-      uf: config?.uf || null,
-      cnpj: config ? `${config.cnpj.substring(0, 8)}****` : null,
-      token_parcial: config ? `${config.token.substring(0, 4)}****` : null,
+      success: true,
+      data: status
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    console.error('[IBPT] Erro ao obter status:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao obter status'
+    }, 500);
   }
 });
 
-// ===== TEXTO LEI TRANSPARÊNCIA =====
-
-/**
- * Gera texto para NF-e (infCpl)
- * POST /ibpt/texto-nfe
- * Body: { itens: [{ codigo, descricao, valor, origem? }], uf: "PR" }
- */
-ibpt.post('/texto-nfe', async (c) => {
+// POST /ibpt/cache/atualizar - Forçar atualização
+ibpt.post('/cache/atualizar', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const body = await c.req.json<{
-      itens: Array<{
-        codigo: string;
-        descricao: string;
-        valor: number;
-        origem?: 'nacional' | 'importado';
-      }>;
-      uf?: string;
-    }>();
+    const job = new IBPTAutoUpdateJob({
+      DB_IBPT: c.env.DB_IBPT,
+      KV_CACHE: c.env.KV_CACHE,
+      EMAIL_API_KEY: c.env.EMAIL_API_KEY,
+      WHATSAPP_API_KEY: c.env.WHATSAPP_API_KEY
+    });
+    
+    const resultado = await job.executar();
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'atualizar_ibpt',
+      tabela: 'ibpt_cache',
+      dados_novos: { resultado }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'Tabela IBPT atualizada com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[IBPT] Erro ao atualizar:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao atualizar tabela IBPT'
+    }, 500);
+  }
+});
 
-    const config = await buscarConfigIBPT(c.env);
-    if (!config) {
-      return c.json({ error: 'Token IBPT não configurado' }, 400);
+// POST /ibpt/cache/limpar - Limpar cache
+ibpt.post('/cache/limpar', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const service = new IBPTService(c.env.DB_IBPT);
+    await service.limparCache();
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'limpar_cache_ibpt',
+      tabela: 'ibpt_cache',
+      dados_novos: {}
+    });
+    
+    return c.json({
+      success: true,
+      message: 'Cache IBPT limpo com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[IBPT] Erro ao limpar cache:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao limpar cache'
+    }, 500);
+  }
+});
+
+// =============================================
+// IMPORTAÇÃO CSV
+// =============================================
+
+// POST /ibpt/importar - Importar arquivo CSV
+ibpt.post('/importar', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const contentType = c.req.header('content-type') || '';
+    
+    if (!contentType.includes('multipart/form-data')) {
+      return c.json({
+        success: false,
+        error: 'Content-Type deve ser multipart/form-data'
+      }, 400);
     }
-
-    const service = createIBPTApiService(c.env.DB_IBPT, config);
     
-    const resultado = await service.consultarLote(
-      body.itens.map(i => ({
-        codigo: i.codigo,
-        descricao: i.descricao,
-        unidadeMedida: 'UN',
-        valor: i.valor,
-        origem: i.origem,
-      })),
-      body.uf || config.uf
-    );
-
-    // Gerar texto para infCpl
-    const { tributo_federal, tributo_estadual, tributo_municipal, tributo_total } = resultado.totais;
+    const formData = await c.req.formData();
+    const file = formData.get('arquivo') as File;
     
-    const textoInfCpl = `Val Aprox Tributos R$ ${tributo_total.toFixed(2)} ` +
-      `(${tributo_federal.toFixed(2)} Federal, ${tributo_estadual.toFixed(2)} Estadual, ${tributo_municipal.toFixed(2)} Municipal) ` +
-      `Fonte: IBPT - Lei 12.741/2012`;
-
-    // Gerar texto resumido (para cupom fiscal)
-    const textoResumido = `Tributos Aprox: R$ ${tributo_total.toFixed(2)} (Lei 12.741/12)`;
-
-    return c.json({
-      texto_infCpl: textoInfCpl,
-      texto_resumido: textoResumido,
-      vTotTrib: tributo_total,
-      totais: resultado.totais,
-      itens: resultado.itens.map(i => ({
-        codigo: i.codigo,
-        vTotTrib: i.valor_tributo_total,
-        infAdProd: `Trib aprox R$${i.valor_tributo_total.toFixed(2)}`,
-      })),
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ===== HEALTH =====
-
-ibpt.get('/health', async (c) => {
-  try {
-    const [cacheCount, config] = await Promise.all([
-      c.env.DB_IBPT.prepare('SELECT COUNT(*) as count FROM ibpt_cache').first<{ count: number }>(),
-      buscarConfigIBPT(c.env),
-    ]);
-
-    return c.json({
-      status: 'healthy',
-      cache_registros: cacheCount?.count || 0,
-      token_configurado: !!config,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error: any) {
-    return c.json({
-      status: 'unhealthy',
-      error: error.message,
-    }, 503);
-  }
-});
-
-// ===== HELPER =====
-
-async function buscarConfigIBPT(env: Env): Promise<{ token: string; cnpj: string; uf: string } | null> {
-  // Primeiro tenta variável de ambiente
-  if (env.IBPT_TOKEN) {
-    const empresa = await env.DB
-      .prepare('SELECT cnpj, ibpt_uf FROM empresas_config WHERE ativo = 1 LIMIT 1')
-      .first<{ cnpj: string; ibpt_uf: string }>();
-
-    if (empresa) {
-      return {
-        token: env.IBPT_TOKEN,
-        cnpj: empresa.cnpj,
-        uf: empresa.ibpt_uf || 'PR',
-      };
+    if (!file) {
+      return c.json({
+        success: false,
+        error: 'Arquivo CSV não enviado'
+      }, 400);
     }
+    
+    const csvContent = await file.text();
+    const importer = new IBPTCSVImporter(c.env.DB_IBPT);
+    const resultado = await importer.importar(csvContent);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'importar_ibpt',
+      tabela: 'ibpt_aliquotas',
+      dados_novos: {
+        arquivo: file.name,
+        registros: resultado.importados
+      }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: `${resultado.importados} registros importados`
+    });
+  } catch (error: any) {
+    console.error('[IBPT] Erro ao importar CSV:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao importar CSV'
+    }, 500);
   }
+});
 
-  // Senão, busca do cadastro de empresas
-  const empresaComToken = await env.DB
-    .prepare(`
-      SELECT cnpj, ibpt_token, ibpt_uf 
-      FROM empresas_config 
-      WHERE ibpt_token IS NOT NULL AND ibpt_token != '' AND ativo = 1
-      LIMIT 1
-    `)
-    .first<{ cnpj: string; ibpt_token: string; ibpt_uf: string }>();
-
-  if (empresaComToken) {
-    return {
-      token: empresaComToken.ibpt_token,
-      cnpj: empresaComToken.cnpj,
-      uf: empresaComToken.ibpt_uf || 'PR',
-    };
+// GET /ibpt/importacoes - Histórico de importações
+ibpt.get('/importacoes', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { page = '1', limit = '20' } = c.req.query();
+    
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const resultado = await c.env.DB_IBPT.prepare(`
+      SELECT * FROM ibpt_importacoes 
+      ORDER BY created_at DESC 
+      LIMIT ? OFFSET ?
+    `).bind(parseInt(limit), offset).all();
+    
+    const total = await c.env.DB_IBPT.prepare(`
+      SELECT COUNT(*) as total FROM ibpt_importacoes
+    `).first<{ total: number }>();
+    
+    return c.json({
+      success: true,
+      data: resultado.results,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: total?.total || 0,
+        pages: Math.ceil((total?.total || 0) / parseInt(limit))
+      }
+    });
+  } catch (error: any) {
+    console.error('[IBPT] Erro ao listar importações:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao listar importações'
+    }, 500);
   }
+});
 
-  return null;
-}
+// =============================================
+// ESTATÍSTICAS
+// =============================================
+
+// GET /ibpt/estatisticas - Estatísticas gerais
+ibpt.get('/estatisticas', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const stats = await c.env.DB_IBPT.prepare(`
+      SELECT 
+        COUNT(*) as total_registros,
+        COUNT(DISTINCT ncm) as total_ncms,
+        MIN(vigencia_inicio) as vigencia_mais_antiga,
+        MAX(vigencia_fim) as vigencia_mais_recente,
+        AVG(nacional_federal + importados_federal + estadual + municipal) as carga_media
+      FROM ibpt_aliquotas
+      WHERE vigencia_fim >= date('now')
+    `).first();
+    
+    const ultimaAtualizacao = await c.env.DB_IBPT.prepare(`
+      SELECT created_at FROM ibpt_importacoes 
+      ORDER BY created_at DESC LIMIT 1
+    `).first<{ created_at: string }>();
+    
+    return c.json({
+      success: true,
+      data: {
+        ...stats,
+        ultima_atualizacao: ultimaAtualizacao?.created_at
+      }
+    });
+  } catch (error: any) {
+    console.error('[IBPT] Erro ao obter estatísticas:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao obter estatísticas'
+    }, 500);
+  }
+});
+
+// GET /ibpt/vencimentos - Verificar vencimentos próximos
+ibpt.get('/vencimentos', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { dias = '30' } = c.req.query();
+    
+    const vencimentos = await c.env.DB_IBPT.prepare(`
+      SELECT 
+        ncm,
+        descricao,
+        vigencia_fim,
+        julianday(vigencia_fim) - julianday('now') as dias_restantes
+      FROM ibpt_aliquotas
+      WHERE vigencia_fim BETWEEN date('now') AND date('now', '+' || ? || ' days')
+      GROUP BY ncm
+      ORDER BY vigencia_fim ASC
+      LIMIT 100
+    `).bind(parseInt(dias)).all();
+    
+    return c.json({
+      success: true,
+      data: vencimentos.results
+    });
+  } catch (error: any) {
+    console.error('[IBPT] Erro ao verificar vencimentos:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao verificar vencimentos'
+    }, 500);
+  }
+});
 
 export default ibpt;
-
