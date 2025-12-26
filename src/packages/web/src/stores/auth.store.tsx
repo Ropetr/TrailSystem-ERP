@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - Auth Store (Context)
+// TRAILSYSTEM ERP - Auth Store (Context)
 // Fix: Manter sessão após F5 (17/12/2025)
 // =============================================
 
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (currentUser) {
             // Token válido - atualiza dados do usuário
             setUsuario(currentUser);
-            localStorage.setItem('planac_user', JSON.stringify(currentUser));
+            localStorage.setItem('trailsystem_user', JSON.stringify(currentUser));
             console.log('[Auth] Token validado, usuário atualizado');
           } else {
             // me() retornou null mas sem erro explícito - mantém sessão
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('[Auth] Token expirado, deslogando');
             setUsuario(null);
             api.setToken(null);
-            localStorage.removeItem('planac_user');
+            localStorage.removeItem('trailsystem_user');
           } else {
             // Outro erro (rede, servidor) - mantém sessão local
             console.log('[Auth] Erro ao validar, mantendo sessão:', error.message);
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const currentUser = await authService.me();
     if (currentUser) {
       setUsuario(currentUser);
-      localStorage.setItem('planac_user', JSON.stringify(currentUser));
+      localStorage.setItem('trailsystem_user', JSON.stringify(currentUser));
     }
   }, []);
 
