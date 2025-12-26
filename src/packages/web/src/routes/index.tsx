@@ -1,6 +1,6 @@
 // =============================================
 // TRAILSYSTEM ERP - Routes Completas
-// Atualizado: 26/12/2025 - Clientes usando Modal Popup
+// Atualizado: 26/12/2025 - Rotas hierárquicas Módulo > Categoria > Item
 // =============================================
 
 import React, { Suspense } from 'react';
@@ -263,73 +263,71 @@ export function AppRoutes() {
                   {/* ========================================== */}
                   
                   {/* --- Clientes (Modal Popup - sem página de formulário separada) --- */}
-                  <Route path="/cadastros/clientes" element={<ClientesPage />} />
-                  <Route path="/cadastros/clientes/novo" element={<Navigate to="/cadastros/clientes" replace />} />
-                  <Route path="/cadastros/clientes/:id" element={<Navigate to="/cadastros/clientes" replace />} />
+                  <Route path="/cadastros/entidades/clientes" element={<ClientesPage />} />
                   
-                  <Route path="/cadastros/fornecedores" element={<FornecedoresPage />} />
-                  <Route path="/cadastros/fornecedores/novo" element={<FornecedorFormPage />} />
-                  <Route path="/cadastros/fornecedores/:id" element={<FornecedorFormPage />} />
+                  <Route path="/cadastros/entidades/fornecedores" element={<FornecedoresPage />} />
+                  <Route path="/cadastros/entidades/fornecedores/novo" element={<FornecedorFormPage />} />
+                  <Route path="/cadastros/entidades/fornecedores/:id" element={<FornecedorFormPage />} />
                   
-                  <Route path="/cadastros/transportadoras" element={<EmDesenvolvimento titulo="Transportadoras" />} />
-                  <Route path="/cadastros/transportadoras/novo" element={<EmDesenvolvimento titulo="Nova Transportadora" />} />
-                  <Route path="/cadastros/transportadoras/:id" element={<EmDesenvolvimento titulo="Editar Transportadora" />} />
+                  <Route path="/cadastros/entidades/transportadoras" element={<EmDesenvolvimento titulo="Transportadoras" />} />
+                  <Route path="/cadastros/entidades/transportadoras/novo" element={<EmDesenvolvimento titulo="Nova Transportadora" />} />
+                  <Route path="/cadastros/entidades/transportadoras/:id" element={<EmDesenvolvimento titulo="Editar Transportadora" />} />
                   
-                  <Route path="/cadastros/colaboradores" element={<FuncionariosPage />} />
-                  <Route path="/cadastros/colaboradores/novo" element={<EmDesenvolvimento titulo="Novo Colaborador" />} />
-                  <Route path="/cadastros/colaboradores/:id" element={<EmDesenvolvimento titulo="Editar Colaborador" />} />
+                  <Route path="/cadastros/entidades/colaboradores" element={<FuncionariosPage />} />
+                  <Route path="/cadastros/entidades/colaboradores/novo" element={<EmDesenvolvimento titulo="Novo Colaborador" />} />
+                  <Route path="/cadastros/entidades/colaboradores/:id" element={<EmDesenvolvimento titulo="Editar Colaborador" />} />
                   
-                  <Route path="/cadastros/parceiros" element={<EmDesenvolvimento titulo="Parceiros de Negócio" />} />
-                  <Route path="/cadastros/parceiros/novo" element={<EmDesenvolvimento titulo="Novo Parceiro" />} />
-                  <Route path="/cadastros/parceiros/:id" element={<EmDesenvolvimento titulo="Editar Parceiro" />} />
+                  <Route path="/cadastros/entidades/parceiros" element={<EmDesenvolvimento titulo="Parceiros de Negócio" />} />
+                  <Route path="/cadastros/entidades/parceiros/novo" element={<EmDesenvolvimento titulo="Novo Parceiro" />} />
+                  <Route path="/cadastros/entidades/parceiros/:id" element={<EmDesenvolvimento titulo="Editar Parceiro" />} />
 
                   {/* --- Produtos --- */}
-                  <Route path="/cadastros/produtos" element={<ProdutosPage />} />
+                  <Route path="/cadastros/produtos/lista" element={<ProdutosPage />} />
                   <Route path="/cadastros/produtos/novo" element={<ProdutoFormPage />} />
                   <Route path="/cadastros/produtos/:id" element={<ProdutoFormPage />} />
 
                   {/* --- Empresa --- */}
-                  <Route path="/cadastros/empresas" element={<EmpresasPage />} />
-                  <Route path="/cadastros/empresas/novo" element={<EmpresaFormPage />} />
-                  <Route path="/cadastros/empresas/:id" element={<EmpresaFormPage />} />
+                  <Route path="/cadastros/empresa/filiais" element={<EmpresasPage />} />
+                  <Route path="/cadastros/empresa/filiais/novo" element={<EmpresaFormPage />} />
+                  <Route path="/cadastros/empresa/filiais/:id" element={<EmpresaFormPage />} />
 
                   {/* --- Financeiro (Cadastros) --- */}
-                  <Route path="/cadastros/contas-bancarias" element={<EmDesenvolvimento titulo="Contas Bancárias" />} />
-                  <Route path="/cadastros/contas-bancarias/novo" element={<EmDesenvolvimento titulo="Nova Conta Bancária" />} />
-                  <Route path="/cadastros/contas-bancarias/:id" element={<EmDesenvolvimento titulo="Editar Conta Bancária" />} />
+                  <Route path="/cadastros/financeiro/contas-bancarias" element={<EmDesenvolvimento titulo="Contas Bancárias" />} />
+                  <Route path="/cadastros/financeiro/contas-bancarias/novo" element={<EmDesenvolvimento titulo="Nova Conta Bancária" />} />
+                  <Route path="/cadastros/financeiro/contas-bancarias/:id" element={<EmDesenvolvimento titulo="Editar Conta Bancária" />} />
                   
-                  <Route path="/cadastros/plano-contas" element={<PlanoContasPage />} />
+                  <Route path="/cadastros/financeiro/plano-contas" element={<PlanoContasPage />} />
                   
-                  <Route path="/cadastros/centros-custo" element={<EmDesenvolvimento titulo="Centros de Custo" />} />
-                  <Route path="/cadastros/centros-custo/novo" element={<EmDesenvolvimento titulo="Novo Centro de Custo" />} />
-                  <Route path="/cadastros/centros-custo/:id" element={<EmDesenvolvimento titulo="Editar Centro de Custo" />} />
+                  <Route path="/cadastros/financeiro/centros-custo" element={<EmDesenvolvimento titulo="Centros de Custo" />} />
+                  <Route path="/cadastros/financeiro/centros-custo/novo" element={<EmDesenvolvimento titulo="Novo Centro de Custo" />} />
+                  <Route path="/cadastros/financeiro/centros-custo/:id" element={<EmDesenvolvimento titulo="Editar Centro de Custo" />} />
                   
-                  <Route path="/cadastros/condicoes-pagamento" element={<EmDesenvolvimento titulo="Condições de Pagamento" />} />
-                  <Route path="/cadastros/condicoes-pagamento/novo" element={<EmDesenvolvimento titulo="Nova Condição" />} />
-                  <Route path="/cadastros/condicoes-pagamento/:id" element={<EmDesenvolvimento titulo="Editar Condição" />} />
+                  <Route path="/cadastros/financeiro/condicoes-pagamento" element={<EmDesenvolvimento titulo="Condições de Pagamento" />} />
+                  <Route path="/cadastros/financeiro/condicoes-pagamento/novo" element={<EmDesenvolvimento titulo="Nova Condição" />} />
+                  <Route path="/cadastros/financeiro/condicoes-pagamento/:id" element={<EmDesenvolvimento titulo="Editar Condição" />} />
 
                   {/* --- Comercial (Cadastros) --- */}
-                  <Route path="/cadastros/tabelas-preco" element={<EmDesenvolvimento titulo="Tabelas de Preço" />} />
-                  <Route path="/cadastros/tabelas-preco/novo" element={<EmDesenvolvimento titulo="Nova Tabela" />} />
-                  <Route path="/cadastros/tabelas-preco/:id" element={<EmDesenvolvimento titulo="Editar Tabela" />} />
+                  <Route path="/cadastros/comercial/tabelas-preco" element={<EmDesenvolvimento titulo="Tabelas de Preço" />} />
+                  <Route path="/cadastros/comercial/tabelas-preco/novo" element={<EmDesenvolvimento titulo="Nova Tabela" />} />
+                  <Route path="/cadastros/comercial/tabelas-preco/:id" element={<EmDesenvolvimento titulo="Editar Tabela" />} />
 
                   {/* --- Patrimônio (Cadastros) --- */}
-                  <Route path="/cadastros/veiculos" element={<EmDesenvolvimento titulo="Veículos" />} />
-                  <Route path="/cadastros/veiculos/novo" element={<EmDesenvolvimento titulo="Novo Veículo" />} />
-                  <Route path="/cadastros/veiculos/:id" element={<EmDesenvolvimento titulo="Editar Veículo" />} />
+                  <Route path="/cadastros/patrimonio/veiculos" element={<EmDesenvolvimento titulo="Veículos" />} />
+                  <Route path="/cadastros/patrimonio/veiculos/novo" element={<EmDesenvolvimento titulo="Novo Veículo" />} />
+                  <Route path="/cadastros/patrimonio/veiculos/:id" element={<EmDesenvolvimento titulo="Editar Veículo" />} />
                   
-                  <Route path="/cadastros/bens" element={<AtivosPage />} />
-                  <Route path="/cadastros/bens/novo" element={<EmDesenvolvimento titulo="Novo Bem" />} />
-                  <Route path="/cadastros/bens/:id" element={<EmDesenvolvimento titulo="Editar Bem" />} />
+                  <Route path="/cadastros/patrimonio/bens" element={<AtivosPage />} />
+                  <Route path="/cadastros/patrimonio/bens/novo" element={<EmDesenvolvimento titulo="Novo Bem" />} />
+                  <Route path="/cadastros/patrimonio/bens/:id" element={<EmDesenvolvimento titulo="Editar Bem" />} />
 
                   {/* --- Acessos (Cadastros) --- */}
-                  <Route path="/cadastros/usuarios" element={<UsuariosPage />} />
-                  <Route path="/cadastros/usuarios/novo" element={<UsuarioFormPage />} />
-                  <Route path="/cadastros/usuarios/:id" element={<UsuarioFormPage />} />
+                  <Route path="/cadastros/acessos/usuarios" element={<UsuariosPage />} />
+                  <Route path="/cadastros/acessos/usuarios/novo" element={<UsuarioFormPage />} />
+                  <Route path="/cadastros/acessos/usuarios/:id" element={<UsuarioFormPage />} />
                   
-                  <Route path="/cadastros/perfis" element={<PerfisPage />} />
-                  <Route path="/cadastros/perfis/novo" element={<EmDesenvolvimento titulo="Novo Perfil" />} />
-                  <Route path="/cadastros/perfis/:id" element={<EmDesenvolvimento titulo="Editar Perfil" />} />
+                  <Route path="/cadastros/acessos/perfis" element={<PerfisPage />} />
+                  <Route path="/cadastros/acessos/perfis/novo" element={<EmDesenvolvimento titulo="Novo Perfil" />} />
+                  <Route path="/cadastros/acessos/perfis/:id" element={<EmDesenvolvimento titulo="Editar Perfil" />} />
 
                   {/* ========== COMERCIAL ========== */}
                   <Route path="/comercial/orcamentos" element={<OrcamentosPage />} />
@@ -428,16 +426,16 @@ export function AppRoutes() {
 
                   {/* ========== REDIRECTS LEGADOS ========== */}
                   {/* Mantém compatibilidade com URLs antigas */}
-                  <Route path="/clientes" element={<Navigate to="/cadastros/clientes" replace />} />
-                  <Route path="/clientes/*" element={<Navigate to="/cadastros/clientes" replace />} />
-                  <Route path="/fornecedores" element={<Navigate to="/cadastros/fornecedores" replace />} />
-                  <Route path="/produtos" element={<Navigate to="/cadastros/produtos" replace />} />
-                  <Route path="/produtos/*" element={<Navigate to="/cadastros/produtos" replace />} />
-                  <Route path="/empresas" element={<Navigate to="/cadastros/empresas" replace />} />
-                  <Route path="/empresas/*" element={<Navigate to="/cadastros/empresas" replace />} />
-                  <Route path="/usuarios" element={<Navigate to="/cadastros/usuarios" replace />} />
-                  <Route path="/usuarios/*" element={<Navigate to="/cadastros/usuarios" replace />} />
-                  <Route path="/perfis" element={<Navigate to="/cadastros/perfis" replace />} />
+                  <Route path="/clientes" element={<Navigate to="/cadastros/entidades/clientes" replace />} />
+                  <Route path="/clientes/*" element={<Navigate to="/cadastros/entidades/clientes" replace />} />
+                  <Route path="/fornecedores" element={<Navigate to="/cadastros/entidades/fornecedores" replace />} />
+                  <Route path="/produtos" element={<Navigate to="/cadastros/produtos/lista" replace />} />
+                  <Route path="/produtos/*" element={<Navigate to="/cadastros/produtos/lista" replace />} />
+                  <Route path="/empresas" element={<Navigate to="/cadastros/empresa/filiais" replace />} />
+                  <Route path="/empresas/*" element={<Navigate to="/cadastros/empresa/filiais" replace />} />
+                  <Route path="/usuarios" element={<Navigate to="/cadastros/acessos/usuarios" replace />} />
+                  <Route path="/cadastros/acessos/usuarios" element={<Navigate to="/cadastros/acessos/usuarios" replace />} />
+                  <Route path="/cadastros/acessos/perfis" element={<Navigate to="/cadastros/acessos/perfis" replace />} />
                   <Route path="/orcamentos" element={<Navigate to="/comercial/orcamentos" replace />} />
                   <Route path="/orcamentos/*" element={<Navigate to="/comercial/orcamentos" replace />} />
                   <Route path="/vendas" element={<Navigate to="/comercial/vendas" replace />} />
