@@ -5,8 +5,8 @@
 import api from "./api";
 import type { LoginRequest, LoginResponse, Usuario } from "@/types";
 
-// URL base do auth (diferente do /v1 das outras rotas)
-const AUTH_BASE = "https://trailsystem-erp-api.trailsystemacabamentos.workers.dev/api/auth";
+// URL base do auth - API correta
+const AUTH_BASE = "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
