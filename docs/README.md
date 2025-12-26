@@ -1,83 +1,72 @@
 # 📚 TrailSystem ERP - Documentação
 
-**Última atualização:** 26/12/2025  
-**Versão:** 2.0 (Estrutura Modular)
+> Documentação técnica completa do sistema ERP
 
----
+## Módulos do Sistema
 
-## 🎯 Sobre o Projeto
+| # | Módulo | Descrição | Status |
+|---|--------|-----------|--------|
+| 00 | [Arquitetura](./00-arquitetura/) | Visão geral da arquitetura | ✅ |
+| 01 | [Cadastros](./01-cadastros/) | Clientes, Produtos, Fornecedores | 📝 |
+| 02 | [Comercial](./02-comercial/) | Orçamentos, Vendas, Tabelas Preço | 📝 |
+| 03 | [Estoque](./03-estoque/) | Saldos, Movimentações, Inventário | 📝 |
+| 04 | [Fiscal](./04-fiscal/) | NF-e, NFC-e, NFS-e, IBPT | ✅ |
+| 05 | [Financeiro](./05-financeiro/) | Contas, Boletos, Fluxo Caixa | 📝 |
+| 06 | [Compras](./06-compras/) | Cotações, Pedidos, Fornecedores | 📝 |
+| 07 | [Logística](./07-logistica/) | Entregas, Rotas, Rastreamento | 📝 |
+| 08 | [CRM](./08-crm/) | Pipeline, Leads, Oportunidades | 📝 |
+| 09 | [RH](./09-rh/) | Colaboradores, Folha, Ponto | 📝 |
+| 10 | [Contábil](./10-contabil/) | Lançamentos, DRE, Balanço | 📝 |
+| 11 | [E-commerce](./11-ecommerce/) | Loja Online, Pedidos | 📝 |
+| 12 | [Patrimônio](./12-patrimonio/) | Bens, Depreciação | 📝 |
+| 13 | [BI](./13-bi/) | Dashboards, Relatórios | 📝 |
+| 14 | [Suporte](./14-suporte/) | Tickets, Base Conhecimento | 📝 |
+| 15 | [Configurações](./15-configuracoes/) | Parâmetros globais do sistema | ✅ |
 
-**TrailSystem ERP** é um sistema de gestão empresarial completo, desenvolvido inicialmente para a **PLANAC Distribuidora** (drywall e materiais de construção), com arquitetura preparada para revenda multi-tenant.
+## Legenda
 
-### Stack Tecnológica
-- **Frontend:** React + TypeScript + TailwindCSS
-- **Backend:** Cloudflare Workers + Hono
-- **Banco de Dados:** Cloudflare D1 (SQLite)
-- **Storage:** Cloudflare R2
-- **Cache:** Cloudflare KV
+| Status | Significado |
+|--------|-------------|
+| ✅ | Documentação completa |
+| 📝 | Em desenvolvimento |
+| ⏳ | Pendente |
 
----
+## Estrutura de Cada Módulo
 
-## 📂 Estrutura da Documentação
+Cada módulo contém:
 
-| Pasta | Módulo | Status | Descrição |
-|-------|--------|--------|-----------|
-| [00-arquitetura](./00-arquitetura/) | Arquitetura | 🟢 | Stack, decisões técnicas, integrações |
-| [01-cadastros](./01-cadastros/) | Cadastros | 🟡 | Clientes, Fornecedores, Produtos, Usuários |
-| [02-comercial](./02-comercial/) | Comercial | 🟡 | Orçamentos, Vendas, PDV |
-| [03-estoque](./03-estoque/) | Estoque | 🟡 | Movimentações, Inventário, Saldos |
-| [04-fiscal](./04-fiscal/) | Fiscal | 🟢 | NF-e, NFC-e, NFS-e, SPED |
-| [05-financeiro](./05-financeiro/) | Financeiro | 🟡 | Contas a Pagar/Receber, Boletos |
-| [06-compras](./06-compras/) | Compras | 🟡 | Cotações, Pedidos, Recebimento |
-| [07-logistica](./07-logistica/) | Logística | 🟡 | Entregas, Rotas, Rastreamento |
-| [08-crm](./08-crm/) | CRM | 🟡 | Leads, Pipeline, Atividades |
-| [09-rh](./09-rh/) | RH | 🔴 | Colaboradores, Folha, Ponto |
-| [10-contabil](./10-contabil/) | Contábil | 🔴 | Plano de Contas, Lançamentos, DRE |
-| [11-ecommerce](./11-ecommerce/) | E-commerce | 🔴 | B2B, B2C, Integrações |
-| [12-patrimonio](./12-patrimonio/) | Patrimônio | 🔴 | Bens, Depreciação |
-| [13-bi](./13-bi/) | BI | 🟢 | Dashboards, Relatórios |
-| [14-suporte](./14-suporte/) | Suporte | 🔴 | Tickets, Base de Conhecimento |
+```
+XX-modulo/
+├── README.md        # Visão geral do módulo
+├── REGRAS.md        # Regras de negócio
+├── API.md           # Endpoints da API
+└── MODELO_DADOS.md  # Estrutura do banco
+```
 
-**Legenda:** 🟢 Produção | 🟡 Desenvolvimento | 🔴 Planejado
+## Prioridade de Documentação
 
----
+### 🔴 Alta (Core Business)
+1. **15-Configurações** ✅ - Base de todo o sistema
+2. **01-Cadastros** 📝 - Clientes, Produtos
+3. **02-Comercial** 📝 - Vendas
+4. **03-Estoque** 📝 - Controle
+5. **04-Fiscal** ✅ - NF-e, compliance
 
-## 🔗 Links Úteis
+### 🟡 Média
+6. **05-Financeiro** - Boletos, cobrança
+7. **06-Compras** - Fornecedores
+8. **08-CRM** - Relacionamento
+
+### 🟢 Baixa
+9. Demais módulos
+
+## Links Úteis
 
 - **Repositório:** https://github.com/Ropetr/TrailSystem-ERP
-- **Cloudflare Dashboard:** https://dash.cloudflare.com
-- **Nuvem Fiscal:** https://nuvemfiscal.com.br
+- **Frontend:** https://planac-erp.pages.dev (quando em produção)
+- **API:** https://api.trailsystem.com.br (quando em produção)
 
 ---
 
-## 📋 Convenções
-
-### Nomenclatura de Arquivos
-- `README.md` - Visão geral do módulo
-- `REGRAS.md` - Regras de negócio
-- `TELAS.md` - Especificação de telas
-- `API.md` - Endpoints da API
-- `MODELO_DADOS.md` - Tabelas e relacionamentos
-- `FLUXOGRAMAS.md` - Fluxos de processo (Mermaid)
-
-### Nomenclatura Cloudflare
-- Prefixo: `Planac-erp-` para todos os recursos
-- Exemplos: `Planac-erp-database`, `Planac-erp-cache`
-
----
-
-## 📊 Status Geral do Projeto
-
-| Área | Progresso | Observações |
-|------|-----------|-------------|
-| Modelo de Dados | 100% | 211 tabelas no D1 |
-| API Backend | 85% | Services e Routes principais |
-| Frontend | 80% | 77 páginas |
-| Integrações Fiscais | 100% | Nuvem Fiscal completo |
-| Dashboards | 100% | 4 dashboards criados |
-| Testes | 40% | Em desenvolvimento |
-| Deploy Produção | 0% | Pendente |
-
----
-
-**Documentação reorganizada em:** 26/12/2025
+**Última atualização:** 26/12/2025  
+**Mantido por:** DEV.com - 57 Especialistas
