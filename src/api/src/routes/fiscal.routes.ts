@@ -1,574 +1,735 @@
 // =============================================
-// PLANAC ERP - Fiscal API Routes
-// Endpoints para documentos fiscais
+// PLANAC ERP - Rotas Fiscais (Nuvem Fiscal)
 // =============================================
+// Endpoints para documentos fiscais eletrônicos
+// NF-e, NFC-e, NFS-e, CT-e, MDF-e
+// Atualizado: 26/12/2025 - Adaptado para API Unificada
 
 import { Hono } from 'hono';
+import { z } from 'zod';
+import type { Bindings, Variables } from '../types';
+import { requireAuth, requirePermission } from '../middleware/auth';
+import { registrarAuditoria } from '../utils/auditoria';
 import { createNuvemFiscalService } from '../services/nuvem-fiscal';
 
-// Tipos do ambiente
-interface Env {
-  NUVEM_FISCAL_CLIENT_ID: string;
-  NUVEM_FISCAL_CLIENT_SECRET: string;
-  NUVEM_FISCAL_AMBIENTE?: 'homologacao' | 'producao';
-  NUVEM_FISCAL_TOKEN_CACHE?: KVNamespace;
-}
+const fiscal = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-const fiscal = new Hono<{ Bindings: Env }>();
+// Middleware de autenticação para todas as rotas
+fiscal.use('/*', requireAuth());
 
 // Helper para criar o service
-const getService = (env: Env) => createNuvemFiscalService({
-  NUVEM_FISCAL_CLIENT_ID: env.NUVEM_FISCAL_CLIENT_ID,
-  NUVEM_FISCAL_CLIENT_SECRET: env.NUVEM_FISCAL_CLIENT_SECRET,
-  NUVEM_FISCAL_AMBIENTE: env.NUVEM_FISCAL_AMBIENTE,
-  NUVEM_FISCAL_TOKEN_CACHE: env.NUVEM_FISCAL_TOKEN_CACHE,
+const getService = (c: any) => createNuvemFiscalService({
+  NUVEM_FISCAL_CLIENT_ID: c.env.NUVEM_FISCAL_CLIENT_ID,
+  NUVEM_FISCAL_CLIENT_SECRET: c.env.NUVEM_FISCAL_CLIENT_SECRET,
+  NUVEM_FISCAL_AMBIENTE: c.env.NUVEM_FISCAL_AMBIENTE,
+  NUVEM_FISCAL_TOKEN_CACHE: c.env.KV_CACHE,
 });
 
-// ===== CEP =====
-fiscal.get('/cep/:cep', async (c) => {
+// =============================================
+// CONSULTAS AUXILIARES (CEP, CNPJ)
+// =============================================
+
+// GET /fiscal/cep/:cep - Consultar CEP
+fiscal.get('/cep/:cep', requirePermission('fiscal', 'consultar'), async (c) => {
   try {
     const { cep } = c.req.param();
-    const service = getService(c.env);
-    const endereco = await service.cep.consultar(cep);
-    return c.json(endereco);
+    const service = getService(c);
+    const resultado = await service.consultarCEP(cep);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
+    console.error('[FISCAL] Erro ao consultar CEP:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar CEP'
+    }, error.status || 500);
   }
 });
 
-// ===== CNPJ =====
-fiscal.get('/cnpj/:cnpj', async (c) => {
+// GET /fiscal/cnpj/:cnpj - Consultar CNPJ
+fiscal.get('/cnpj/:cnpj', requirePermission('fiscal', 'consultar'), async (c) => {
   try {
     const { cnpj } = c.req.param();
-    const service = getService(c.env);
-    const empresa = await service.cnpj.consultar(cnpj);
-    return c.json(empresa);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-// ===== EMPRESAS =====
-fiscal.get('/empresas', async (c) => {
-  try {
-    const service = getService(c.env);
-    const { $top, $skip, cpf_cnpj } = c.req.query();
-    const empresas = await service.empresas.listar(
-      { $top: $top ? parseInt($top) : undefined, $skip: $skip ? parseInt($skip) : undefined },
-      cpf_cnpj
-    );
-    return c.json(empresas);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/empresas/:cpf_cnpj', async (c) => {
-  try {
-    const { cpf_cnpj } = c.req.param();
-    const service = getService(c.env);
-    const empresa = await service.empresas.buscar(cpf_cnpj);
-    if (!empresa) {
-      return c.json({ error: 'Empresa não encontrada' }, 404);
-    }
-    return c.json(empresa);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.post('/empresas', async (c) => {
-  try {
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const empresa = await service.empresas.cadastrar(body);
-    return c.json(empresa, 201);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.put('/empresas/:cpf_cnpj', async (c) => {
-  try {
-    const { cpf_cnpj } = c.req.param();
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const empresa = await service.empresas.atualizar(cpf_cnpj, body);
-    return c.json(empresa);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.delete('/empresas/:cpf_cnpj', async (c) => {
-  try {
-    const { cpf_cnpj } = c.req.param();
-    const service = getService(c.env);
-    await service.empresas.remover(cpf_cnpj);
-    return c.json({ success: true });
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-// Certificado
-fiscal.put('/empresas/:cpf_cnpj/certificado', async (c) => {
-  try {
-    const { cpf_cnpj } = c.req.param();
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const resultado = await service.empresas.certificado.upload(cpf_cnpj, body);
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/empresas/:cpf_cnpj/certificado', async (c) => {
-  try {
-    const { cpf_cnpj } = c.req.param();
-    const service = getService(c.env);
-    const certificado = await service.empresas.certificado.consultar(cpf_cnpj);
-    return c.json(certificado || { message: 'Certificado não cadastrado' });
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-// ===== NF-e =====
-fiscal.post('/nfe', async (c) => {
-  try {
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const nfe = await service.nfe.emitir(body);
-    return c.json(nfe, 201);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/nfe', async (c) => {
-  try {
-    const service = getService(c.env);
-    const { cpf_cnpj, ambiente, referencia, chave, $top, $skip } = c.req.query();
-    const notas = await service.nfe.listar(
-      { cpf_cnpj, ambiente: ambiente as any, referencia, chave },
-      { $top: $top ? parseInt($top) : undefined, $skip: $skip ? parseInt($skip) : undefined }
-    );
-    return c.json(notas);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/nfe/:id', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const nfe = await service.nfe.consultar(id);
-    return c.json(nfe);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/nfe/:id/xml', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const xml = await service.nfe.baixarXml(id);
-    return new Response(xml, {
-      headers: {
-        'Content-Type': 'application/xml',
-        'Content-Disposition': `attachment; filename="nfe-${id}.xml"`,
-      },
+    const service = getService(c);
+    const resultado = await service.consultarCNPJ(cnpj);
+    
+    return c.json({
+      success: true,
+      data: resultado
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
+    console.error('[FISCAL] Erro ao consultar CNPJ:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar CNPJ'
+    }, error.status || 500);
   }
 });
 
-fiscal.get('/nfe/:id/pdf', async (c) => {
+// =============================================
+// NF-e (Nota Fiscal Eletrônica)
+// =============================================
+
+// POST /fiscal/nfe/emitir - Emitir NF-e
+fiscal.post('/nfe/emitir', requirePermission('fiscal', 'emitir_nfe'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const pdf = await service.nfe.baixarPdf(id);
-    return new Response(pdf, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="danfe-${id}.pdf"`,
-      },
+    const body = await c.req.json();
+    const service = getService(c);
+    
+    const resultado = await service.emitirNFe(body);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'emitir_nfe',
+      tabela: 'notas_fiscais',
+      registro_id: resultado.id,
+      dados_novos: { chave: resultado.chave, numero: resultado.numero }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'NF-e emitida com sucesso'
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
+    console.error('[FISCAL] Erro ao emitir NF-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao emitir NF-e'
+    }, error.status || 500);
   }
 });
 
-fiscal.post('/nfe/:id/cancelamento', async (c) => {
+// GET /fiscal/nfe/:chave - Consultar NF-e
+fiscal.get('/nfe/:chave', requirePermission('fiscal', 'consultar'), async (c) => {
   try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
+    const { chave } = c.req.param();
+    const service = getService(c);
+    const resultado = await service.consultarNFe(chave);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao consultar NF-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar NF-e'
+    }, error.status || 500);
+  }
+});
+
+// POST /fiscal/nfe/:chave/cancelar - Cancelar NF-e
+fiscal.post('/nfe/:chave/cancelar', requirePermission('fiscal', 'cancelar_nfe'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const { chave } = c.req.param();
     const { justificativa } = await c.req.json();
-    const resultado = await service.nfe.cancelar(id, justificativa);
-    return c.json(resultado);
+    
+    if (!justificativa || justificativa.length < 15) {
+      return c.json({
+        success: false,
+        error: 'Justificativa deve ter no mínimo 15 caracteres'
+      }, 400);
+    }
+    
+    const service = getService(c);
+    const resultado = await service.cancelarNFe(chave, justificativa);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'cancelar_nfe',
+      tabela: 'notas_fiscais',
+      dados_novos: { chave, justificativa }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'NF-e cancelada com sucesso'
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
+    console.error('[FISCAL] Erro ao cancelar NF-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao cancelar NF-e'
+    }, error.status || 500);
   }
 });
 
-fiscal.post('/nfe/:id/carta-correcao', async (c) => {
+// POST /fiscal/nfe/:chave/carta-correcao - Carta de Correção
+fiscal.post('/nfe/:chave/carta-correcao', requirePermission('fiscal', 'emitir_nfe'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
+    const { chave } = c.req.param();
     const { correcao } = await c.req.json();
-    const resultado = await service.nfe.cartaCorrecao.emitir(id, correcao);
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.post('/nfe/:id/email', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const body = await c.req.json();
-    await service.nfe.enviarEmail(id, body);
-    return c.json({ success: true });
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.post('/nfe/inutilizacao', async (c) => {
-  try {
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const resultado = await service.nfe.inutilizar(body);
-    return c.json(resultado, 201);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/nfe/sefaz/status', async (c) => {
-  try {
-    const service = getService(c.env);
-    const { cpf_cnpj, autorizador } = c.req.query();
-    if (!cpf_cnpj) {
-      return c.json({ error: 'cpf_cnpj é obrigatório' }, 400);
+    
+    if (!correcao || correcao.length < 15) {
+      return c.json({
+        success: false,
+        error: 'Correção deve ter no mínimo 15 caracteres'
+      }, 400);
     }
-    const status = await service.nfe.statusSefaz(cpf_cnpj, autorizador);
-    return c.json(status);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-// ===== NFC-e =====
-fiscal.post('/nfce', async (c) => {
-  try {
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const nfce = await service.nfce.emitir(body);
-    return c.json(nfce, 201);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/nfce', async (c) => {
-  try {
-    const service = getService(c.env);
-    const { cpf_cnpj, ambiente, $top, $skip } = c.req.query();
-    const notas = await service.nfce.listar(
-      { cpf_cnpj, ambiente: ambiente as any },
-      { $top: $top ? parseInt($top) : undefined, $skip: $skip ? parseInt($skip) : undefined }
-    );
-    return c.json(notas);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/nfce/:id', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const nfce = await service.nfce.consultar(id);
-    return c.json(nfce);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/nfce/:id/pdf', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const pdf = await service.nfce.baixarPdf(id);
-    return new Response(pdf, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="danfce-${id}.pdf"`,
-      },
+    
+    const service = getService(c);
+    const resultado = await service.cartaCorrecaoNFe(chave, correcao);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'carta_correcao_nfe',
+      tabela: 'notas_fiscais',
+      dados_novos: { chave, correcao }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'Carta de correção registrada'
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
+    console.error('[FISCAL] Erro ao registrar carta de correção:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao registrar carta de correção'
+    }, error.status || 500);
   }
 });
 
-fiscal.post('/nfce/:id/cancelamento', async (c) => {
+// GET /fiscal/nfe/:chave/xml - Download XML
+fiscal.get('/nfe/:chave/xml', requirePermission('fiscal', 'consultar'), async (c) => {
   try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const { justificativa } = await c.req.json();
-    const resultado = await service.nfce.cancelar(id, justificativa);
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-// ===== CT-e =====
-fiscal.post('/cte', async (c) => {
-  try {
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const cte = await service.cte.emitir(body);
-    return c.json(cte, 201);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/cte', async (c) => {
-  try {
-    const service = getService(c.env);
-    const { cpf_cnpj, ambiente, $top, $skip } = c.req.query();
-    const conhecimentos = await service.cte.listar(
-      { cpf_cnpj, ambiente: ambiente as any },
-      { $top: $top ? parseInt($top) : undefined, $skip: $skip ? parseInt($skip) : undefined }
-    );
-    return c.json(conhecimentos);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/cte/:id', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const cte = await service.cte.consultar(id);
-    return c.json(cte);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/cte/:id/pdf', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const pdf = await service.cte.baixarPdf(id);
-    return new Response(pdf, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="dacte-${id}.pdf"`,
-      },
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.post('/cte/:id/cancelamento', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const { justificativa } = await c.req.json();
-    const resultado = await service.cte.cancelar(id, justificativa);
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-// ===== MDF-e =====
-fiscal.post('/mdfe', async (c) => {
-  try {
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const mdfe = await service.mdfe.emitir(body);
-    return c.json(mdfe, 201);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/mdfe', async (c) => {
-  try {
-    const service = getService(c.env);
-    const { cpf_cnpj, ambiente, $top, $skip } = c.req.query();
-    const manifestos = await service.mdfe.listar(
-      { cpf_cnpj, ambiente: ambiente as any },
-      { $top: $top ? parseInt($top) : undefined, $skip: $skip ? parseInt($skip) : undefined }
-    );
-    return c.json(manifestos);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/mdfe/:id', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const mdfe = await service.mdfe.consultar(id);
-    return c.json(mdfe);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/mdfe/:id/pdf', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const pdf = await service.mdfe.baixarPdf(id);
-    return new Response(pdf, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="damdfe-${id}.pdf"`,
-      },
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.post('/mdfe/:id/encerramento', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const resultado = await service.mdfe.encerrar(id, body);
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.post('/mdfe/:id/condutor', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const resultado = await service.mdfe.incluirCondutor(id, body);
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/mdfe/nao-encerrados', async (c) => {
-  try {
-    const service = getService(c.env);
-    const { cpf_cnpj } = c.req.query();
-    if (!cpf_cnpj) {
-      return c.json({ error: 'cpf_cnpj é obrigatório' }, 400);
-    }
-    const resultado = await service.mdfe.naoEncerrados(cpf_cnpj);
-    return c.json(resultado);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-// ===== DISTRIBUIÇÃO (Notas de Fornecedores) =====
-fiscal.post('/distribuicao/nfe', async (c) => {
-  try {
-    const service = getService(c.env);
-    const body = await c.req.json();
-    const resultado = await service.distribuicao.gerar(body);
-    return c.json(resultado, 201);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/distribuicao/nfe/:id', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const distribuicao = await service.distribuicao.consultar(id);
-    return c.json(distribuicao);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/distribuicao/nfe/documentos', async (c) => {
-  try {
-    const service = getService(c.env);
-    const { cpf_cnpj, ambiente, tipo_documento, $top, $skip } = c.req.query();
-    if (!cpf_cnpj || !ambiente) {
-      return c.json({ error: 'cpf_cnpj e ambiente são obrigatórios' }, 400);
-    }
-    const documentos = await service.distribuicao.documentos.listar(
-      { cpf_cnpj, ambiente: ambiente as any, tipo_documento: tipo_documento as any },
-      { $top: $top ? parseInt($top) : undefined, $skip: $skip ? parseInt($skip) : undefined }
-    );
-    return c.json(documentos);
-  } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
-  }
-});
-
-fiscal.get('/distribuicao/nfe/documentos/:id/xml', async (c) => {
-  try {
-    const { id } = c.req.param();
-    const service = getService(c.env);
-    const xml = await service.distribuicao.documentos.baixarXml(id);
+    const { chave } = c.req.param();
+    const service = getService(c);
+    const xml = await service.downloadNFeXML(chave);
+    
     return new Response(xml, {
       headers: {
         'Content-Type': 'application/xml',
-        'Content-Disposition': `attachment; filename="documento-${id}.xml"`,
-      },
+        'Content-Disposition': `attachment; filename="nfe-${chave}.xml"`
+      }
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
+    console.error('[FISCAL] Erro ao baixar XML:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao baixar XML'
+    }, error.status || 500);
   }
 });
 
-fiscal.get('/distribuicao/nfe/notas-sem-manifestacao', async (c) => {
+// GET /fiscal/nfe/:chave/pdf - Download PDF (DANFE)
+fiscal.get('/nfe/:chave/pdf', requirePermission('fiscal', 'consultar'), async (c) => {
   try {
-    const service = getService(c.env);
-    const { cpf_cnpj, ambiente, $top, $skip } = c.req.query();
-    if (!cpf_cnpj || !ambiente) {
-      return c.json({ error: 'cpf_cnpj e ambiente são obrigatórios' }, 400);
-    }
-    const notas = await service.distribuicao.notasSemManifestacao(
-      { cpf_cnpj, ambiente: ambiente as any },
-      { $top: $top ? parseInt($top) : undefined, $skip: $skip ? parseInt($skip) : undefined }
-    );
-    return c.json(notas);
+    const { chave } = c.req.param();
+    const service = getService(c);
+    const pdf = await service.downloadNFePDF(chave);
+    
+    return new Response(pdf, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="danfe-${chave}.pdf"`
+      }
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
+    console.error('[FISCAL] Erro ao baixar PDF:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao baixar PDF'
+    }, error.status || 500);
   }
 });
 
-fiscal.post('/distribuicao/nfe/manifestacao', async (c) => {
+// =============================================
+// NFC-e (Nota Fiscal Consumidor Eletrônica)
+// =============================================
+
+// POST /fiscal/nfce/emitir - Emitir NFC-e
+fiscal.post('/nfce/emitir', requirePermission('fiscal', 'emitir_nfce'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const service = getService(c.env);
     const body = await c.req.json();
-    const resultado = await service.distribuicao.manifestar(body);
-    return c.json(resultado, 201);
+    const service = getService(c);
+    
+    const resultado = await service.emitirNFCe(body);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'emitir_nfce',
+      tabela: 'notas_fiscais',
+      registro_id: resultado.id,
+      dados_novos: { chave: resultado.chave, numero: resultado.numero }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'NFC-e emitida com sucesso'
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, error.status || 500);
+    console.error('[FISCAL] Erro ao emitir NFC-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao emitir NFC-e'
+    }, error.status || 500);
+  }
+});
+
+// GET /fiscal/nfce/:chave - Consultar NFC-e
+fiscal.get('/nfce/:chave', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { chave } = c.req.param();
+    const service = getService(c);
+    const resultado = await service.consultarNFCe(chave);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao consultar NFC-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar NFC-e'
+    }, error.status || 500);
+  }
+});
+
+// POST /fiscal/nfce/:chave/cancelar - Cancelar NFC-e
+fiscal.post('/nfce/:chave/cancelar', requirePermission('fiscal', 'cancelar_nfce'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const { chave } = c.req.param();
+    const { justificativa } = await c.req.json();
+    
+    const service = getService(c);
+    const resultado = await service.cancelarNFCe(chave, justificativa);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'cancelar_nfce',
+      tabela: 'notas_fiscais',
+      dados_novos: { chave, justificativa }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'NFC-e cancelada com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao cancelar NFC-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao cancelar NFC-e'
+    }, error.status || 500);
+  }
+});
+
+// =============================================
+// NFS-e (Nota Fiscal de Serviços Eletrônica)
+// =============================================
+
+// POST /fiscal/nfse/emitir - Emitir NFS-e
+fiscal.post('/nfse/emitir', requirePermission('fiscal', 'emitir_nfse'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const body = await c.req.json();
+    const service = getService(c);
+    
+    const resultado = await service.emitirNFSe(body);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'emitir_nfse',
+      tabela: 'notas_fiscais',
+      registro_id: resultado.id,
+      dados_novos: { numero: resultado.numero }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'NFS-e emitida com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao emitir NFS-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao emitir NFS-e'
+    }, error.status || 500);
+  }
+});
+
+// GET /fiscal/nfse/:id - Consultar NFS-e
+fiscal.get('/nfse/:id', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { id } = c.req.param();
+    const service = getService(c);
+    const resultado = await service.consultarNFSe(id);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao consultar NFS-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar NFS-e'
+    }, error.status || 500);
+  }
+});
+
+// POST /fiscal/nfse/:id/cancelar - Cancelar NFS-e
+fiscal.post('/nfse/:id/cancelar', requirePermission('fiscal', 'cancelar_nfse'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const { id } = c.req.param();
+    const { justificativa } = await c.req.json();
+    
+    const service = getService(c);
+    const resultado = await service.cancelarNFSe(id, justificativa);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'cancelar_nfse',
+      tabela: 'notas_fiscais',
+      dados_novos: { id, justificativa }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'NFS-e cancelada com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao cancelar NFS-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao cancelar NFS-e'
+    }, error.status || 500);
+  }
+});
+
+// =============================================
+// CT-e (Conhecimento de Transporte Eletrônico)
+// =============================================
+
+// POST /fiscal/cte/emitir - Emitir CT-e
+fiscal.post('/cte/emitir', requirePermission('fiscal', 'emitir_cte'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const body = await c.req.json();
+    const service = getService(c);
+    
+    const resultado = await service.emitirCTe(body);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'emitir_cte',
+      tabela: 'conhecimentos_transporte',
+      registro_id: resultado.id,
+      dados_novos: { chave: resultado.chave, numero: resultado.numero }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'CT-e emitido com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao emitir CT-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao emitir CT-e'
+    }, error.status || 500);
+  }
+});
+
+// GET /fiscal/cte/:chave - Consultar CT-e
+fiscal.get('/cte/:chave', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { chave } = c.req.param();
+    const service = getService(c);
+    const resultado = await service.consultarCTe(chave);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao consultar CT-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar CT-e'
+    }, error.status || 500);
+  }
+});
+
+// POST /fiscal/cte/:chave/cancelar - Cancelar CT-e
+fiscal.post('/cte/:chave/cancelar', requirePermission('fiscal', 'cancelar_cte'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const { chave } = c.req.param();
+    const { justificativa } = await c.req.json();
+    
+    const service = getService(c);
+    const resultado = await service.cancelarCTe(chave, justificativa);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'cancelar_cte',
+      tabela: 'conhecimentos_transporte',
+      dados_novos: { chave, justificativa }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'CT-e cancelado com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao cancelar CT-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao cancelar CT-e'
+    }, error.status || 500);
+  }
+});
+
+// =============================================
+// MDF-e (Manifesto de Documentos Fiscais)
+// =============================================
+
+// POST /fiscal/mdfe/emitir - Emitir MDF-e
+fiscal.post('/mdfe/emitir', requirePermission('fiscal', 'emitir_mdfe'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const body = await c.req.json();
+    const service = getService(c);
+    
+    const resultado = await service.emitirMDFe(body);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'emitir_mdfe',
+      tabela: 'manifestos',
+      registro_id: resultado.id,
+      dados_novos: { chave: resultado.chave, numero: resultado.numero }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'MDF-e emitido com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao emitir MDF-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao emitir MDF-e'
+    }, error.status || 500);
+  }
+});
+
+// GET /fiscal/mdfe/:chave - Consultar MDF-e
+fiscal.get('/mdfe/:chave', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { chave } = c.req.param();
+    const service = getService(c);
+    const resultado = await service.consultarMDFe(chave);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao consultar MDF-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar MDF-e'
+    }, error.status || 500);
+  }
+});
+
+// POST /fiscal/mdfe/:chave/encerrar - Encerrar MDF-e
+fiscal.post('/mdfe/:chave/encerrar', requirePermission('fiscal', 'emitir_mdfe'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const { chave } = c.req.param();
+    const body = await c.req.json();
+    
+    const service = getService(c);
+    const resultado = await service.encerrarMDFe(chave, body);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'encerrar_mdfe',
+      tabela: 'manifestos',
+      dados_novos: { chave }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'MDF-e encerrado com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao encerrar MDF-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao encerrar MDF-e'
+    }, error.status || 500);
+  }
+});
+
+// POST /fiscal/mdfe/:chave/cancelar - Cancelar MDF-e
+fiscal.post('/mdfe/:chave/cancelar', requirePermission('fiscal', 'cancelar_mdfe'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const { chave } = c.req.param();
+    const { justificativa } = await c.req.json();
+    
+    const service = getService(c);
+    const resultado = await service.cancelarMDFe(chave, justificativa);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'cancelar_mdfe',
+      tabela: 'manifestos',
+      dados_novos: { chave, justificativa }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'MDF-e cancelado com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao cancelar MDF-e:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao cancelar MDF-e'
+    }, error.status || 500);
+  }
+});
+
+// =============================================
+// DISTRIBUIÇÃO DFe
+// =============================================
+
+// GET /fiscal/distribuicao/ultimas - Últimas notas recebidas
+fiscal.get('/distribuicao/ultimas', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { cnpj, ultNSU } = c.req.query();
+    const service = getService(c);
+    const resultado = await service.consultarDistribuicaoDFe(cnpj, ultNSU);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao consultar distribuição:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar distribuição'
+    }, error.status || 500);
+  }
+});
+
+// GET /fiscal/distribuicao/nsu/:nsu - Consultar por NSU
+fiscal.get('/distribuicao/nsu/:nsu', requirePermission('fiscal', 'consultar'), async (c) => {
+  try {
+    const { nsu } = c.req.param();
+    const { cnpj } = c.req.query();
+    const service = getService(c);
+    const resultado = await service.consultarNSU(cnpj, nsu);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao consultar NSU:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao consultar NSU'
+    }, error.status || 500);
+  }
+});
+
+// POST /fiscal/distribuicao/manifestar - Manifestar conhecimento
+fiscal.post('/distribuicao/manifestar', requirePermission('fiscal', 'manifestar'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const body = await c.req.json();
+    const service = getService(c);
+    const resultado = await service.manifestarNFe(body);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'manifestar_nfe',
+      tabela: 'notas_fiscais_recebidas',
+      dados_novos: body
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'Manifestação registrada'
+    });
+  } catch (error: any) {
+    console.error('[FISCAL] Erro ao manifestar:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao manifestar'
+    }, error.status || 500);
   }
 });
 
 export default fiscal;
-
