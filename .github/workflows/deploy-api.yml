@@ -4,8 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/packages/api/**'
-      - 'src/packages/shared/**'
+      - 'src/api/**'
   workflow_dispatch:
 
 jobs:
@@ -23,7 +22,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        working-directory: src/packages/api
+        working-directory: src/api
         run: npm install
 
       - name: Deploy to Cloudflare Workers
@@ -31,10 +30,12 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: f14d821b52a4f6ecbad7fb0e0afba8e5
-          workingDirectory: src/packages/api
+          workingDirectory: src/api
           command: deploy
 
       - name: Deployment Summary
         run: |
           echo "✅ Worker deployado com sucesso!"
           echo "📍 URL: https://planac-erp-api.ropetr.workers.dev"
+          echo "📅 Data: $(date)"
+          echo "🔖 Versão: 2.0.0 (API Unificada)"
