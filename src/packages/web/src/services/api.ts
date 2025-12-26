@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - API Client
+// TRAILSYSTEM ERP - API Client
 // Rebuild: 17/12/2025 - Fix VITE_API_URL /v1
 // =============================================
 
@@ -13,7 +13,7 @@ const getApiUrl = () => {
   
   // Em produção (Cloudflare Pages), usa a URL do worker
   if (typeof window !== "undefined" && window.location.hostname.includes("pages.dev")) {
-    return "https://planac-erp-api.planacacabamentos.workers.dev/v1";
+    return "https://trailsystem-erp-api.trailsystemacabamentos.workers.dev/v1";
   }
   
   // Desenvolvimento local - usa proxy
@@ -30,7 +30,7 @@ class ApiClient {
     this.baseUrl = baseUrl;
     // Recuperar token do localStorage
     if (typeof window !== "undefined") {
-      this.token = localStorage.getItem("planac_token");
+      this.token = localStorage.getItem("trailsystem_token");
     }
   }
 
@@ -38,9 +38,9 @@ class ApiClient {
     this.token = token;
     if (typeof window !== "undefined") {
       if (token) {
-        localStorage.setItem("planac_token", token);
+        localStorage.setItem("trailsystem_token", token);
       } else {
-        localStorage.removeItem("planac_token");
+        localStorage.removeItem("trailsystem_token");
       }
     }
   }
@@ -74,7 +74,7 @@ class ApiClient {
     if (response.status === 401) {
       this.setToken(null);
       if (typeof window !== "undefined") {
-        localStorage.removeItem("planac_user");
+        localStorage.removeItem("trailsystem_user");
         window.location.href = "/login";
       }
       throw new Error("Sessao expirada");
