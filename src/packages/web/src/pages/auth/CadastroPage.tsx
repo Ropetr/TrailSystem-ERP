@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { api } from @/services/api';
+import { api } from '@/services/api';
 
 export default function CadastroPage() {
   const navigate = useNavigate();
