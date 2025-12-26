@@ -2,5 +2,5 @@
 // PLANAC ERP - Módulo Suporte
 // =============================================
 
-export { TicketsPage } from './TicketsPage';
-export { BaseConhecimentoPage } from './BaseConhecimentoPage';
+export { default as TicketsPage } from "./TicketsPage";
+export { default as BaseConhecimentoPage } from "./BaseConhecimentoPage";
