@@ -1,301 +1,386 @@
 // =============================================
-// PLANAC ERP - Routes Empresas Config
-// Configuração de empresas incluindo IBPT
+// PLANAC ERP - Rotas de Configuração de Empresas
 // =============================================
+// Configurações específicas por empresa (IBPT, fiscal, etc)
+// Atualizado: 26/12/2025 - Adaptado para API Unificada
 
 import { Hono } from 'hono';
+import { z } from 'zod';
+import type { Bindings, Variables } from '../types';
+import { requireAuth, requirePermission } from '../middleware/auth';
+import { registrarAuditoria } from '../utils/auditoria';
+import { EmpresaConfigService } from '../services/empresas/empresa-config-service';
 
-interface Env {
-  DB: D1Database;
-}
+const empresasConfig = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-const empresasConfig = new Hono<{ Bindings: Env }>();
+// Middleware de autenticação para todas as rotas
+empresasConfig.use('/*', requireAuth());
 
-// ===== IBPT =====
-
-/**
- * Obter configuração IBPT de uma empresa
- * GET /empresas-config/:cnpj/ibpt
- */
-empresasConfig.get('/:cnpj/ibpt', async (c) => {
-  try {
-    const { cnpj } = c.req.param();
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
-
-    const result = await c.env.DB
-      .prepare(`
-        SELECT ibpt_token, ibpt_uf, ibpt_configurado_em
-        FROM empresas_config
-        WHERE cnpj = ? AND ativo = 1
-      `)
-      .bind(cnpjLimpo)
-      .first<any>();
-
-    if (!result) {
-      return c.json({ error: 'Empresa não encontrada' }, 404);
-    }
-
-    return c.json({
-      configurado: !!result.ibpt_token,
-      uf: result.ibpt_uf,
-      token_parcial: result.ibpt_token ? `${result.ibpt_token.substring(0, 4)}****` : null,
-      configurado_em: result.ibpt_configurado_em,
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
+// Schemas de validação
+const ibptConfigSchema = z.object({
+  habilitado: z.boolean(),
+  token_ibpt: z.string().optional(),
+  uf_padrao: z.string().length(2).optional(),
+  exibir_tributos_nfe: z.boolean().optional(),
+  exibir_tributos_nfce: z.boolean().optional(),
+  fonte_dados: z.enum(['api', 'csv', 'cache']).optional(),
+  notificar_atualizacoes: z.boolean().optional(),
+  emails_notificacao: z.array(z.string().email()).optional(),
+  whatsapp_notificacao: z.string().optional()
 });
 
-/**
- * Configurar IBPT de uma empresa
- * PUT /empresas-config/:cnpj/ibpt
- * Body: { token: string, uf: string }
- */
-empresasConfig.put('/:cnpj/ibpt', async (c) => {
+const fiscalConfigSchema = z.object({
+  ambiente: z.enum(['homologacao', 'producao']),
+  serie_nfe: z.number().min(1).max(999).optional(),
+  serie_nfce: z.number().min(1).max(999).optional(),
+  serie_nfse: z.number().min(1).max(999).optional(),
+  csc_nfce: z.string().optional(),
+  csc_id_nfce: z.string().optional(),
+  regime_tributario: z.enum(['simples_nacional', 'lucro_presumido', 'lucro_real']).optional(),
+  certificado_id: z.string().uuid().optional()
+});
+
+// =============================================
+// CONFIGURAÇÕES GERAIS
+// =============================================
+
+// GET /empresas-config - Obter configurações da empresa
+empresasConfig.get('/', requirePermission('empresa', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const { cnpj } = c.req.param();
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
-    const body = await c.req.json<{ token: string; uf: string }>();
-
-    if (!body.token) {
-      return c.json({ error: 'Token é obrigatório' }, 400);
-    }
-
-    if (!body.uf || body.uf.length !== 2) {
-      return c.json({ error: 'UF inválida' }, 400);
-    }
-
-    // Verificar se empresa existe
-    const empresa = await c.env.DB
-      .prepare('SELECT id FROM empresas_config WHERE cnpj = ?')
-      .bind(cnpjLimpo)
-      .first();
-
-    if (!empresa) {
-      // Criar registro se não existe
-      await c.env.DB
-        .prepare(`
-          INSERT INTO empresas_config (cnpj, ibpt_token, ibpt_uf, ibpt_configurado_em, ativo, created_at, updated_at)
-          VALUES (?, ?, ?, datetime('now'), 1, datetime('now'), datetime('now'))
-        `)
-        .bind(cnpjLimpo, body.token, body.uf.toUpperCase())
-        .run();
-    } else {
-      // Atualizar registro existente
-      await c.env.DB
-        .prepare(`
-          UPDATE empresas_config 
-          SET ibpt_token = ?, ibpt_uf = ?, ibpt_configurado_em = datetime('now'), updated_at = datetime('now')
-          WHERE cnpj = ?
-        `)
-        .bind(body.token, body.uf.toUpperCase(), cnpjLimpo)
-        .run();
-    }
-
+    const service = new EmpresaConfigService(c.env.DB);
+    const config = await service.getConfig(usuario.empresa_id);
+    
     return c.json({
       success: true,
-      message: 'Configuração IBPT salva com sucesso',
+      data: config
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    console.error('[EMPRESAS-CONFIG] Erro ao obter config:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao obter configurações'
+    }, 500);
   }
 });
 
-/**
- * Remover configuração IBPT
- * DELETE /empresas-config/:cnpj/ibpt
- */
-empresasConfig.delete('/:cnpj/ibpt', async (c) => {
+// PATCH /empresas-config - Atualizar configurações gerais
+empresasConfig.patch('/', requirePermission('empresa', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const { cnpj } = c.req.param();
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
+    const body = await c.req.json();
+    const service = new EmpresaConfigService(c.env.DB);
+    
+    const configAnterior = await service.getConfig(usuario.empresa_id);
+    const resultado = await service.updateConfig(usuario.empresa_id, body);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'atualizar_config',
+      tabela: 'empresas_config',
+      dados_anteriores: configAnterior,
+      dados_novos: body
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'Configurações atualizadas'
+    });
+  } catch (error: any) {
+    console.error('[EMPRESAS-CONFIG] Erro ao atualizar:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao atualizar configurações'
+    }, 500);
+  }
+});
 
-    await c.env.DB
-      .prepare(`
+// =============================================
+// CONFIGURAÇÕES IBPT
+// =============================================
+
+// GET /empresas-config/ibpt - Obter configurações IBPT
+empresasConfig.get('/ibpt', requirePermission('fiscal', 'consultar'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const config = await c.env.DB.prepare(`
+      SELECT ibpt_config FROM empresas_config WHERE empresa_id = ?
+    `).bind(usuario.empresa_id).first<{ ibpt_config: string }>();
+    
+    const ibptConfig = config?.ibpt_config 
+      ? JSON.parse(config.ibpt_config)
+      : {
+          habilitado: true,
+          uf_padrao: 'PR',
+          exibir_tributos_nfe: true,
+          exibir_tributos_nfce: true,
+          fonte_dados: 'cache',
+          notificar_atualizacoes: true
+        };
+    
+    return c.json({
+      success: true,
+      data: ibptConfig
+    });
+  } catch (error: any) {
+    console.error('[EMPRESAS-CONFIG] Erro ao obter IBPT:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao obter configurações IBPT'
+    }, 500);
+  }
+});
+
+// PATCH /empresas-config/ibpt - Atualizar configurações IBPT
+empresasConfig.patch('/ibpt', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  
+  try {
+    const body = await c.req.json();
+    const validado = ibptConfigSchema.parse(body);
+    
+    // Obter config atual
+    const configAtual = await c.env.DB.prepare(`
+      SELECT ibpt_config FROM empresas_config WHERE empresa_id = ?
+    `).bind(usuario.empresa_id).first<{ ibpt_config: string }>();
+    
+    const ibptAnterior = configAtual?.ibpt_config 
+      ? JSON.parse(configAtual.ibpt_config) 
+      : {};
+    
+    // Merge com config existente
+    const novoConfig = { ...ibptAnterior, ...validado };
+    
+    // Verificar se registro existe
+    const existe = await c.env.DB.prepare(`
+      SELECT 1 FROM empresas_config WHERE empresa_id = ?
+    `).bind(usuario.empresa_id).first();
+    
+    if (existe) {
+      await c.env.DB.prepare(`
         UPDATE empresas_config 
-        SET ibpt_token = NULL, ibpt_uf = NULL, ibpt_configurado_em = NULL, updated_at = datetime('now')
-        WHERE cnpj = ?
-      `)
-      .bind(cnpjLimpo)
-      .run();
-
-    return c.json({ success: true, message: 'Configuração IBPT removida' });
+        SET ibpt_config = ?, updated_at = datetime('now')
+        WHERE empresa_id = ?
+      `).bind(JSON.stringify(novoConfig), usuario.empresa_id).run();
+    } else {
+      await c.env.DB.prepare(`
+        INSERT INTO empresas_config (empresa_id, ibpt_config, created_at, updated_at)
+        VALUES (?, ?, datetime('now'), datetime('now'))
+      `).bind(usuario.empresa_id, JSON.stringify(novoConfig)).run();
+    }
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'atualizar_config_ibpt',
+      tabela: 'empresas_config',
+      dados_anteriores: ibptAnterior,
+      dados_novos: novoConfig
+    });
+    
+    return c.json({
+      success: true,
+      data: novoConfig,
+      message: 'Configurações IBPT atualizadas'
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    if (error.name === 'ZodError') {
+      return c.json({
+        success: false,
+        error: 'Dados inválidos',
+        details: error.errors
+      }, 400);
+    }
+    
+    console.error('[EMPRESAS-CONFIG] Erro ao atualizar IBPT:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao atualizar configurações IBPT'
+    }, 500);
   }
 });
 
-// ===== NUVEM FISCAL =====
+// =============================================
+// CONFIGURAÇÕES FISCAIS
+// =============================================
 
-/**
- * Obter configuração Nuvem Fiscal
- * GET /empresas-config/:cnpj/nuvem-fiscal
- */
-empresasConfig.get('/:cnpj/nuvem-fiscal', async (c) => {
+// GET /empresas-config/fiscal - Obter configurações fiscais
+empresasConfig.get('/fiscal', requirePermission('fiscal', 'consultar'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const { cnpj } = c.req.param();
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
-
-    const result = await c.env.DB
-      .prepare(`
-        SELECT 
-          nf_ambiente, nf_serie_nfe, nf_serie_nfce, nf_serie_nfse,
-          nf_csc_id, nf_certificado_configurado
-        FROM empresas_config
-        WHERE cnpj = ? AND ativo = 1
-      `)
-      .bind(cnpjLimpo)
-      .first<any>();
-
-    if (!result) {
-      return c.json({ error: 'Empresa não encontrada' }, 404);
-    }
-
-    return c.json(result);
+    const config = await c.env.DB.prepare(`
+      SELECT fiscal_config FROM empresas_config WHERE empresa_id = ?
+    `).bind(usuario.empresa_id).first<{ fiscal_config: string }>();
+    
+    const fiscalConfig = config?.fiscal_config 
+      ? JSON.parse(config.fiscal_config)
+      : {
+          ambiente: 'homologacao',
+          serie_nfe: 1,
+          serie_nfce: 1,
+          serie_nfse: 1
+        };
+    
+    return c.json({
+      success: true,
+      data: fiscalConfig
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    console.error('[EMPRESAS-CONFIG] Erro ao obter fiscal:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao obter configurações fiscais'
+    }, 500);
   }
 });
 
-/**
- * Configurar Nuvem Fiscal
- * PUT /empresas-config/:cnpj/nuvem-fiscal
- */
-empresasConfig.put('/:cnpj/nuvem-fiscal', async (c) => {
+// PATCH /empresas-config/fiscal - Atualizar configurações fiscais
+empresasConfig.patch('/fiscal', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const { cnpj } = c.req.param();
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
-    const body = await c.req.json<{
-      ambiente?: 'homologacao' | 'producao';
-      serie_nfe?: number;
-      serie_nfce?: number;
-      serie_nfse?: number;
-      csc_id?: string;
-      csc_token?: string;
-    }>();
-
-    const updates: string[] = [];
-    const params: any[] = [];
-
-    if (body.ambiente) {
-      updates.push('nf_ambiente = ?');
-      params.push(body.ambiente);
+    const body = await c.req.json();
+    const validado = fiscalConfigSchema.parse(body);
+    
+    // Obter config atual
+    const configAtual = await c.env.DB.prepare(`
+      SELECT fiscal_config FROM empresas_config WHERE empresa_id = ?
+    `).bind(usuario.empresa_id).first<{ fiscal_config: string }>();
+    
+    const fiscalAnterior = configAtual?.fiscal_config 
+      ? JSON.parse(configAtual.fiscal_config) 
+      : {};
+    
+    // Merge com config existente
+    const novoConfig = { ...fiscalAnterior, ...validado };
+    
+    // Verificar se registro existe
+    const existe = await c.env.DB.prepare(`
+      SELECT 1 FROM empresas_config WHERE empresa_id = ?
+    `).bind(usuario.empresa_id).first();
+    
+    if (existe) {
+      await c.env.DB.prepare(`
+        UPDATE empresas_config 
+        SET fiscal_config = ?, updated_at = datetime('now')
+        WHERE empresa_id = ?
+      `).bind(JSON.stringify(novoConfig), usuario.empresa_id).run();
+    } else {
+      await c.env.DB.prepare(`
+        INSERT INTO empresas_config (empresa_id, fiscal_config, created_at, updated_at)
+        VALUES (?, ?, datetime('now'), datetime('now'))
+      `).bind(usuario.empresa_id, JSON.stringify(novoConfig)).run();
     }
-    if (body.serie_nfe !== undefined) {
-      updates.push('nf_serie_nfe = ?');
-      params.push(body.serie_nfe);
-    }
-    if (body.serie_nfce !== undefined) {
-      updates.push('nf_serie_nfce = ?');
-      params.push(body.serie_nfce);
-    }
-    if (body.serie_nfse !== undefined) {
-      updates.push('nf_serie_nfse = ?');
-      params.push(body.serie_nfse);
-    }
-    if (body.csc_id) {
-      updates.push('nf_csc_id = ?');
-      params.push(body.csc_id);
-    }
-    if (body.csc_token) {
-      updates.push('nf_csc_token = ?');
-      params.push(body.csc_token);
-    }
-
-    if (updates.length === 0) {
-      return c.json({ error: 'Nenhum campo para atualizar' }, 400);
-    }
-
-    updates.push("updated_at = datetime('now')");
-    params.push(cnpjLimpo);
-
-    await c.env.DB
-      .prepare(`UPDATE empresas_config SET ${updates.join(', ')} WHERE cnpj = ?`)
-      .bind(...params)
-      .run();
-
-    return c.json({ success: true, message: 'Configuração atualizada' });
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'atualizar_config_fiscal',
+      tabela: 'empresas_config',
+      dados_anteriores: fiscalAnterior,
+      dados_novos: novoConfig
+    });
+    
+    return c.json({
+      success: true,
+      data: novoConfig,
+      message: 'Configurações fiscais atualizadas'
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    if (error.name === 'ZodError') {
+      return c.json({
+        success: false,
+        error: 'Dados inválidos',
+        details: error.errors
+      }, 400);
+    }
+    
+    console.error('[EMPRESAS-CONFIG] Erro ao atualizar fiscal:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao atualizar configurações fiscais'
+    }, 500);
   }
 });
 
-// ===== GERAL =====
+// =============================================
+// RESET / DEFAULTS
+// =============================================
 
-/**
- * Obter configuração completa da empresa
- * GET /empresas-config/:cnpj
- */
-empresasConfig.get('/:cnpj', async (c) => {
+// POST /empresas-config/reset - Restaurar configurações padrão
+empresasConfig.post('/reset', requirePermission('empresa', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  const { modulo } = await c.req.json();
+  
   try {
-    const { cnpj } = c.req.param();
-    const cnpjLimpo = cnpj.replace(/\D/g, '');
-
-    const result = await c.env.DB
-      .prepare(`
-        SELECT 
-          id, cnpj, razao_social, nome_fantasia, inscricao_estadual,
-          email_notificacao, telefone_notificacao,
-          nf_ambiente, nf_serie_nfe, nf_serie_nfce, nf_serie_nfse,
-          nf_certificado_configurado,
-          ibpt_uf, ibpt_configurado_em,
-          CASE WHEN ibpt_token IS NOT NULL THEN 1 ELSE 0 END as ibpt_configurado,
-          tenant_id, ativo, created_at, updated_at
-        FROM empresas_config
-        WHERE cnpj = ?
-      `)
-      .bind(cnpjLimpo)
-      .first();
-
-    if (!result) {
-      return c.json({ error: 'Empresa não encontrada' }, 404);
+    let campo = '';
+    let valorPadrao = '';
+    
+    switch (modulo) {
+      case 'ibpt':
+        campo = 'ibpt_config';
+        valorPadrao = JSON.stringify({
+          habilitado: true,
+          uf_padrao: 'PR',
+          exibir_tributos_nfe: true,
+          exibir_tributos_nfce: true,
+          fonte_dados: 'cache',
+          notificar_atualizacoes: true
+        });
+        break;
+        
+      case 'fiscal':
+        campo = 'fiscal_config';
+        valorPadrao = JSON.stringify({
+          ambiente: 'homologacao',
+          serie_nfe: 1,
+          serie_nfce: 1,
+          serie_nfse: 1
+        });
+        break;
+        
+      default:
+        return c.json({
+          success: false,
+          error: 'Módulo inválido. Válidos: ibpt, fiscal'
+        }, 400);
     }
-
-    return c.json(result);
+    
+    await c.env.DB.prepare(`
+      UPDATE empresas_config 
+      SET ${campo} = ?, updated_at = datetime('now')
+      WHERE empresa_id = ?
+    `).bind(valorPadrao, usuario.empresa_id).run();
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: `reset_config_${modulo}`,
+      tabela: 'empresas_config',
+      dados_novos: { modulo, restaurado: true }
+    });
+    
+    return c.json({
+      success: true,
+      message: `Configurações de ${modulo} restauradas para o padrão`
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Listar todas as empresas
- * GET /empresas-config?tenant_id=xxx&ativo=1
- */
-empresasConfig.get('/', async (c) => {
-  try {
-    const { tenant_id, ativo } = c.req.query();
-
-    let query = `
-      SELECT 
-        id, cnpj, razao_social, nome_fantasia,
-        nf_ambiente, nf_certificado_configurado,
-        ibpt_uf,
-        CASE WHEN ibpt_token IS NOT NULL THEN 1 ELSE 0 END as ibpt_configurado,
-        ativo, updated_at
-      FROM empresas_config
-      WHERE 1=1
-    `;
-    const params: any[] = [];
-
-    if (tenant_id) {
-      query += ' AND tenant_id = ?';
-      params.push(tenant_id);
-    }
-
-    if (ativo !== undefined) {
-      query += ' AND ativo = ?';
-      params.push(ativo === '1' || ativo === 'true' ? 1 : 0);
-    }
-
-    query += ' ORDER BY razao_social';
-
-    const result = await c.env.DB.prepare(query).bind(...params).all<any>();
-
-    return c.json({ data: result.results || [] });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    console.error('[EMPRESAS-CONFIG] Erro ao resetar:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao restaurar configurações'
+    }, 500);
   }
 });
 
 export default empresasConfig;
-
