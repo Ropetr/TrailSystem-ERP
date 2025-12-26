@@ -2,7 +2,7 @@
 // PLANAC ERP - Módulo Contábil
 // =============================================
 
-export { PlanoContasPage } from './PlanoContasPage';
-export { LancamentosPage } from './LancamentosPage';
-export { DREPage } from './DREPage';
-export { BalancoPage } from './BalancoPage';
+export { default as PlanoContasPage } from "./PlanoContasPage";
+export { default as LancamentosPage } from "./LancamentosPage";
+export { default as DREPage } from "./DREPage";
+export { default as BalancoPage } from "./BalancoPage";
