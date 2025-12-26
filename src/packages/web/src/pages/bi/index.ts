@@ -2,6 +2,6 @@
 // PLANAC ERP - Módulo BI (Business Intelligence)
 // =============================================
 
-export { DashboardPage } from './DashboardPage';
-export { RelatoriosPage } from './RelatoriosPage';
-export { IndicadoresPage } from './IndicadoresPage';
+export { default as DashboardPage } from "./DashboardPage";
+export { default as RelatoriosPage } from "./RelatoriosPage";
+export { default as IndicadoresPage } from "./IndicadoresPage";
