@@ -1,387 +1,379 @@
 // =============================================
-// PLANAC ERP - Certificados Digitais Routes
-// Multi-tenant ready para comercialização
+// PLANAC ERP - Rotas de Certificados Digitais
 // =============================================
+// Gestão de Certificados A1 para emissão fiscal
+// Atualizado: 26/12/2025 - Adaptado para API Unificada
 
 import { Hono } from 'hono';
-import {
-  uploadCertificado,
-  buscarCertificado,
-  listarCertificados,
-  listarCertificadosVencendo,
-  removerCertificado,
-  definirCertificadoPrincipal,
-  atualizarStatusCertificados,
-  obterCertificadoParaUso,
-} from '../services/empresas/certificado-service';
+import { z } from 'zod';
+import type { Bindings, Variables } from '../types';
+import { requireAuth, requirePermission } from '../middleware/auth';
+import { registrarAuditoria } from '../utils/auditoria';
+import { CertificadoService } from '../services/empresas/certificado-service';
 
-// Tipos do ambiente
-interface Env {
-  DB: D1Database;
-  CERTIFICADOS_BUCKET: R2Bucket;
-  ENCRYPTION_KEY: string;  // Chave mestra para criptografia
-  NUVEM_FISCAL_CLIENT_ID?: string;
-  NUVEM_FISCAL_CLIENT_SECRET?: string;
-  NUVEM_FISCAL_AMBIENTE?: 'homologacao' | 'producao';
-}
+const certificados = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-const certificados = new Hono<{ Bindings: Env }>();
+// Middleware de autenticação para todas as rotas
+certificados.use('/*', requireAuth());
 
-// ===== UPLOAD =====
+// =============================================
+// UPLOAD E GESTÃO
+// =============================================
 
-/**
- * Upload de certificado digital
- * POST /certificados/:cnpj
- * Body: multipart/form-data com arquivo .pfx e senha
- */
-certificados.post('/:cnpj', async (c) => {
+// POST /certificados/upload - Upload de certificado A1
+certificados.post('/upload', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const { cnpj } = c.req.param();
-    const formData = await c.req.formData();
+    const contentType = c.req.header('content-type') || '';
     
-    const arquivo = formData.get('arquivo') as File | null;
-    const senha = formData.get('senha') as string | null;
-    const definirPrincipal = formData.get('principal') === 'true';
-    const sincronizarNuvem = formData.get('sincronizar_nuvem_fiscal') === 'true';
-    const tenantId = formData.get('tenant_id') as string | null;
+    if (!contentType.includes('multipart/form-data')) {
+      return c.json({
+        success: false,
+        error: 'Content-Type deve ser multipart/form-data'
+      }, 400);
+    }
+    
+    const formData = await c.req.formData();
+    const arquivo = formData.get('arquivo') as File;
+    const senha = formData.get('senha') as string;
     
     if (!arquivo) {
-      return c.json({ error: 'Arquivo do certificado é obrigatório' }, 400);
+      return c.json({
+        success: false,
+        error: 'Arquivo do certificado não enviado'
+      }, 400);
     }
     
     if (!senha) {
-      return c.json({ error: 'Senha do certificado é obrigatória' }, 400);
+      return c.json({
+        success: false,
+        error: 'Senha do certificado não informada'
+      }, 400);
     }
     
     // Validar extensão
     const nomeArquivo = arquivo.name.toLowerCase();
     if (!nomeArquivo.endsWith('.pfx') && !nomeArquivo.endsWith('.p12')) {
-      return c.json({ error: 'Arquivo deve ser .pfx ou .p12' }, 400);
+      return c.json({
+        success: false,
+        error: 'Arquivo deve ser .pfx ou .p12'
+      }, 400);
     }
     
-    // Validar tamanho (máx 50KB para certificados A1)
-    if (arquivo.size > 50 * 1024) {
-      return c.json({ error: 'Arquivo muito grande. Certificados A1 geralmente têm menos de 50KB' }, 400);
-    }
+    const service = new CertificadoService({
+      DB: c.env.DB,
+      R2_CERTIFICADOS: c.env.R2_CERTIFICADOS,
+      ENCRYPTION_KEY: c.env.ENCRYPTION_KEY,
+      NUVEM_FISCAL_CLIENT_ID: c.env.NUVEM_FISCAL_CLIENT_ID,
+      NUVEM_FISCAL_CLIENT_SECRET: c.env.NUVEM_FISCAL_CLIENT_SECRET
+    });
     
-    const arquivoBuffer = await arquivo.arrayBuffer();
+    const arrayBuffer = await arquivo.arrayBuffer();
+    const resultado = await service.upload({
+      empresa_id: usuario.empresa_id,
+      arquivo: new Uint8Array(arrayBuffer),
+      nome_arquivo: arquivo.name,
+      senha: senha
+    });
     
-    // Obter usuário do contexto (se autenticado)
-    const uploadedBy = c.req.header('X-User-Id') || 'system';
-    
-    // Configuração Nuvem Fiscal
-    const nuvemFiscalConfig = c.env.NUVEM_FISCAL_CLIENT_ID ? {
-      clientId: c.env.NUVEM_FISCAL_CLIENT_ID,
-      clientSecret: c.env.NUVEM_FISCAL_CLIENT_SECRET!,
-      ambiente: c.env.NUVEM_FISCAL_AMBIENTE || 'homologacao',
-    } : undefined;
-    
-    const certificado = await uploadCertificado(
-      c.env.DB,
-      c.env.CERTIFICADOS_BUCKET,
-      c.env.ENCRYPTION_KEY,
-      {
-        cnpj,
-        arquivo: arquivoBuffer,
-        senha,
-        nome_arquivo: arquivo.name,
-        definir_como_principal: definirPrincipal,
-        sincronizar_nuvem_fiscal: sincronizarNuvem,
-        tenant_id: tenantId || undefined,
-        uploaded_by: uploadedBy,
-      },
-      nuvemFiscalConfig
-    );
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'upload_certificado',
+      tabela: 'empresas_certificados',
+      registro_id: resultado.id,
+      dados_novos: {
+        arquivo: arquivo.name,
+        validade: resultado.data_validade
+      }
+    });
     
     return c.json({
       success: true,
-      message: 'Certificado enviado com sucesso',
-      certificado: {
-        id: certificado.id,
-        cnpj: certificado.cnpj,
-        nome_arquivo: certificado.nome_arquivo,
-        status: certificado.status,
-        principal: certificado.principal,
-        nuvem_fiscal_sync: certificado.nuvem_fiscal_sync,
-        validade_fim: certificado.validade_fim,
-        dias_para_vencer: certificado.dias_para_vencer,
-      },
-    }, 201);
-  } catch (error: any) {
-    console.error('Erro ao fazer upload do certificado:', error);
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ===== CONSULTAS =====
-
-/**
- * Consulta certificado principal da empresa
- * GET /certificados/:cnpj
- */
-certificados.get('/:cnpj', async (c) => {
-  try {
-    const { cnpj } = c.req.param();
-    const certificado = await buscarCertificado(c.env.DB, cnpj);
-    
-    if (!certificado) {
-      return c.json({ 
-        error: 'Certificado não encontrado',
-        message: 'Esta empresa não possui certificado digital cadastrado'
-      }, 404);
-    }
-    
-    // Não retornar dados sensíveis
-    return c.json({
-      id: certificado.id,
-      cnpj: certificado.cnpj,
-      tipo: certificado.tipo,
-      nome_arquivo: certificado.nome_arquivo,
-      serial_number: certificado.serial_number,
-      razao_social_certificado: certificado.razao_social_certificado,
-      cnpj_certificado: certificado.cnpj_certificado,
-      issuer: certificado.issuer,
-      validade_inicio: certificado.validade_inicio,
-      validade_fim: certificado.validade_fim,
-      dias_para_vencer: certificado.dias_para_vencer,
-      status: certificado.status,
-      principal: certificado.principal,
-      nuvem_fiscal_sync: certificado.nuvem_fiscal_sync,
-      nuvem_fiscal_sync_at: certificado.nuvem_fiscal_sync_at,
-      uploaded_at: certificado.uploaded_at,
+      data: resultado,
+      message: 'Certificado enviado com sucesso'
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    console.error('[CERTIFICADOS] Erro ao fazer upload:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao fazer upload do certificado'
+    }, 500);
   }
 });
 
-/**
- * Lista todos os certificados da empresa
- * GET /certificados/:cnpj/todos
- */
-certificados.get('/:cnpj/todos', async (c) => {
+// GET /certificados - Listar certificados da empresa
+certificados.get('/', requirePermission('fiscal', 'consultar'), async (c) => {
+  const usuario = c.get('usuario');
+  
   try {
-    const { cnpj } = c.req.param();
-    const lista = await listarCertificados(c.env.DB, cnpj);
+    const resultado = await c.env.DB.prepare(`
+      SELECT 
+        id, empresa_id, tipo, arquivo_nome,
+        cnpj, razao_social, data_validade, data_upload,
+        sincronizado_nuvem_fiscal, nuvem_fiscal_id, ativo,
+        created_at, updated_at
+      FROM empresas_certificados 
+      WHERE empresa_id = ?
+      ORDER BY created_at DESC
+    `).bind(usuario.empresa_id).all();
     
-    // Remover dados sensíveis
-    const certificados = lista.map(cert => ({
-      id: cert.id,
-      cnpj: cert.cnpj,
-      tipo: cert.tipo,
-      nome_arquivo: cert.nome_arquivo,
-      serial_number: cert.serial_number,
-      razao_social_certificado: cert.razao_social_certificado,
-      validade_fim: cert.validade_fim,
-      dias_para_vencer: cert.dias_para_vencer,
-      status: cert.status,
-      principal: cert.principal,
-      nuvem_fiscal_sync: cert.nuvem_fiscal_sync,
-      uploaded_at: cert.uploaded_at,
+    // Adicionar dias restantes
+    const certificadosComDias = resultado.results.map((cert: any) => ({
+      ...cert,
+      dias_restantes: Math.ceil(
+        (new Date(cert.data_validade).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      ),
+      status: cert.ativo 
+        ? (new Date(cert.data_validade) > new Date() ? 'valido' : 'vencido')
+        : 'inativo'
     }));
     
-    return c.json({ data: certificados, total: certificados.length });
+    return c.json({
+      success: true,
+      data: certificadosComDias
+    });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    console.error('[CERTIFICADOS] Erro ao listar:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao listar certificados'
+    }, 500);
   }
 });
 
-/**
- * Verifica se empresa tem certificado válido
- * GET /certificados/:cnpj/status
- */
-certificados.get('/:cnpj/status', async (c) => {
+// GET /certificados/:id - Detalhes de um certificado
+certificados.get('/:id', requirePermission('fiscal', 'consultar'), async (c) => {
+  const usuario = c.get('usuario');
+  const { id } = c.req.param();
+  
   try {
-    const { cnpj } = c.req.param();
-    const certificado = await buscarCertificado(c.env.DB, cnpj);
+    const certificado = await c.env.DB.prepare(`
+      SELECT 
+        id, empresa_id, tipo, arquivo_nome,
+        cnpj, razao_social, data_validade, data_upload,
+        sincronizado_nuvem_fiscal, nuvem_fiscal_id, ativo,
+        created_at, updated_at
+      FROM empresas_certificados 
+      WHERE id = ? AND empresa_id = ?
+    `).bind(id, usuario.empresa_id).first();
     
     if (!certificado) {
       return c.json({
-        cnpj,
-        possui_certificado: false,
-        pode_emitir_nfe: false,
-        mensagem: 'Certificado digital não cadastrado',
-      });
+        success: false,
+        error: 'Certificado não encontrado'
+      }, 404);
     }
-    
-    const podeEmitir = certificado.status === 'ativo' && 
-                       (certificado.dias_para_vencer || 0) > 0;
-    
-    let mensagem = 'Certificado válido';
-    if (certificado.status === 'expirado') {
-      mensagem = 'Certificado expirado';
-    } else if (certificado.status === 'pendente') {
-      mensagem = 'Certificado aguardando validação';
-    } else if ((certificado.dias_para_vencer || 0) <= 30) {
-      mensagem = `Certificado vence em ${certificado.dias_para_vencer} dias`;
-    }
-    
-    return c.json({
-      cnpj,
-      possui_certificado: true,
-      pode_emitir_nfe: podeEmitir,
-      status: certificado.status,
-      validade_fim: certificado.validade_fim,
-      dias_para_vencer: certificado.dias_para_vencer,
-      sincronizado_nuvem_fiscal: certificado.nuvem_fiscal_sync,
-      mensagem,
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ===== ALERTAS =====
-
-/**
- * Lista certificados próximos do vencimento
- * GET /certificados/alertas/vencimento?dias=30&tenant_id=xxx
- */
-certificados.get('/alertas/vencimento', async (c) => {
-  try {
-    const { dias, tenant_id } = c.req.query();
-    const diasNum = dias ? parseInt(dias) : 30;
-    
-    const lista = await listarCertificadosVencendo(c.env.DB, diasNum, tenant_id);
-    
-    const alertas = lista.map(cert => ({
-      cnpj: cert.cnpj,
-      razao_social: cert.razao_social_certificado,
-      validade_fim: cert.validade_fim,
-      dias_para_vencer: cert.dias_para_vencer,
-      status: cert.status,
-      urgencia: (cert.dias_para_vencer || 0) <= 7 ? 'critica' : 
-                (cert.dias_para_vencer || 0) <= 15 ? 'alta' : 'media',
-    }));
-    
-    return c.json({ 
-      data: alertas, 
-      total: alertas.length,
-      periodo_dias: diasNum,
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ===== AÇÕES =====
-
-/**
- * Define certificado como principal
- * PUT /certificados/:cnpj/:id/principal
- */
-certificados.put('/:cnpj/:id/principal', async (c) => {
-  try {
-    const { cnpj, id } = c.req.param();
-    
-    const sucesso = await definirCertificadoPrincipal(c.env.DB, cnpj, parseInt(id));
-    
-    if (!sucesso) {
-      return c.json({ error: 'Certificado não encontrado' }, 404);
-    }
-    
-    return c.json({ success: true, message: 'Certificado definido como principal' });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Remove certificado
- * DELETE /certificados/:cnpj/:id
- */
-certificados.delete('/:cnpj/:id', async (c) => {
-  try {
-    const { cnpj, id } = c.req.param();
-    
-    const sucesso = await removerCertificado(
-      c.env.DB,
-      c.env.CERTIFICADOS_BUCKET,
-      cnpj,
-      parseInt(id)
-    );
-    
-    if (!sucesso) {
-      return c.json({ error: 'Certificado não encontrado' }, 404);
-    }
-    
-    return c.json({ success: true, message: 'Certificado removido' });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-/**
- * Sincroniza certificado com Nuvem Fiscal
- * POST /certificados/:cnpj/sincronizar
- */
-certificados.post('/:cnpj/sincronizar', async (c) => {
-  try {
-    const { cnpj } = c.req.param();
-    
-    if (!c.env.NUVEM_FISCAL_CLIENT_ID) {
-      return c.json({ error: 'Nuvem Fiscal não configurada' }, 400);
-    }
-    
-    // Obter certificado com senha descriptografada
-    const certData = await obterCertificadoParaUso(
-      c.env.DB,
-      c.env.CERTIFICADOS_BUCKET,
-      c.env.ENCRYPTION_KEY,
-      cnpj
-    );
-    
-    if (!certData) {
-      return c.json({ error: 'Certificado não encontrado ou inválido' }, 404);
-    }
-    
-    // Re-upload para Nuvem Fiscal
-    // (reutiliza a função interna do service)
-    // Por simplicidade, vamos apenas marcar como sincronizado
-    // Em produção, chamaríamos a função de sincronização
-    
-    await c.env.DB
-      .prepare(`
-        UPDATE empresas_certificados 
-        SET nuvem_fiscal_sync = 1, 
-            nuvem_fiscal_sync_at = datetime('now'),
-            updated_at = datetime('now')
-        WHERE cnpj = ? AND principal = 1
-      `)
-      .bind(cnpj.replace(/\D/g, ''))
-      .run();
-    
-    return c.json({ success: true, message: 'Certificado sincronizado com Nuvem Fiscal' });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// ===== JOBS =====
-
-/**
- * Atualiza status de todos os certificados (job diário)
- * POST /certificados/jobs/atualizar-status
- */
-certificados.post('/jobs/atualizar-status', async (c) => {
-  try {
-    // Verificar se é chamada autorizada (cron ou admin)
-    const authHeader = c.req.header('Authorization');
-    const cronSecret = c.req.header('X-Cron-Secret');
-    
-    // Em produção, validar autenticação adequadamente
-    
-    const resultado = await atualizarStatusCertificados(c.env.DB);
     
     return c.json({
       success: true,
-      message: 'Status dos certificados atualizado',
-      ...resultado,
+      data: {
+        ...certificado,
+        dias_restantes: Math.ceil(
+          (new Date(certificado.data_validade as string).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        )
+      }
     });
   } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+    console.error('[CERTIFICADOS] Erro ao buscar:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao buscar certificado'
+    }, 500);
+  }
+});
+
+// DELETE /certificados/:id - Remover certificado
+certificados.delete('/:id', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  const { id } = c.req.param();
+  
+  try {
+    // Verificar se existe
+    const certificado = await c.env.DB.prepare(`
+      SELECT * FROM empresas_certificados 
+      WHERE id = ? AND empresa_id = ?
+    `).bind(id, usuario.empresa_id).first();
+    
+    if (!certificado) {
+      return c.json({
+        success: false,
+        error: 'Certificado não encontrado'
+      }, 404);
+    }
+    
+    const service = new CertificadoService({
+      DB: c.env.DB,
+      R2_CERTIFICADOS: c.env.R2_CERTIFICADOS,
+      ENCRYPTION_KEY: c.env.ENCRYPTION_KEY
+    });
+    
+    await service.remover(id, usuario.empresa_id);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'remover_certificado',
+      tabela: 'empresas_certificados',
+      registro_id: id,
+      dados_anteriores: { cnpj: certificado.cnpj }
+    });
+    
+    return c.json({
+      success: true,
+      message: 'Certificado removido com sucesso'
+    });
+  } catch (error: any) {
+    console.error('[CERTIFICADOS] Erro ao remover:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao remover certificado'
+    }, 500);
+  }
+});
+
+// =============================================
+// SINCRONIZAÇÃO NUVEM FISCAL
+// =============================================
+
+// POST /certificados/:id/sincronizar - Sincronizar com Nuvem Fiscal
+certificados.post('/:id/sincronizar', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  const { id } = c.req.param();
+  
+  try {
+    const service = new CertificadoService({
+      DB: c.env.DB,
+      R2_CERTIFICADOS: c.env.R2_CERTIFICADOS,
+      ENCRYPTION_KEY: c.env.ENCRYPTION_KEY,
+      NUVEM_FISCAL_CLIENT_ID: c.env.NUVEM_FISCAL_CLIENT_ID,
+      NUVEM_FISCAL_CLIENT_SECRET: c.env.NUVEM_FISCAL_CLIENT_SECRET
+    });
+    
+    const resultado = await service.sincronizarNuvemFiscal(id, usuario.empresa_id);
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: 'sincronizar_certificado',
+      tabela: 'empresas_certificados',
+      registro_id: id,
+      dados_novos: { nuvem_fiscal_id: resultado.nuvem_fiscal_id }
+    });
+    
+    return c.json({
+      success: true,
+      data: resultado,
+      message: 'Certificado sincronizado com Nuvem Fiscal'
+    });
+  } catch (error: any) {
+    console.error('[CERTIFICADOS] Erro ao sincronizar:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao sincronizar certificado'
+    }, 500);
+  }
+});
+
+// =============================================
+// VALIDAÇÃO E STATUS
+// =============================================
+
+// POST /certificados/:id/validar - Validar certificado
+certificados.post('/:id/validar', requirePermission('fiscal', 'consultar'), async (c) => {
+  const usuario = c.get('usuario');
+  const { id } = c.req.param();
+  const { senha } = await c.req.json();
+  
+  try {
+    const service = new CertificadoService({
+      DB: c.env.DB,
+      R2_CERTIFICADOS: c.env.R2_CERTIFICADOS,
+      ENCRYPTION_KEY: c.env.ENCRYPTION_KEY
+    });
+    
+    const resultado = await service.validar(id, usuario.empresa_id, senha);
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error: any) {
+    console.error('[CERTIFICADOS] Erro ao validar:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao validar certificado'
+    }, 500);
+  }
+});
+
+// GET /certificados/vencimentos - Verificar certificados a vencer
+certificados.get('/vencimentos/proximos', requirePermission('fiscal', 'consultar'), async (c) => {
+  const usuario = c.get('usuario');
+  const { dias = '30' } = c.req.query();
+  
+  try {
+    const resultado = await c.env.DB.prepare(`
+      SELECT 
+        id, cnpj, razao_social, data_validade,
+        julianday(data_validade) - julianday('now') as dias_restantes
+      FROM empresas_certificados 
+      WHERE empresa_id = ?
+        AND ativo = 1
+        AND data_validade BETWEEN date('now') AND date('now', '+' || ? || ' days')
+      ORDER BY data_validade ASC
+    `).bind(usuario.empresa_id, parseInt(dias)).all();
+    
+    return c.json({
+      success: true,
+      data: resultado.results
+    });
+  } catch (error: any) {
+    console.error('[CERTIFICADOS] Erro ao verificar vencimentos:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao verificar vencimentos'
+    }, 500);
+  }
+});
+
+// PATCH /certificados/:id/ativar - Ativar/desativar certificado
+certificados.patch('/:id/ativar', requirePermission('fiscal', 'configurar'), async (c) => {
+  const usuario = c.get('usuario');
+  const { id } = c.req.param();
+  const { ativo } = await c.req.json();
+  
+  try {
+    await c.env.DB.prepare(`
+      UPDATE empresas_certificados 
+      SET ativo = ?, updated_at = datetime('now')
+      WHERE id = ? AND empresa_id = ?
+    `).bind(ativo ? 1 : 0, id, usuario.empresa_id).run();
+    
+    // Registrar auditoria
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: ativo ? 'ativar_certificado' : 'desativar_certificado',
+      tabela: 'empresas_certificados',
+      registro_id: id
+    });
+    
+    return c.json({
+      success: true,
+      message: ativo ? 'Certificado ativado' : 'Certificado desativado'
+    });
+  } catch (error: any) {
+    console.error('[CERTIFICADOS] Erro ao atualizar status:', error);
+    return c.json({
+      success: false,
+      error: error.message || 'Erro ao atualizar status'
+    }, 500);
   }
 });
 
 export default certificados;
-
