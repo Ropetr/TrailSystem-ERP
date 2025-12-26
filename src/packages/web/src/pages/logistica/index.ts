@@ -2,7 +2,7 @@
 // PLANAC ERP - Módulo Logística
 // =============================================
 
-export { EntregasPage } from './EntregasPage';
-export { RotasPage } from './RotasPage';
-export { RastreioPage } from './RastreioPage';
-export { FrotaPage } from './FrotaPage';
+export { default as EntregasPage } from "./EntregasPage";
+export { default as RotasPage } from "./RotasPage";
+export { default as RastreioPage } from "./RastreioPage";
+export { default as FrotaPage } from "./FrotaPage";
