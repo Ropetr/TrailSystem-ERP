@@ -14,12 +14,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "https://planac-erp-api.planacacabamentos.workers.dev",
+        target: "https://trailsystem-api.planacacabamentos.workers.dev",
         changeOrigin: true,
         secure: true,
       },
       "/v1": {
-        target: "https://planac-erp-api.planacacabamentos.workers.dev",
+        target: "https://trailsystem-api.planacacabamentos.workers.dev",
         changeOrigin: true,
         secure: true,
       },
@@ -37,4 +37,3 @@ export default defineConfig({
     },
   },
 });
-
