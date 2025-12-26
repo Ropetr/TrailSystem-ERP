@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrailSystem ERP | Sistema de Gestão Empresarial em Nuvem</title>
+  <meta name="description" content="O ERP mais completo do Brasil. Gerencie vendas, estoque, fiscal, financeiro e muito mais em uma única plataforma SaaS.">
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #DB2827;
+      --primary-dark: #B91C1C;
+      --primary-light: #EF4444;
+      --accent: #3C3641;
+      --accent-dark: #2D2832;
+      --dark: #3C3641;
+      --dark-light: #4A454F;
+      --gray-900: #111827;
+      --gray-800: #1F2937;
+      --gray-700: #374151;
+      --gray-600: #4B5563;
+      --gray-500: #6B7280;
+      --gray-400: #9CA3AF;
+      --gray-300: #D1D5DB;
+      --gray-200: #E5E7EB;
+      --gray-100: #F3F4F6;
+      --gray-50: #F9FAFB;
+      --white: #FFFFFF;
+      --gradient-primary: linear-gradient(135deg, #DB2827 0%, #991B1B 100%);
+      --gradient-dark: linear-gradient(180deg, #3C3641 0%, #4A454F 100%);
+      --gradient-mesh: radial-gradient(at 40% 20%, hsla(228,100%,74%,0.1) 0px, transparent 50%),
+                       radial-gradient(at 80% 0%, hsla(189,100%,56%,0.1) 0px, transparent 50%),
+                       radial-gradient(at 0% 50%, hsla(355,100%,93%,0.1) 0px, transparent 50%),
+                       radial-gradient(at 80% 50%, hsla(340,100%,76%,0.1) 0px, transparent 50%),
+                       radial-gradient(at 0% 100%, hsla(22,100%,77%,0.1) 0px, transparent 50%);
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--white);
+      color: var(--gray-800);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ===== UTILITIES ===== */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      font-size: 1.125rem;
+      color: var(--gray-600);
+      max-width: 600px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 28px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--gradient-primary);
+      color: var(--white);
+      box-shadow: 0 4px 14px 0 rgba(219, 40, 39, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px 0 rgba(219, 40, 39, 0.5);
+    }
+
+    .btn-secondary {
+      background: var(--white);
+      color: var(--dark);
+      border: 2px solid var(--gray-200);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-dark {
+      background: var(--dark);
+      color: var(--white);
+    }
+
+    .btn-dark:hover {
+      background: var(--dark-light);
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--gray-100);
+      transition: all 0.3s ease;
+    }
+
+    header.scrolled {
+      box-shadow: var(--shadow-md);
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+    }
+
+    .logo img {
+      height: 56px;
+      width: auto;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--gray-700);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 80px;
+      background: var(--gradient-mesh), var(--gray-50);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(219, 40, 39, 0.08) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(60, 54, 65, 0.06) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 100px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-700);
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .hero-badge span {
+      background: #DB2827;
+      color: var(--white);
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+    }
+
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--dark);
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease 0.1s forwards;
+      opacity: 0;
+    }
+
+    .hero h1 .gradient-text {
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--gray-600);
+      margin-bottom: 32px;
+      max-width: 540px;
+      animation: fadeInUp 0.6s ease 0.2s forwards;
+      opacity: 0;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.6s ease 0.3s forwards;
+      opacity: 0;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+      margin-top: 48px;
+      animation: fadeInUp 0.6s ease 0.4s forwards;
+      opacity: 0;
+    }
+
+    .hero-stat h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .hero-stat p {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+      margin: 0;
+    }
+
+    .hero-image {
+      position: relative;
+      animation: fadeInRight 0.8s ease 0.3s forwards;
+      opacity: 0;
+    }
+
+    .hero-image img {
+      width: 100%;
+      border-radius: 24px;
+      box-shadow: var(--shadow-2xl);
+    }
+
+    .hero-image::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      background: var(--gradient-primary);
+      border-radius: 32px;
+      z-index: -1;
+      opacity: 0.1;
+    }
+
+    /* Dashboard mockup */
+    .dashboard-mockup {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: var(--shadow-2xl);
+      overflow: hidden;
+      border: 1px solid var(--gray-200);
+    }
+
+    .mockup-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .mockup-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .mockup-dot.red { background: #EF4444; }
+    .mockup-dot.yellow { background: #F59E0B; }
+    .mockup-dot.green { background: #10B981; }
+
+    .mockup-content {
+      padding: 24px;
+      background: var(--gray-50);
+    }
+
+    .mockup-sidebar {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 20px;
+      min-height: 300px;
+    }
+
+    .mockup-menu {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .mockup-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+
+    .mockup-menu-item.active {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    .mockup-menu-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: currentColor;
+      opacity: 0.3;
+    }
+
+    .mockup-main {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .mockup-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .mockup-card {
+      background: var(--gray-50);
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid var(--gray-100);
+    }
+
+    .mockup-card-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .mockup-card-label {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+
+    .mockup-chart {
+      background: var(--gray-50);
+      border-radius: 12px;
+      height: 120px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      padding: 16px;
+      border: 1px solid var(--gray-100);
+    }
+
+    .mockup-bar {
+      width: 24px;
+      background: var(--gradient-primary);
+      border-radius: 4px 4px 0 0;
+      opacity: 0.8;
+    }
+
+    /* ===== FEATURES ===== */
+    .features {
+      padding: 120px 0;
+      background: var(--white);
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .features-header .section-subtitle {
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .feature-card {
+      padding: 32px;
+      background: var(--gray-50);
+      border-radius: 20px;
+      border: 1px solid var(--gray-100);
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary);
+    }
+
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gradient-primary);
+      border-radius: 14px;
+      margin-bottom: 20px;
+    }
+
+    .feature-icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--white);
+    }
+
+    .feature-card h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      color: var(--gray-600);
+      font-size: 0.95rem;
+    }
+
+    /* ===== MODULES ===== */
+    .modules {
+      padding: 120px 0;
+      background: var(--gradient-dark);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modules::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--gradient-mesh);
+      opacity: 0.5;
+    }
+
+    .modules .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    .modules-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .modules-header .section-title {
+      color: var(--white);
+    }
+
+    .modules-header .section-subtitle {
+      color: var(--gray-400);
+      margin: 0 auto;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .module-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .module-card:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-4px);
+    }
+
+    .module-card.core {
+      border-color: rgba(219, 40, 39, 0.4);
+    }
+
+    .module-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .module-icon svg {
+      width: 24px;
+      height: 24px;
+      color: #DB2827;
+    }
+
+    .module-card h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+
+    .module-card p {
+      font-size: 0.85rem;
+      color: var(--gray-400);
+    }
+
+    .module-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: #DB2827;
+      color: var(--white);
+      font-size: 0.7rem;
+      font-weight: 600;
+      border-radius: 100px;
+      margin-top: 12px;
+    }
+
+    /* ===== PRICING ===== */
+    .pricing {
+      padding: 120px 0;
+      background: var(--gray-50);
+    }
+
+    .pricing-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .pricing-header .section-subtitle {
+      margin: 0 auto;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .pricing-card {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 40px;
+      border: 2px solid var(--gray-100);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .pricing-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .pricing-card.featured {
+      border-color: var(--primary);
+      transform: scale(1.05);
+      box-shadow: var(--shadow-2xl);
+    }
+
+    .pricing-card.featured::before {
+      content: 'Mais Popular';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gradient-primary);
+      color: var(--white);
+      padding: 6px 20px;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .pricing-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+
+    .pricing-description {
+      font-size: 0.9rem;
+      color: var(--gray-500);
+      margin-bottom: 24px;
+    }
+
+    .pricing-price {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .pricing-currency {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    .pricing-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--dark);
+      line-height: 1;
+    }
+
+    .pricing-period {
+      font-size: 0.9rem;
+      color: var(--gray-500);
+      margin-bottom: 32px;
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 32px;
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      color: var(--gray-700);
+      font-size: 0.95rem;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .pricing-features li:last-child {
+      border-bottom: none;
+    }
+
+    .pricing-features svg {
+      width: 20px;
+      height: 20px;
+      color: #DB2827;
+      flex-shrink: 0;
+    }
+
+    .pricing-card .btn {
+      width: 100%;
+    }
+
+    /* ===== INTEGRATIONS ===== */
+    .integrations {
+      padding: 120px 0;
+      background: var(--white);
+    }
+
+    .integrations-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    .integrations-header .section-subtitle {
+      margin: 0 auto;
+    }
+
+    .integrations-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .integration-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 24px;
+      background: var(--gray-50);
+      border-radius: 16px;
+      border: 1px solid var(--gray-100);
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .integration-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .integration-icon {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--white);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .integration-icon svg {
+      width: 32px;
+      height: 32px;
+      color: #DB2827;
+    }
+
+    .integration-card h4 {
+      font-weight: 600;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+
+    .integration-card p {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+    }
+
+    /* ===== CTA ===== */
+    .cta {
+      padding: 120px 0;
+      background: var(--gradient-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .cta-content {
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      font-size: 1.25rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 32px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .cta .btn-secondary {
+      background: var(--white);
+      color: var(--primary);
+      border: none;
+    }
+
+    .cta .btn-secondary:hover {
+      background: var(--gray-100);
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      background: var(--dark);
+      color: var(--gray-400);
+      padding: 80px 0 40px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr repeat(3, 1fr);
+      gap: 48px;
+      margin-bottom: 64px;
+    }
+
+    .footer-brand img {
+      height: 56px;
+      margin-bottom: 16px;
+      filter: brightness(0) invert(1);
+    }
+
+    .footer-brand p {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      max-width: 300px;
+    }
+
+    .footer-links h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 20px;
+      font-size: 1rem;
+    }
+
+    .footer-links ul {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 12px;
+    }
+
+    .footer-links a {
+      color: var(--gray-400);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--white);
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 32px;
+      border-top: 1px solid var(--gray-800);
+    }
+
+    .footer-bottom p {
+      font-size: 0.875rem;
+    }
+
+    .footer-social {
+      display: flex;
+      gap: 16px;
+    }
+
+    .footer-social a {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gray-800);
+      border-radius: 10px;
+      color: var(--gray-400);
+      transition: all 0.2s ease;
+    }
+
+    .footer-social a:hover {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInRight {
+      from {
+        opacity: 0;
+        transform: translateX(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1024px) {
+      .hero-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .hero p {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-buttons {
+        justify-content: center;
+      }
+
+      .hero-stats {
+        justify-content: center;
+      }
+
+      .hero-image {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .modules-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .pricing-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+      }
+
+      .pricing-card.featured {
+        transform: none;
+      }
+
+      .integrations-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .nav-actions .btn-secondary {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .hero {
+        padding-top: 100px;
+        min-height: auto;
+        padding-bottom: 60px;
+      }
+
+      .hero-stats {
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .features-grid,
+      .modules-grid,
+      .integrations-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .mockup-sidebar {
+        grid-template-columns: 1fr;
+      }
+
+      .mockup-menu {
+        display: none;
+      }
+
+      .mockup-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+
+      .footer-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .footer-brand p {
+        max-width: 100%;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header id="header">
+    <div class="container">
+      <nav>
+        <a href="#" class="logo">
+          <img src="/images/logo-horizontal.png" alt="TrailSystem">
+        </a>
+        
+        <ul class="nav-links">
+          <li><a href="#features">Recursos</a></li>
+          <li><a href="#modules">Módulos</a></li>
+          <li><a href="#pricing">Planos</a></li>
+          <li><a href="#integrations">Integrações</a></li>
+        </ul>
+        
+        <div class="nav-actions">
+          <a href="https://app.trailsystem.com.br/login" class="btn btn-secondary">Entrar</a>
+          <a href="https://app.trailsystem.com.br/cadastro" class="btn btn-primary">Começar Grátis</a>
+        </div>
+        
+        <button class="mobile-menu-btn">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-text">
+          <div class="hero-badge">
+            <span>Novo</span>
+            Portal do Cliente White-label
+          </div>
+          
+          <h1>
+            O ERP que sua empresa <span class="gradient-text">merece</span>
+          </h1>
+          
+          <p>
+            Sistema de gestão completo em nuvem. Vendas, estoque, fiscal, financeiro e muito mais — tudo integrado em uma plataforma moderna e fácil de usar.
+          </p>
+          
+          <div class="hero-buttons">
+            <a href="https://app.trailsystem.com.br/cadastro" class="btn btn-primary">
+              Teste 14 dias grátis
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+              </svg>
+            </a>
+            <a href="https://app.trailsystem.com.br/cadastro" class="btn btn-secondary">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Ver demonstração
+            </a>
+          </div>
+          
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <h3>16+</h3>
+              <p>Módulos integrados</p>
+            </div>
+            <div class="hero-stat">
+              <h3>99.9%</h3>
+              <p>Uptime garantido</p>
+            </div>
+            <div class="hero-stat">
+              <h3>24/7</h3>
+              <p>Suporte técnico</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="hero-image">
+          <div class="dashboard-mockup">
+            <div class="mockup-header">
+              <span class="mockup-dot red"></span>
+              <span class="mockup-dot yellow"></span>
+              <span class="mockup-dot green"></span>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-sidebar">
+                <div class="mockup-menu">
+                  <div class="mockup-menu-item active">
+                    <span class="mockup-menu-icon"></span>
+                    Dashboard
+                  </div>
+                  <div class="mockup-menu-item">
+                    <span class="mockup-menu-icon"></span>
+                    Vendas
+                  </div>
+                  <div class="mockup-menu-item">
+                    <span class="mockup-menu-icon"></span>
+                    Estoque
+                  </div>
+                  <div class="mockup-menu-item">
+                    <span class="mockup-menu-icon"></span>
+                    Financeiro
+                  </div>
+                  <div class="mockup-menu-item">
+                    <span class="mockup-menu-icon"></span>
+                    Fiscal
+                  </div>
+                </div>
+                <div class="mockup-main">
+                  <div class="mockup-cards">
+                    <div class="mockup-card">
+                      <div class="mockup-card-value">R$ 47.8k</div>
+                      <div class="mockup-card-label">Vendas Hoje</div>
+                    </div>
+                    <div class="mockup-card">
+                      <div class="mockup-card-value">1.247</div>
+                      <div class="mockup-card-label">Pedidos</div>
+                    </div>
+                    <div class="mockup-card">
+                      <div class="mockup-card-value">98.5%</div>
+                      <div class="mockup-card-label">Conversão</div>
+                    </div>
+                  </div>
+                  <div class="mockup-chart">
+                    <div class="mockup-bar" style="height: 40%"></div>
+                    <div class="mockup-bar" style="height: 65%"></div>
+                    <div class="mockup-bar" style="height: 45%"></div>
+                    <div class="mockup-bar" style="height: 80%"></div>
+                    <div class="mockup-bar" style="height: 55%"></div>
+                    <div class="mockup-bar" style="height: 90%"></div>
+                    <div class="mockup-bar" style="height: 70%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="features-header">
+        <h2 class="section-title">Por que escolher o TrailSystem?</h2>
+        <p class="section-subtitle">
+          Desenvolvido com as melhores tecnologias para oferecer performance, segurança e escalabilidade.
+        </p>
+      </div>
+      
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+            </svg>
+          </div>
+          <h3>100% em Nuvem</h3>
+          <p>Acesse de qualquer lugar, a qualquer momento. Sem instalações, sem servidores locais, sem preocupações.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <h3>Segurança Máxima</h3>
+          <p>Criptografia de ponta, backups automáticos e certificados digitais protegidos. Seus dados estão seguros.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+          </div>
+          <h3>Ultra Rápido</h3>
+          <p>Infraestrutura global com servidores edge. Resposta instantânea em qualquer operação.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3>API Completa</h3>
+          <p>Integre com qualquer sistema. API RESTful documentada para automações e integrações customizadas.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+            </svg>
+          </div>
+          <h3>Personalizável</h3>
+          <p>Adapte o sistema às suas necessidades. Campos customizados, relatórios e dashboards sob medida.</p>
+        </div>
+        
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
+          <h3>Multi-Empresa</h3>
+          <p>Gerencie matriz e filiais em uma única conta. Consolide dados e simplifique a gestão.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modules -->
+  <section class="modules" id="modules">
+    <div class="container">
+      <div class="modules-header">
+        <h2 class="section-title">Módulos para toda sua operação</h2>
+        <p class="section-subtitle">
+          Escolha apenas o que precisa. Comece simples e expanda conforme seu negócio cresce.
+        </p>
+      </div>
+      
+      <div class="modules-grid">
+        <div class="module-card core">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h4>Cadastros</h4>
+          <p>Clientes, fornecedores e produtos</p>
+          <span class="module-badge">Incluso</span>
+        </div>
+        
+        <div class="module-card core">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <h4>Comercial</h4>
+          <p>Orçamentos e vendas</p>
+          <span class="module-badge">Incluso</span>
+        </div>
+        
+        <div class="module-card core">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+          <h4>Estoque</h4>
+          <p>Movimentações e inventário</p>
+          <span class="module-badge">Incluso</span>
+        </div>
+        
+        <div class="module-card core">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg>
+          </div>
+          <h4>Fiscal</h4>
+          <p>NF-e, NFC-e, NFS-e</p>
+          <span class="module-badge">Incluso</span>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h4>Financeiro</h4>
+          <p>Contas a pagar e receber</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+          </div>
+          <h4>Compras</h4>
+          <p>Cotações e pedidos</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+          </div>
+          <h4>Logística</h4>
+          <p>Entregas e rotas</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <h4>CRM</h4>
+          <p>Leads e oportunidades</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <h4>RH</h4>
+          <p>Funcionários e folha</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          </div>
+          <h4>Contábil</h4>
+          <p>DRE e balanço</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          </div>
+          <h4>Patrimônio</h4>
+          <p>Ativos e depreciação</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+          </div>
+          <h4>E-commerce</h4>
+          <p>Integração com lojas</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          </div>
+          <h4>Suporte</h4>
+          <p>Tickets e base de conhecimento</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <h4>BI & Relatórios</h4>
+          <p>Dashboards e indicadores</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <h4>Portal do Cliente</h4>
+          <p>White-label para seus clientes</p>
+        </div>
+        
+        <div class="module-card">
+          <div class="module-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </div>
+          <h4>Configurações</h4>
+          <p>Usuários e permissões</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="pricing-header">
+        <h2 class="section-title">Planos que cabem no seu bolso</h2>
+        <p class="section-subtitle">
+          Comece com 14 dias grátis. Sem cartão de crédito. Cancele quando quiser.
+        </p>
+      </div>
+      
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3 class="pricing-name">Starter</h3>
+          <p class="pricing-description">Ideal para pequenos negócios</p>
+          
+          <div class="pricing-price">
+            <span class="pricing-currency">R$</span>
+            <span class="pricing-value">299</span>
+          </div>
+          <p class="pricing-period">por mês</p>
+          
+          <ul class="pricing-features">
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Até 3 usuários
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              1 empresa
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              5 GB de armazenamento
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              4 módulos inclusos
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Suporte por email
+            </li>
+          </ul>
+          
+          <a href="https://app.trailsystem.com.br/cadastro" class="btn btn-secondary">Começar agora</a>
+        </div>
+        
+        <div class="pricing-card featured">
+          <h3 class="pricing-name">Professional</h3>
+          <p class="pricing-description">Para empresas em crescimento</p>
+          
+          <div class="pricing-price">
+            <span class="pricing-currency">R$</span>
+            <span class="pricing-value">599</span>
+          </div>
+          <p class="pricing-period">por mês</p>
+          
+          <ul class="pricing-features">
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Até 10 usuários
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              3 empresas
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              20 GB de armazenamento
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Todos os módulos
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Suporte prioritário
+            </li>
+          </ul>
+          
+          <a href="https://app.trailsystem.com.br/cadastro" class="btn btn-primary">Começar agora</a>
+        </div>
+        
+        <div class="pricing-card">
+          <h3 class="pricing-name">Enterprise</h3>
+          <p class="pricing-description">Para grandes operações</p>
+          
+          <div class="pricing-price">
+            <span class="pricing-currency">R$</span>
+            <span class="pricing-value">1.199</span>
+          </div>
+          <p class="pricing-period">por mês</p>
+          
+          <ul class="pricing-features">
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Até 50 usuários
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              10 empresas
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              100 GB de armazenamento
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Todos os módulos + API
+            </li>
+            <li>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              Suporte 24/7 + Gerente
+            </li>
+          </ul>
+          
+          <a href="https://wa.me/5543999999999?text=Olá! Gostaria de saber mais sobre o TrailSystem ERP" class="btn btn-dark" target="_blank">Falar com vendas</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Integrations -->
+  <section class="integrations" id="integrations">
+    <div class="container">
+      <div class="integrations-header">
+        <h2 class="section-title">Integrações poderosas</h2>
+        <p class="section-subtitle">
+          Conecte com os principais serviços do mercado para automatizar sua operação.
+        </p>
+      </div>
+      
+      <div class="integrations-grid">
+        <div class="integration-card">
+          <div class="integration-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <h4>Nuvem Fiscal</h4>
+          <p>Emissão de NF-e, NFC-e, NFS-e</p>
+        </div>
+        
+        <div class="integration-card">
+          <div class="integration-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          </div>
+          <h4>TecnoSpeed</h4>
+          <p>Boletos e PIX</p>
+        </div>
+        
+        <div class="integration-card">
+          <div class="integration-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+          <h4>CNPJá</h4>
+          <p>Consulta CNPJ e CEP</p>
+        </div>
+        
+        <div class="integration-card">
+          <div class="integration-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          </div>
+          <h4>IBPT</h4>
+          <p>Alíquotas fiscais</p>
+        </div>
+        
+        <div class="integration-card">
+          <div class="integration-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+          </div>
+          <h4>Nuvemshop</h4>
+          <p>E-commerce integrado</p>
+        </div>
+        
+        <div class="integration-card">
+          <div class="integration-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          </div>
+          <h4>WhatsApp</h4>
+          <p>Mensagens automáticas</p>
+        </div>
+        
+        <div class="integration-card">
+          <div class="integration-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+          <h4>Cosmos</h4>
+          <p>Catálogo de produtos</p>
+        </div>
+        
+        <div class="integration-card">
+          <div class="integration-icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <h4>eSocial</h4>
+          <p>Eventos trabalhistas</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Pronto para transformar sua gestão?</h2>
+        <p>Junte-se a centenas de empresas que já simplificaram suas operações com o TrailSystem.</p>
+        <div class="cta-buttons">
+          <a href="https://app.trailsystem.com.br/cadastro" class="btn btn-secondary">
+            Teste grátis por 14 dias
+          </a>
+          <a href="https://wa.me/5543999999999?text=Gostaria de agendar uma demonstração do TrailSystem" class="btn btn-dark" target="_blank">
+            Agendar demonstração
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="/images/logo-horizontal.png" alt="TrailSystem">
+          <p>O sistema de gestão empresarial mais completo do Brasil. Simples, poderoso e acessível.</p>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Produto</h4>
+          <ul>
+            <li><a href="#features">Recursos</a></li>
+            <li><a href="#modules">Módulos</a></li>
+            <li><a href="#pricing">Planos</a></li>
+            <li><a href="#integrations">Integrações</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Empresa</h4>
+          <ul>
+            <li><a href="#">Sobre nós</a></li>
+            <li><a href="#">Blog</a></li>
+            <li><a href="#">Carreiras</a></li>
+            <li><a href="#">Contato</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-links">
+          <h4>Suporte</h4>
+          <ul>
+            <li><a href="#">Central de Ajuda</a></li>
+            <li><a href="#">Documentação</a></li>
+            <li><a href="#">Status</a></li>
+            <li><a href="#">API</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2025 TrailSystem. Todos os direitos reservados.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Instagram">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+          </a>
+          <a href="#" aria-label="LinkedIn">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+            </svg>
+          </a>
+          <a href="#" aria-label="YouTube">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Header scroll effect
+    const header = document.getElementById('header');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Animation on scroll
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.feature-card, .module-card, .pricing-card, .integration-card').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>
