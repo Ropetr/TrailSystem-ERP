@@ -1,12 +1,12 @@
 // =============================================
-// PLANAC ERP - Auth Service
+// TRAILSYSTEM ERP - Auth Service
 // =============================================
 
 import api from "./api";
 import type { LoginRequest, LoginResponse, Usuario } from "@/types";
 
 // URL base do auth (diferente do /v1 das outras rotas)
-const AUTH_BASE = "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
+const AUTH_BASE = "https://trailsystem-erp-api.trailsystemacabamentos.workers.dev/api/auth";
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -21,7 +21,7 @@ export const authService = {
     if (data.success && data.token) {
       api.setToken(data.token);
       if (data.usuario) {
-        localStorage.setItem("planac_user", JSON.stringify(data.usuario));
+        localStorage.setItem("trailsystem_user", JSON.stringify(data.usuario));
       }
     }
     
@@ -42,8 +42,8 @@ export const authService = {
       // Ignorar erro de logout
     } finally {
       api.setToken(null);
-      localStorage.removeItem("planac_user");
-      localStorage.removeItem("planac_refresh");
+      localStorage.removeItem("trailsystem_user");
+      localStorage.removeItem("trailsystem_refresh");
     }
   },
 
@@ -82,7 +82,7 @@ export const authService = {
   },
 
   getStoredUser(): Usuario | null {
-    const stored = localStorage.getItem("planac_user");
+    const stored = localStorage.getItem("trailsystem_user");
     return stored ? JSON.parse(stored) : null;
   },
 };
