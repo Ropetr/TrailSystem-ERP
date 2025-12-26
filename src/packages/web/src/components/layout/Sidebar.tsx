@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - Sidebar com Módulo CADASTROS
+// TRAILSYSTEM ERP - Sidebar com Módulo CADASTROS
 // Aprovado: 15/12/2025 - 57 Especialistas DEV.com
 // Ajustado: 16/12/2025 - Flyout alinhado com item selecionado
 // Corrigido: 18/12/2025 - Fix hover do submenu (delay e ponte)
@@ -485,7 +485,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
               <span className="text-white font-bold text-lg">P</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">PLANAC</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">TRAILSYSTEM</span>
           </NavLink>
         </div>
 
