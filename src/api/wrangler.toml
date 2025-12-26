@@ -1,0 +1,122 @@
+# =============================================
+# 🚀 PLANAC ERP - API Unificada
+# =============================================
+# Arquivo: src/api/wrangler.toml
+# Atualizado: 26/12/2025 - Unificação das APIs
+# 
+# MIGRAÇÃO: packages/api → api (API unificada)
+# Todas as 62 rotas + integrações fiscais
+
+name = "planac-erp-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# =============================================
+# VARIÁVEIS DE AMBIENTE
+# =============================================
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br"
+
+# =============================================
+# D1 DATABASES
+# =============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "Planac-erp-database"
+database_id = "12f9a7d5-fe09-4b09-bf72-59bae24d65b2"
+
+[[d1_databases]]
+binding = "DB_IBPT"
+database_name = "planac-erp-ibpt"
+database_id = "556b7a7a-0ddd-43b7-8b64-f4ea3ebd9966"
+
+# =============================================
+# KV NAMESPACES
+# =============================================
+[[kv_namespaces]]
+binding = "KV_CACHE"
+id = "d053dab81a554dc6961884eae41f75f7"
+
+[[kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "80c6322699844ba1bb99e841f0c84306"
+
+[[kv_namespaces]]
+binding = "KV_RATE_LIMIT"
+id = "f9991a8379d74873a8030e42dad416bd"
+
+# =============================================
+# R2 BUCKETS
+# =============================================
+[[r2_buckets]]
+binding = "R2_STORAGE"
+bucket_name = "planac-erp-storage"
+
+[[r2_buckets]]
+binding = "R2_CERTIFICADOS"
+bucket_name = "planac-erp-certificados"
+
+[[r2_buckets]]
+binding = "R2_DOCS"
+bucket_name = "planac-images"
+
+[[r2_buckets]]
+binding = "R2_BACKUP"
+bucket_name = "planac-cms-media"
+
+# =============================================
+# SCHEDULED JOBS (CRON)
+# =============================================
+# Horários em UTC (subtrair 3h para BRT)
+# 
+# 06:00 UTC (03:00 BRT) - Atualizar status certificados
+# 07:00 UTC (04:00 BRT) - Atualizar tabela IBPT
+# 08:00 UTC Segundas (05:00 BRT) - Relatório semanal
+# 09:00 UTC Dia 1 (06:00 BRT) - Limpeza mensal
+[triggers]
+crons = [
+  "0 6 * * *",
+  "0 7 * * *",
+  "0 8 * * 1",
+  "0 9 1 * *"
+]
+
+# =============================================
+# OBSERVABILITY
+# =============================================
+[observability]
+enabled = true
+
+# =============================================
+# BUILD
+# =============================================
+[build]
+command = "npm run build"
+
+# =============================================
+# SECRETS (Configurar via Dashboard ou CLI)
+# =============================================
+# wrangler secret put JWT_SECRET
+# wrangler secret put ENCRYPTION_KEY
+# wrangler secret put NUVEM_FISCAL_CLIENT_ID
+# wrangler secret put NUVEM_FISCAL_CLIENT_SECRET
+# wrangler secret put EMAIL_API_KEY
+# wrangler secret put WHATSAPP_API_KEY
+
+# =============================================
+# AMBIENTES
+# =============================================
+[env.development]
+name = "planac-erp-api-dev"
+vars = { ENVIRONMENT = "development", LOG_LEVEL = "debug", NUVEM_FISCAL_URL = "https://api.sandbox.nuvemfiscal.com.br" }
+
+[env.staging]
+name = "planac-erp-api-staging"
+vars = { ENVIRONMENT = "staging", LOG_LEVEL = "info", NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br" }
+
+[env.production]
+name = "planac-erp-api"
+vars = { ENVIRONMENT = "production", LOG_LEVEL = "info", NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br" }
