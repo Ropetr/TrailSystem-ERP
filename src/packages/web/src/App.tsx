@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - App
+// TRAILSYSTEM ERP - App
 // Com suporte a tema claro/escuro
 // =============================================
 
