@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - Header
+// TRAILSYSTEM ERP - Header
 // Cores iOS/Samsung Dark Mode
 // =============================================
 
@@ -62,11 +62,11 @@ export function Header({ onMenuClick }: HeaderProps) {
         <div className="relative" ref={profileRef}>
           <button onClick={() => setIsProfileOpen(!isProfileOpen)}
             className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-[#2c2c2e] transition-colors">
-            <div className="w-8 h-8 bg-planac-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-trailsystem-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
               {usuario?.avatar_url ? (
                 <img src={usuario.avatar_url} alt="" className="w-8 h-8 rounded-full" />
               ) : (
-                <Icons.user className="w-5 h-5 text-planac-600 dark:text-red-400" />
+                <Icons.user className="w-5 h-5 text-trailsystem-600 dark:text-red-400" />
               )}
             </div>
             <div className="hidden sm:block text-left">
