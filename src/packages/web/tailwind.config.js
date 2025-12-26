@@ -8,8 +8,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Cores PLANAC - Design System
-        planac: {
+        // Cores TRAILSYSTEM - Design System
+        trailsystem: {
           50: "#fef2f2",
           100: "#fee2e2",
           200: "#fecaca",
