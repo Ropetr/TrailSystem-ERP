@@ -37,34 +37,34 @@ const Icons = {
 // Categorias do módulo Cadastros
 const cadastroCategorias = [
   { id: 'entidades', label: 'Entidades', items: [
-    { label: 'Clientes', path: '/cadastros/clientes' },
-    { label: 'Fornecedores', path: '/cadastros/fornecedores' },
-    { label: 'Transportadoras', path: '/cadastros/transportadoras' },
-    { label: 'Colaboradores', path: '/cadastros/colaboradores' },
-    { label: 'Parceiros de Negócio', path: '/cadastros/parceiros' },
+    { label: 'Clientes', path: '/cadastros/entidades/clientes' },
+    { label: 'Fornecedores', path: '/cadastros/entidades/fornecedores' },
+    { label: 'Transportadoras', path: '/cadastros/entidades/transportadoras' },
+    { label: 'Colaboradores', path: '/cadastros/entidades/colaboradores' },
+    { label: 'Parceiros de Negócio', path: '/cadastros/entidades/parceiros' },
   ]},
   { id: 'produtos', label: 'Produtos', items: [
-    { label: 'Produtos e Serviços', path: '/cadastros/produtos' },
+    { label: 'Produtos e Serviços', path: '/cadastros/produtos/lista' },
   ]},
   { id: 'empresa', label: 'Empresa', items: [
-    { label: 'Matriz & Filiais', path: '/cadastros/empresas' },
+    { label: 'Matriz & Filiais', path: '/cadastros/empresa/filiais' },
   ]},
   { id: 'financeiro', label: 'Financeiro', items: [
-    { label: 'Contas Bancárias', path: '/cadastros/contas-bancarias' },
-    { label: 'Plano de Contas', path: '/cadastros/plano-contas' },
-    { label: 'Centros de Custo', path: '/cadastros/centros-custo' },
-    { label: 'Condições de Pagamento', path: '/cadastros/condicoes-pagamento' },
+    { label: 'Contas Bancárias', path: '/cadastros/financeiro/contas-bancarias' },
+    { label: 'Plano de Contas', path: '/cadastros/financeiro/plano-contas' },
+    { label: 'Centros de Custo', path: '/cadastros/financeiro/centros-custo' },
+    { label: 'Condições de Pagamento', path: '/cadastros/financeiro/condicoes-pagamento' },
   ]},
   { id: 'comercial', label: 'Comercial', items: [
-    { label: 'Tabelas de Preço', path: '/cadastros/tabelas-preco' },
+    { label: 'Tabelas de Preço', path: '/cadastros/comercial/tabelas-preco' },
   ]},
   { id: 'patrimonio', label: 'Patrimônio', items: [
-    { label: 'Veículos', path: '/cadastros/veiculos' },
-    { label: 'Bens', path: '/cadastros/bens' },
+    { label: 'Veículos', path: '/cadastros/patrimonio/veiculos' },
+    { label: 'Bens', path: '/cadastros/patrimonio/bens' },
   ]},
   { id: 'acessos', label: 'Acessos', items: [
-    { label: 'Usuários', path: '/cadastros/usuarios' },
-    { label: 'Perfis de Usuários', path: '/cadastros/perfis' },
+    { label: 'Usuários', path: '/cadastros/acessos/usuarios' },
+    { label: 'Perfis de Usuários', path: '/cadastros/acessos/perfis' },
   ]},
 ];
 
