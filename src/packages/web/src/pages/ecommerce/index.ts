@@ -2,6 +2,6 @@
 // PLANAC ERP - Módulo E-commerce
 // =============================================
 
-export { IntegracaoPage } from './IntegracaoPage';
-export { PedidosOnlinePage } from './PedidosOnlinePage';
-export { ProdutosOnlinePage } from './ProdutosOnlinePage';
+export { default as IntegracaoPage } from "./IntegracaoPage";
+export { default as PedidosOnlinePage } from "./PedidosOnlinePage";
+export { default as ProdutosOnlinePage } from "./ProdutosOnlinePage";
