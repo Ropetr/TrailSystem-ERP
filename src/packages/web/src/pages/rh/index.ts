@@ -2,6 +2,6 @@
 // PLANAC ERP - Módulo RH
 // =============================================
 
-export { FuncionariosPage } from './FuncionariosPage';
-export { PontoPage } from './PontoPage';
-export { FolhaPage } from './FolhaPage';
+export { default as FuncionariosPage } from "./FuncionariosPage";
+export { default as PontoPage } from "./PontoPage";
+export { default as FolhaPage } from "./FolhaPage";
