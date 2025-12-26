@@ -2,11 +2,11 @@
 // PLANAC ERP - Comercial Pages Export
 // =============================================
 
-export { ClientesPage } from './ClientesPage';
-export { ClienteFormPage } from './ClienteFormPage';
-export { ProdutosPage } from './ProdutosPage';
-export { ProdutoFormPage } from './ProdutoFormPage';
-export { OrcamentosPage } from './OrcamentosPage';
-export { OrcamentoFormPage } from './OrcamentoFormPage';
-export { VendasPage } from './VendasPage';
-export { VendaFormPage } from './VendaFormPage';
+export { default as ClientesPage } from "./ClientesPage";
+export { default as ClienteFormPage } from "./ClienteFormPage";
+export { default as ProdutosPage } from "./ProdutosPage";
+export { default as ProdutoFormPage } from "./ProdutoFormPage";
+export { default as OrcamentosPage } from "./OrcamentosPage";
+export { default as OrcamentoFormPage } from "./OrcamentoFormPage";
+export { default as VendasPage } from "./VendasPage";
+export { default as VendaFormPage } from "./VendaFormPage";
