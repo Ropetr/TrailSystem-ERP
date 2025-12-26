@@ -2,5 +2,5 @@
 // PLANAC ERP - Módulo Patrimônio
 // =============================================
 
-export { AtivosPage } from './AtivosPage';
-export { DepreciacaoPage } from './DepreciacaoPage';
+export { default as AtivosPage } from "./AtivosPage";
+export { default as DepreciacaoPage } from "./DepreciacaoPage";
