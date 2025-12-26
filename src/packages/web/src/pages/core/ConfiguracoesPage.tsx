@@ -1,5 +1,5 @@
 // =============================================
-// PLANAC ERP - Configurações Page
+// TRAILSYSTEM ERP - Configurações Page
 // =============================================
 
 import React, { useState, useEffect } from 'react';
@@ -25,7 +25,7 @@ export function ConfiguracoesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [config, setConfig] = useState({
     // Geral
-    nome_sistema: 'PLANAC ERP',
+    nome_sistema: 'TRAILSYSTEM ERP',
     fuso_horario: 'America/Sao_Paulo',
     formato_data: 'DD/MM/YYYY',
     moeda: 'BRL',
@@ -86,7 +86,7 @@ export function ConfiguracoesPage() {
                 onClick={() => setActiveSection(section.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                   activeSection === section.id
-                    ? 'bg-planac-50 text-planac-600'
+                    ? 'bg-trailsystem-50 text-trailsystem-600'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -150,7 +150,7 @@ export function ConfiguracoesPage() {
               <h2 className="text-lg font-semibold text-gray-900">Dados da Empresa</h2>
               <p className="text-gray-500">
                 Configure os dados da empresa padrão em{' '}
-                <a href="/empresas" className="text-planac-600 hover:underline">
+                <a href="/empresas" className="text-trailsystem-600 hover:underline">
                   Cadastro de Empresas
                 </a>
               </p>
@@ -293,7 +293,7 @@ export function ConfiguracoesPage() {
                   id="dois_fatores"
                   checked={config.dois_fatores as boolean}
                   onChange={(e) => handleChange('dois_fatores', e.target.checked)}
-                  className="w-4 h-4 text-planac-500 border-gray-300 rounded"
+                  className="w-4 h-4 text-trailsystem-500 border-gray-300 rounded"
                 />
                 <label htmlFor="dois_fatores" className="text-sm font-medium text-gray-700">
                   Exigir autenticação em dois fatores (2FA)
