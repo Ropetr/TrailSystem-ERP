@@ -2,10 +2,7 @@
 # 🚀 PLANAC ERP - API Unificada
 # =============================================
 # Arquivo: src/api/wrangler.toml
-# Atualizado: 26/12/2025 - Unificação das APIs
-# 
-# MIGRAÇÃO: packages/api → api (API unificada)
-# Todas as 62 rotas + integrações fiscais
+# Atualizado: 27/12/2025 - Corrigido bindings
 
 name = "planac-erp-api"
 main = "src/index.ts"
@@ -42,48 +39,42 @@ database_name = "planac-erp-ibpt"
 database_id = "556b7a7a-0ddd-43b7-8b64-f4ea3ebd9966"
 
 # =============================================
-# KV NAMESPACES
+# KV NAMESPACES (corrigido - sem prefixo KV_)
 # =============================================
 [[kv_namespaces]]
-binding = "KV_CACHE"
+binding = "CACHE"
 id = "d053dab81a554dc6961884eae41f75f7"
 
 [[kv_namespaces]]
-binding = "KV_SESSIONS"
+binding = "SESSIONS"
 id = "80c6322699844ba1bb99e841f0c84306"
 
 [[kv_namespaces]]
-binding = "KV_RATE_LIMIT"
+binding = "RATE_LIMIT"
 id = "f9991a8379d74873a8030e42dad416bd"
 
 # =============================================
 # R2 BUCKETS
 # =============================================
 [[r2_buckets]]
-binding = "R2_STORAGE"
+binding = "STORAGE"
 bucket_name = "planac-erp-storage"
 
 [[r2_buckets]]
-binding = "R2_CERTIFICADOS"
+binding = "CERTIFICADOS"
 bucket_name = "planac-erp-certificados"
 
 [[r2_buckets]]
-binding = "R2_DOCS"
+binding = "DOCS"
 bucket_name = "planac-images"
 
 [[r2_buckets]]
-binding = "R2_BACKUP"
+binding = "BACKUP"
 bucket_name = "planac-cms-media"
 
 # =============================================
 # SCHEDULED JOBS (CRON)
 # =============================================
-# Horários em UTC (subtrair 3h para BRT)
-# 
-# 06:00 UTC (03:00 BRT) - Atualizar status certificados
-# 07:00 UTC (04:00 BRT) - Atualizar tabela IBPT
-# 08:00 UTC Segundas (05:00 BRT) - Relatório semanal
-# 09:00 UTC Dia 1 (06:00 BRT) - Limpeza mensal
 [triggers]
 crons = [
   "0 6 * * *",
@@ -96,23 +87,21 @@ crons = [
 # AMBIENTES
 # =============================================
 
-# Desenvolvimento (local)
 [env.development]
 name = "planac-erp-api-dev"
 [env.development.vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "debug"
 
-# Staging
 [env.staging]
 name = "planac-erp-api-staging"
 [env.staging.vars]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
 
-# Produção
 [env.production]
 name = "planac-erp-api"
 [env.production.vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"
+
