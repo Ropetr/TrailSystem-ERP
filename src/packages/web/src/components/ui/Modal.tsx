@@ -2,7 +2,7 @@
 // PLANAC ERP - Modal Component
 // =============================================
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Icons } from './Icons';
 
 interface ModalProps {
