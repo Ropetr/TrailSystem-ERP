@@ -7,6 +7,17 @@ import { z } from 'zod';
 import type { Bindings, Variables } from '../types';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { registrarAuditoria } from '../utils/auditoria';
+import {
+  consultarOfficePorCnpj,
+  consultarSimplesPorCnpj,
+  consultarCnpjCompleto,
+  consultarCep,
+} from '../services/cnpja';
+import {
+  consultarCpfCompleto,
+  consultarSaldo,
+  CPFCNPJ_PACOTES,
+} from '../services/cpfcnpj';
 
 const fornecedores = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -377,6 +388,174 @@ fornecedores.post('/:id/avaliar', requirePermission('fornecedores', 'editar'), a
   `).bind(avaliacao, new Date().toISOString(), id, user.empresa_id).run();
   
   return c.json({ success: true, message: 'Avaliação registrada' });
+});
+
+// ============================================
+// CEP Lookup Endpoint (Free via CNPjá)
+// ============================================
+
+// GET /fornecedores/cep/:cep - Consultar endereço por CEP (gratuito)
+fornecedores.get('/cep/:cep', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cep } = c.req.param();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const startTime = Date.now();
+    const endereco = await consultarCep(cep, token);
+    
+    return c.json({
+      success: true,
+      data: {
+        cep: endereco.zip,
+        logradouro: endereco.street,
+        bairro: endereco.district,
+        cidade: endereco.city,
+        uf: endereco.state,
+        codigo_ibge: endereco.cityIbge?.toString(),
+        codigo_ibge_uf: endereco.stateIbge?.toString(),
+      },
+      tempo_resposta_ms: Date.now() - startTime
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CEP';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// ============================================
+// CNPjá Integration Endpoints (PJ - Fornecedores)
+// ============================================
+
+// GET /fornecedores/cnpja/office/:cnpj - Consultar dados cadastrais via CNPjá
+fornecedores.get('/cnpja/office/:cnpj', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const startTime = Date.now();
+    const office = await consultarOfficePorCnpj(cnpj, token);
+    
+    return c.json({
+      success: true,
+      data: office,
+      tempo_resposta_ms: Date.now() - startTime
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// GET /fornecedores/cnpja/simples/:cnpj - Consultar status do Simples Nacional
+fornecedores.get('/cnpja/simples/:cnpj', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const startTime = Date.now();
+    const simples = await consultarSimplesPorCnpj(cnpj, token);
+    
+    return c.json({
+      success: true,
+      data: simples,
+      tempo_resposta_ms: Date.now() - startTime
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// GET /fornecedores/cnpja/:cnpj - Consulta completa com sugestão de fornecedor
+fornecedores.get('/cnpja/:cnpj', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+  const user = c.get('user');
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await consultarCnpjCompleto(
+      cnpj,
+      token,
+      c.env.DB,
+      user.empresa_id
+    );
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// ============================================
+// CPF.CNPJ Integration Endpoints (PF - Fornecedores)
+// ============================================
+
+// GET /fornecedores/cpf/saldo - Consultar saldo de créditos CPF.CNPJ
+fornecedores.get('/cpf/saldo', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const token = c.env.CPFCNPJ_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CPF.CNPJ não configurado' }, 500);
+  }
+
+  try {
+    const saldo = await consultarSaldo(token, CPFCNPJ_PACOTES.CPF_LOOKALIKE);
+    
+    return c.json({
+      success: true,
+      data: saldo
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar saldo';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// GET /fornecedores/cpf/:cpf - Consulta CPF com sugestão de fornecedor PF
+fornecedores.get('/cpf/:cpf', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cpf } = c.req.param();
+  const user = c.get('user');
+
+  const token = c.env.CPFCNPJ_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CPF.CNPJ não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await consultarCpfCompleto(
+      cpf,
+      token,
+      c.env.DB,
+      user.empresa_id
+    );
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CPF';
+    return c.json({ success: false, error: message }, 400);
+  }
 });
 
 export default fornecedores;
