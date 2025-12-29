@@ -9,6 +9,7 @@ import { authMiddleware, requirePermission } from '../middleware/auth';
 import { registrarAuditoria } from '../utils/auditoria';
 import {
   buscarPorGtin,
+  buscarPorNcm,
   buscarEEnriquecer,
   vincularProduto,
   buscarVinculo,
@@ -18,6 +19,7 @@ import {
   obterEstatisticas,
   validarGtin,
   extrairEnriquecimento,
+  importarProdutoCosmos,
   type CosmosConfig,
 } from '../services/cosmos';
 
@@ -783,6 +785,136 @@ produtos.put('/cosmos/config', requirePermission('produtos', 'editar'), async (c
   });
 
   return c.json({ success: true, message: 'Configuração Cosmos salva' });
+});
+
+// GET /produtos/cosmos/ncm/:ncm - Buscar produtos por NCM
+produtos.get('/cosmos/ncm/:ncm', requirePermission('produtos', 'visualizar'), async (c) => {
+  const user = c.get('user');
+  const { ncm } = c.req.param();
+  const { pagina, itens_por_pagina, descricao, marca } = c.req.query();
+
+  const cosmosToken = c.env.COSMOS_TOKEN;
+  if (!cosmosToken) {
+    return c.json({ success: false, error: 'Token Cosmos não configurado' }, 500);
+  }
+
+  const configDb = await obterConfig(c.env.DB, user.empresa_id);
+  const config: CosmosConfig = {
+    token: cosmosToken,
+    ambiente: configDb?.ambiente || 'producao',
+  };
+
+  const resultado = await buscarPorNcm(config, {
+    ncm,
+    pagina: pagina ? parseInt(pagina) : 1,
+    itens_por_pagina: itens_por_pagina ? parseInt(itens_por_pagina) : 30,
+    descricao,
+    marca,
+  }, c.env.DB, user.empresa_id);
+
+  if (resultado.status === 'erro') {
+    return c.json({ success: false, error: resultado.erro }, 500);
+  }
+
+  if (resultado.status === 'nao_encontrado') {
+    return c.json({ 
+      success: false, 
+      error: 'Nenhum produto encontrado com este NCM',
+      tempo_resposta_ms: resultado.tempo_resposta_ms
+    }, 404);
+  }
+
+  return c.json({
+    success: true,
+    data: {
+      produtos: resultado.produtos,
+      ncm_info: resultado.ncm_info,
+      paginacao: {
+        pagina_atual: resultado.pagina_atual,
+        itens_por_pagina: resultado.itens_por_pagina,
+        total_paginas: resultado.total_paginas,
+        total_produtos: resultado.total_produtos,
+      },
+      tempo_resposta_ms: resultado.tempo_resposta_ms
+    }
+  });
+});
+
+// POST /produtos/cosmos/importar - Importar produto do Cosmos para o cadastro
+produtos.post('/cosmos/importar', requirePermission('produtos', 'criar'), async (c) => {
+  const user = c.get('user');
+  const body = await c.req.json();
+  const { gtin, codigo, unidade_medida_id, categoria_id, preco_custo, margem_lucro, preco_venda, estoque_minimo } = body;
+
+  if (!gtin) {
+    return c.json({ success: false, error: 'GTIN é obrigatório' }, 400);
+  }
+
+  if (!unidade_medida_id) {
+    return c.json({ success: false, error: 'Unidade de medida é obrigatória' }, 400);
+  }
+
+  const cosmosToken = c.env.COSMOS_TOKEN;
+  if (!cosmosToken) {
+    return c.json({ success: false, error: 'Token Cosmos não configurado' }, 500);
+  }
+
+  const produtoExistente = await c.env.DB.prepare(
+    'SELECT id FROM produtos WHERE empresa_id = ? AND (gtin = ? OR codigo_barras = ?)'
+  ).bind(user.empresa_id, gtin, gtin).first();
+
+  if (produtoExistente) {
+    return c.json({ success: false, error: 'Já existe um produto com este GTIN' }, 409);
+  }
+
+  const configDb = await obterConfig(c.env.DB, user.empresa_id);
+  const config: CosmosConfig = {
+    token: cosmosToken,
+    ambiente: configDb?.ambiente || 'producao',
+    preencher_descricao: true,
+    preencher_ncm: true,
+    preencher_cest: true,
+    preencher_marca: true,
+    preencher_peso: true,
+    preencher_dimensoes: true,
+  };
+
+  const resultado = await importarProdutoCosmos(c.env.DB, user.empresa_id, config, gtin, {
+    codigo,
+    unidade_medida_id,
+    categoria_id,
+    preco_custo,
+    margem_lucro,
+    preco_venda,
+    estoque_minimo,
+  });
+
+  if (!resultado.sucesso) {
+    return c.json({ success: false, error: resultado.erro }, 400);
+  }
+
+  await registrarAuditoria(c.env.DB, {
+    empresa_id: user.empresa_id,
+    usuario_id: user.id,
+    acao: 'criar',
+    tabela: 'produtos',
+    registro_id: resultado.produto_id!,
+    dados_novos: { origem: 'cosmos', gtin }
+  });
+
+  const produtoCriado = await c.env.DB.prepare(`
+    SELECT p.*, c.nome as categoria_nome, um.sigla as unidade_sigla
+    FROM produtos p
+    LEFT JOIN categorias_produtos c ON p.categoria_id = c.id
+    LEFT JOIN unidades_medida um ON p.unidade_medida_id = um.id
+    WHERE p.id = ? AND p.empresa_id = ?
+  `).bind(resultado.produto_id, user.empresa_id).first();
+
+  return c.json({
+    success: true,
+    message: 'Produto importado do Cosmos com sucesso',
+    data: produtoCriado
+  }, 201);
 });
 
 export default produtos;

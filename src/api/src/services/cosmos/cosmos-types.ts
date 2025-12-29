@@ -384,4 +384,85 @@ export interface CosmosLog {
   created_at: string;
 }
 
+/**
+ * Resultado da busca por NCM
+ */
+export interface CosmosBuscaPorNcmResultado {
+  /** Produtos encontrados */
+  produtos: CosmosProduto[];
+  
+  /** Página atual */
+  pagina_atual: number;
+  
+  /** Itens por página */
+  itens_por_pagina: number;
+  
+  /** Total de páginas */
+  total_paginas: number;
+  
+  /** Total de produtos */
+  total_produtos: number;
+  
+  /** Informações do NCM */
+  ncm_info?: CosmosNcm;
+  
+  /** Tempo de resposta em ms */
+  tempo_resposta_ms: number;
+  
+  /** Status da busca */
+  status: 'encontrado' | 'nao_encontrado' | 'erro';
+  
+  /** Mensagem de erro (se houver) */
+  erro?: string;
+}
+
+/**
+ * Parâmetros para busca por NCM
+ */
+export interface CosmosBuscaPorNcmParams {
+  /** Código NCM (8 dígitos) */
+  ncm: string;
+  
+  /** Página (default: 1) */
+  pagina?: number;
+  
+  /** Itens por página (default: 30, max: 100) */
+  itens_por_pagina?: number;
+  
+  /** Filtro por descrição */
+  descricao?: string;
+  
+  /** Filtro por marca */
+  marca?: string;
+}
+
+/**
+ * Dados para importar produto do Cosmos
+ */
+export interface CosmosImportarProdutoParams {
+  /** GTIN do produto a importar */
+  gtin: string;
+  
+  /** Código interno do produto (se não informado, gera automaticamente) */
+  codigo?: string;
+  
+  /** ID da unidade de medida */
+  unidade_medida_id: string;
+  
+  /** ID da categoria (opcional) */
+  categoria_id?: string;
+  
+  /** Preço de custo (opcional) */
+  preco_custo?: number;
+  
+  /** Margem de lucro (opcional) */
+  margem_lucro?: number;
+  
+  /** Preço de venda (opcional, se não informado calcula pela margem) */
+  preco_venda?: number;
+  
+  /** Estoque mínimo (opcional) */
+  estoque_minimo?: number;
+}
+
 export type { CosmosProduto as default };

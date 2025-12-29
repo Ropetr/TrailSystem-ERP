@@ -12,6 +12,8 @@ import type {
   CosmosEstatisticas,
   CosmosLog,
   CosmosProductLink,
+  CosmosBuscaPorNcmResultado,
+  CosmosBuscaPorNcmParams,
 } from './cosmos-types';
 
 // ===== CONSTANTES =====
@@ -648,4 +650,239 @@ export function validarGtin(gtin: string): boolean {
 
   const digitoCalculado = (10 - (soma % 10)) % 10;
   return digitoCalculado === digitoVerificador;
+}
+
+/**
+ * Busca produtos por NCM na API Cosmos
+ */
+export async function buscarPorNcm(
+  config: CosmosConfig,
+  params: CosmosBuscaPorNcmParams,
+  db?: D1Database,
+  empresaId?: string
+): Promise<CosmosBuscaPorNcmResultado> {
+  const inicio = Date.now();
+  const ncmLimpo = params.ncm.replace(/\D/g, '');
+  
+  if (ncmLimpo.length < 4 || ncmLimpo.length > 8) {
+    return {
+      produtos: [],
+      pagina_atual: 1,
+      itens_por_pagina: 30,
+      total_paginas: 0,
+      total_produtos: 0,
+      tempo_resposta_ms: Date.now() - inicio,
+      status: 'erro',
+      erro: 'NCM deve ter entre 4 e 8 dígitos',
+    };
+  }
+
+  try {
+    const pagina = params.pagina || 1;
+    const itensPorPagina = Math.min(params.itens_por_pagina || 30, 100);
+    
+    let url = `${COSMOS_API_URL}/products?ncm=${ncmLimpo}&page=${pagina}&per_page=${itensPorPagina}`;
+    
+    if (params.descricao) {
+      url += `&description=${encodeURIComponent(params.descricao)}`;
+    }
+    
+    if (params.marca) {
+      url += `&brand=${encodeURIComponent(params.marca)}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Cosmos-Token': config.token,
+        'User-Agent': 'PLANAC-ERP/1.0',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const tempoResposta = Date.now() - inicio;
+
+    if (!response.ok) {
+      if (db && empresaId) {
+        await registrarLog(db, {
+          empresa_id: empresaId,
+          gtin: `NCM:${ncmLimpo}`,
+          origem: 'cadastro_produto',
+          status_code: response.status,
+          cache_hit: false,
+          tempo_resposta_ms: tempoResposta,
+          erro: `HTTP ${response.status}`,
+        });
+      }
+
+      return {
+        produtos: [],
+        pagina_atual: pagina,
+        itens_por_pagina: itensPorPagina,
+        total_paginas: 0,
+        total_produtos: 0,
+        tempo_resposta_ms: tempoResposta,
+        status: response.status === 404 ? 'nao_encontrado' : 'erro',
+        erro: `Erro na API Cosmos: ${response.status}`,
+      };
+    }
+
+    const data = await response.json() as {
+      products: CosmosProduto[];
+      current_page: number;
+      per_page: number;
+      total_pages: number;
+      total_count: number;
+    };
+
+    if (db && empresaId) {
+      await registrarLog(db, {
+        empresa_id: empresaId,
+        gtin: `NCM:${ncmLimpo}`,
+        origem: 'cadastro_produto',
+        status_code: 200,
+        cache_hit: false,
+        tempo_resposta_ms: tempoResposta,
+      });
+    }
+
+    const ncmInfo = data.products.length > 0 && data.products[0].ncm 
+      ? data.products[0].ncm 
+      : undefined;
+
+    return {
+      produtos: data.products,
+      pagina_atual: data.current_page,
+      itens_por_pagina: data.per_page,
+      total_paginas: data.total_pages,
+      total_produtos: data.total_count,
+      ncm_info: ncmInfo,
+      tempo_resposta_ms: tempoResposta,
+      status: data.products.length > 0 ? 'encontrado' : 'nao_encontrado',
+    };
+  } catch (error) {
+    const tempoResposta = Date.now() - inicio;
+    
+    if (db && empresaId) {
+      await registrarLog(db, {
+        empresa_id: empresaId,
+        gtin: `NCM:${ncmLimpo}`,
+        origem: 'cadastro_produto',
+        status_code: 500,
+        cache_hit: false,
+        tempo_resposta_ms: tempoResposta,
+        erro: error instanceof Error ? error.message : 'Erro desconhecido',
+      });
+    }
+
+    return {
+      produtos: [],
+      pagina_atual: 1,
+      itens_por_pagina: 30,
+      total_paginas: 0,
+      total_produtos: 0,
+      tempo_resposta_ms: tempoResposta,
+      status: 'erro',
+      erro: error instanceof Error ? error.message : 'Erro desconhecido',
+    };
+  }
+}
+
+/**
+ * Importa produto do Cosmos para o cadastro interno
+ */
+export async function importarProdutoCosmos(
+  db: D1Database,
+  empresaId: string,
+  config: CosmosConfig,
+  gtin: string,
+  dadosAdicionais: {
+    codigo?: string;
+    unidade_medida_id: string;
+    categoria_id?: string;
+    preco_custo?: number;
+    margem_lucro?: number;
+    preco_venda?: number;
+    estoque_minimo?: number;
+  }
+): Promise<{ sucesso: boolean; produto_id?: string; erro?: string }> {
+  const resultado = await buscarPorGtin(config, gtin, db, empresaId);
+  
+  if (resultado.status !== 'encontrado' || !resultado.produto) {
+    return {
+      sucesso: false,
+      erro: resultado.erro || 'Produto não encontrado no Cosmos',
+    };
+  }
+
+  const produto = resultado.produto;
+  const enriquecimento = extrairEnriquecimento(produto, config);
+  
+  const produtoId = crypto.randomUUID();
+  const codigo = dadosAdicionais.codigo || `COSMOS-${produto.gtin}`;
+  
+  let precoVenda = dadosAdicionais.preco_venda;
+  if (!precoVenda && dadosAdicionais.preco_custo && dadosAdicionais.margem_lucro) {
+    precoVenda = dadosAdicionais.preco_custo * (1 + dadosAdicionais.margem_lucro / 100);
+  }
+  if (!precoVenda && produto.avg_price) {
+    precoVenda = produto.avg_price;
+  }
+
+  try {
+    await db.prepare(`
+      INSERT INTO produtos (
+        id, empresa_id, codigo, descricao, gtin, ncm, cest,
+        unidade_medida_id, categoria_id,
+        peso_liquido, peso_bruto, largura, altura, profundidade,
+        preco_custo, preco_venda, margem_lucro,
+        estoque_minimo, ativo, created_at, updated_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?,
+        ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?,
+        ?, 1, datetime('now'), datetime('now')
+      )
+    `).bind(
+      produtoId,
+      empresaId,
+      codigo,
+      enriquecimento.descricao || produto.description,
+      String(produto.gtin),
+      enriquecimento.ncm || null,
+      enriquecimento.cest || null,
+      dadosAdicionais.unidade_medida_id,
+      dadosAdicionais.categoria_id || null,
+      enriquecimento.peso_liquido || null,
+      enriquecimento.peso_bruto || null,
+      enriquecimento.largura || null,
+      enriquecimento.altura || null,
+      enriquecimento.profundidade || null,
+      dadosAdicionais.preco_custo || null,
+      precoVenda || null,
+      dadosAdicionais.margem_lucro || null,
+      dadosAdicionais.estoque_minimo || 0
+    ).run();
+
+    await vincularProduto(db, empresaId, produtoId, String(produto.gtin), produto, {
+      origem_descricao: 'cosmos',
+      origem_ncm: produto.ncm ? 'cosmos' : undefined,
+      origem_cest: produto.cest ? 'cosmos' : undefined,
+      origem_marca: produto.brand ? 'cosmos' : undefined,
+      origem_peso: produto.net_weight || produto.gross_weight ? 'cosmos' : undefined,
+      origem_dimensoes: produto.width || produto.height || produto.depth ? 'cosmos' : undefined,
+      origem_imagem: produto.thumbnail ? 'cosmos' : undefined,
+    });
+
+    return {
+      sucesso: true,
+      produto_id: produtoId,
+    };
+  } catch (error) {
+    return {
+      sucesso: false,
+      erro: error instanceof Error ? error.message : 'Erro ao inserir produto',
+    };
+  }
 }
