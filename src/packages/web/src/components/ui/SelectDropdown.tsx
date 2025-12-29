@@ -3,7 +3,7 @@
 // Padrão visual aprovado - 17/12/2025
 // =============================================
 
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface SelectOption {
   value: string;
