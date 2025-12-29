@@ -127,50 +127,135 @@ export async function consultarCpf(
   return data;
 }
 
+// Função para mesclar dados de múltiplos pacotes CPF
+function mesclarDadosCpf(
+  dadosE: CpfCnpjCpfResponse | null,
+  dadosLookalike: CpfCnpjCpfResponse | null
+): CpfCnpjCpfResponse {
+  const base: CpfCnpjCpfResponse = { status: 1 };
+  
+  // Dados do CPF E (dados cadastrais completos)
+  if (dadosE) {
+    base.cpf = dadosE.cpf;
+    base.nome = dadosE.nome;
+    base.nomeSocial = dadosE.nomeSocial;
+    base.nascimento = dadosE.nascimento;
+    base.mae = dadosE.mae;
+    base.genero = dadosE.genero;
+    base.situacao = dadosE.situacao;
+    base.situacaoDigito = dadosE.situacaoDigito;
+    base.situacaoMotivo = dadosE.situacaoMotivo;
+    base.situacaoAnoObito = dadosE.situacaoAnoObito;
+    base.situacaoInscricao = dadosE.situacaoInscricao;
+    base.situacaoComprovante = dadosE.situacaoComprovante;
+    base.situacaoComprovanteEmissao = dadosE.situacaoComprovanteEmissao;
+    base.situacaoComprovantePdf = dadosE.situacaoComprovantePdf;
+  }
+  
+  // Dados do Lookalike (contatos)
+  if (dadosLookalike) {
+    base.cpf = base.cpf || dadosLookalike.cpf;
+    base.nome = base.nome || dadosLookalike.nome;
+    base.emails = dadosLookalike.emails;
+    base.telefones = dadosLookalike.telefones;
+    base.whatsapp = dadosLookalike.whatsapp;
+    base.empresas = dadosLookalike.empresas;
+  }
+  
+  return base;
+}
+
 export async function consultarCpfCompleto(
   cpf: string,
   token: string,
   db: D1Database,
   empresaId: string,
-  pacote: CpfCnpjPacote = CPFCNPJ_PACOTES.CPF_LOOKALIKE
+  usarCombo: boolean = true // Por padrão usa CPF E + Lookalike
 ): Promise<CpfCnpjConsultaResultado> {
   const cpfLimpo = formatCpf(cpf);
   const startTime = Date.now();
   
-  const cached = await verificarCache(db, empresaId, cpfLimpo, 'cpf', pacote);
-  if (cached) {
-    const dados = JSON.parse(cached.payload) as CpfCnpjCpfResponse;
-    return {
-      cpf: cpfLimpo,
-      dados_basicos: dados,
-      cliente_sugerido: transformarParaClienteSugerido(dados),
-      tempo_resposta_ms: Date.now() - startTime,
-      fonte: 'cache',
-      cached: true,
-      pacotes_usados: [pacote],
-      custo_estimado: 0,
-    };
-  }
-  
-  const dados = await consultarCpf(cpfLimpo, token, pacote);
-  
-  await salvarCache(db, empresaId, cpfLimpo, 'cpf', pacote, dados);
+  const pacotesUsados: number[] = [];
+  let custoTotal = 0;
+  let dadosE: CpfCnpjCpfResponse | null = null;
+  let dadosLookalike: CpfCnpjCpfResponse | null = null;
+  let algumCache = false;
   
   const custos: Record<number, number> = {
     1: 0.15, 7: 0.22, 2: 0.25, 8: 0.36, 9: 0.47,
     3: 1.20, 18: 1.40, 21: 0.24,
   };
   
-  return {
-    cpf: cpfLimpo,
-    dados_basicos: dados,
-    cliente_sugerido: transformarParaClienteSugerido(dados),
-    tempo_resposta_ms: Date.now() - startTime,
-    fonte: 'cpfcnpj',
-    cached: false,
-    pacotes_usados: [pacote],
-    custo_estimado: custos[pacote] || 0,
-  };
+  if (usarCombo) {
+    // Consulta CPF E (dados cadastrais: nome, mãe, nascimento, gênero, situação, óbito, PDF)
+    const cachedE = await verificarCache(db, empresaId, cpfLimpo, 'cpf', CPFCNPJ_PACOTES.CPF_E);
+    if (cachedE) {
+      dadosE = JSON.parse(cachedE.payload) as CpfCnpjCpfResponse;
+      algumCache = true;
+    } else {
+      dadosE = await consultarCpf(cpfLimpo, token, CPFCNPJ_PACOTES.CPF_E);
+      await salvarCache(db, empresaId, cpfLimpo, 'cpf', CPFCNPJ_PACOTES.CPF_E, dadosE);
+      custoTotal += custos[CPFCNPJ_PACOTES.CPF_E];
+    }
+    pacotesUsados.push(CPFCNPJ_PACOTES.CPF_E);
+    
+    // Consulta Lookalike (contatos: emails, telefones, whatsapp)
+    const cachedLookalike = await verificarCache(db, empresaId, cpfLimpo, 'cpf', CPFCNPJ_PACOTES.CPF_LOOKALIKE);
+    if (cachedLookalike) {
+      dadosLookalike = JSON.parse(cachedLookalike.payload) as CpfCnpjCpfResponse;
+      algumCache = true;
+    } else {
+      dadosLookalike = await consultarCpf(cpfLimpo, token, CPFCNPJ_PACOTES.CPF_LOOKALIKE);
+      await salvarCache(db, empresaId, cpfLimpo, 'cpf', CPFCNPJ_PACOTES.CPF_LOOKALIKE, dadosLookalike);
+      custoTotal += custos[CPFCNPJ_PACOTES.CPF_LOOKALIKE];
+    }
+    pacotesUsados.push(CPFCNPJ_PACOTES.CPF_LOOKALIKE);
+    
+    // Mescla os dados dos dois pacotes
+    const dadosMesclados = mesclarDadosCpf(dadosE, dadosLookalike);
+    
+    return {
+      cpf: cpfLimpo,
+      dados_basicos: dadosMesclados,
+      dados_contatos: dadosLookalike || undefined,
+      cliente_sugerido: transformarParaClienteSugerido(dadosMesclados),
+      tempo_resposta_ms: Date.now() - startTime,
+      fonte: algumCache && custoTotal === 0 ? 'cache' : 'cpfcnpj',
+      cached: algumCache && custoTotal === 0,
+      pacotes_usados: pacotesUsados,
+      custo_estimado: custoTotal,
+    };
+  } else {
+    // Modo legado: apenas Lookalike
+    const cached = await verificarCache(db, empresaId, cpfLimpo, 'cpf', CPFCNPJ_PACOTES.CPF_LOOKALIKE);
+    if (cached) {
+      const dados = JSON.parse(cached.payload) as CpfCnpjCpfResponse;
+      return {
+        cpf: cpfLimpo,
+        dados_basicos: dados,
+        cliente_sugerido: transformarParaClienteSugerido(dados),
+        tempo_resposta_ms: Date.now() - startTime,
+        fonte: 'cache',
+        cached: true,
+        pacotes_usados: [CPFCNPJ_PACOTES.CPF_LOOKALIKE],
+        custo_estimado: 0,
+      };
+    }
+    
+    const dados = await consultarCpf(cpfLimpo, token, CPFCNPJ_PACOTES.CPF_LOOKALIKE);
+    await salvarCache(db, empresaId, cpfLimpo, 'cpf', CPFCNPJ_PACOTES.CPF_LOOKALIKE, dados);
+    
+    return {
+      cpf: cpfLimpo,
+      dados_basicos: dados,
+      cliente_sugerido: transformarParaClienteSugerido(dados),
+      tempo_resposta_ms: Date.now() - startTime,
+      fonte: 'cpfcnpj',
+      cached: false,
+      pacotes_usados: [CPFCNPJ_PACOTES.CPF_LOOKALIKE],
+      custo_estimado: custos[CPFCNPJ_PACOTES.CPF_LOOKALIKE],
+    };
+  }
 }
 
 export async function consultarSaldo(
