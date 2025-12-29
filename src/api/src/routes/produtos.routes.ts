@@ -22,6 +22,13 @@ import {
   importarProdutoCosmos,
   type CosmosConfig,
 } from '../services/cosmos';
+import {
+  consultarTributacaoPorNCM,
+  consultarTributacaoProduto,
+  listarAliquotasIPI,
+  listarMVA,
+  listarFCP,
+} from '../services/tributacao';
 
 const produtos = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -915,6 +922,95 @@ produtos.post('/cosmos/importar', requirePermission('produtos', 'criar'), async 
     message: 'Produto importado do Cosmos com sucesso',
     data: produtoCriado
   }, 201);
+});
+
+// =============================================
+// TRIBUTAÇÃO - Consulta de tributação por NCM
+// =============================================
+
+// GET /produtos/tributacao/ncm/:ncm - Consultar tributação por NCM
+produtos.get('/tributacao/ncm/:ncm', requirePermission('produtos', 'visualizar'), async (c) => {
+  const { ncm } = c.req.param();
+  const { uf_origem, uf_destino, regime } = c.req.query();
+
+  const resultado = await consultarTributacaoPorNCM(c.env.DB, {
+    ncm,
+    uf_origem,
+    uf_destino,
+    regime: regime as 'simples' | 'lucro_presumido' | 'lucro_real' | undefined,
+  });
+
+  return c.json({
+    success: resultado.status !== 'nao_encontrado',
+    data: resultado.tributacao,
+    status: resultado.status,
+    mensagem: resultado.mensagem,
+    tempo_resposta_ms: resultado.tempo_resposta_ms
+  });
+});
+
+// GET /produtos/tributacao/:id - Consultar tributação de um produto específico
+produtos.get('/tributacao/:id', requirePermission('produtos', 'visualizar'), async (c) => {
+  const user = c.get('user');
+  const { id } = c.req.param();
+  const { uf_origem, uf_destino, regime } = c.req.query();
+
+  const resultado = await consultarTributacaoProduto(c.env.DB, user.empresa_id, id, {
+    uf_origem,
+    uf_destino,
+    regime: regime as 'simples' | 'lucro_presumido' | 'lucro_real' | undefined,
+  });
+
+  if (!resultado) {
+    return c.json({ 
+      success: false, 
+      error: 'Produto não encontrado ou sem NCM cadastrado' 
+    }, 404);
+  }
+
+  return c.json({
+    success: true,
+    data: resultado
+  });
+});
+
+// GET /produtos/tributacao/tabelas/ipi - Listar alíquotas IPI (TIPI)
+produtos.get('/tributacao/tabelas/ipi', requirePermission('produtos', 'visualizar'), async (c) => {
+  const { ncm_prefixo } = c.req.query();
+
+  const aliquotas = await listarAliquotasIPI(c.env.DB, ncm_prefixo);
+
+  return c.json({
+    success: true,
+    data: aliquotas,
+    total: aliquotas.length
+  });
+});
+
+// GET /produtos/tributacao/tabelas/mva - Listar MVA (ICMS-ST)
+produtos.get('/tributacao/tabelas/mva', requirePermission('produtos', 'visualizar'), async (c) => {
+  const { uf_origem, uf_destino } = c.req.query();
+
+  const mvas = await listarMVA(c.env.DB, uf_origem, uf_destino);
+
+  return c.json({
+    success: true,
+    data: mvas,
+    total: mvas.length
+  });
+});
+
+// GET /produtos/tributacao/tabelas/fcp - Listar FCP por UF
+produtos.get('/tributacao/tabelas/fcp', requirePermission('produtos', 'visualizar'), async (c) => {
+  const { uf } = c.req.query();
+
+  const fcps = await listarFCP(c.env.DB, uf);
+
+  return c.json({
+    success: true,
+    data: fcps,
+    total: fcps.length
+  });
 });
 
 export default produtos;
