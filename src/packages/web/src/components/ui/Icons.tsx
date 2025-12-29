@@ -2,7 +2,6 @@
 // PLANAC ERP - Icons Component
 // =============================================
 
-import React from 'react';
 
 interface IconProps {
   className?: string;
