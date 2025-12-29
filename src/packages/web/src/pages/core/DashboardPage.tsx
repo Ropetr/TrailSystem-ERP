@@ -2,7 +2,6 @@
 // TRAILSYSTEM ERP - Dashboard Page
 // =============================================
 
-import React from 'react';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { Icons } from '@/components/ui/Icons';
 import { useAuth } from '@/stores/auth.store';
