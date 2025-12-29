@@ -194,23 +194,27 @@ vendas.post('/', async (c) => {
       body.observacao_interna || null, body.observacao_nf || null, now, now
     ).run();
 
-    // Criar itens
-    let item_num = 1;
-    for (const item of body.itens) {
+    // Criar itens usando batch para melhor performance
+    // Ao inves de N queries sequenciais, executa todas em uma unica operacao
+    const itemStatements = body.itens.map((item, index) => {
       const valorBruto = item.quantidade * item.valor_unitario;
       const descontoValor = item.desconto_valor || (valorBruto * (item.desconto_percentual || 0) / 100);
       const valorLiquido = valorBruto - descontoValor;
 
-      await c.env.DB.prepare(`
+      return c.env.DB.prepare(`
         INSERT INTO pedidos_venda_itens (
           id, pedido_venda_id, item, produto_id, quantidade, valor_unitario,
           desconto_percentual, desconto_valor, valor_total, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        crypto.randomUUID(), id, item_num++, item.produto_id,
+        crypto.randomUUID(), id, index + 1, item.produto_id,
         item.quantidade, item.valor_unitario,
         item.desconto_percentual || 0, descontoValor, valorLiquido, now
-      ).run();
+      );
+    });
+
+    if (itemStatements.length > 0) {
+      await c.env.DB.batch(itemStatements);
     }
 
     return c.json({
