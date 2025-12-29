@@ -1,22 +1,32 @@
 # OSSF Scorecard - Avalia práticas de segurança do repositório
+# Seguindo as melhores práticas de segurança do OpenSSF
+# https://github.com/ossf/scorecard-action#workflow-restrictions
 name: OSSF Scorecard
 
 on:
+  # Executa apenas no branch main para evitar vazamento de informações
+  branch_protection_rule:
   push:
     branches: [main]
   schedule:
+    # Executa semanalmente aos domingos às 4h UTC
     - cron: '0 4 * * 0'
 
-permissions:
-  security-events: write
-  id-token: write
-  contents: read
-  actions: read
+# Permissões mínimas no nível do workflow (princípio do menor privilégio)
+permissions: read-all
 
 jobs:
   analysis:
     name: Scorecard Analysis
     runs-on: ubuntu-latest
+    # Permissões específicas apenas para este job
+    permissions:
+      # Necessário para fazer checkout do código
+      contents: read
+      # Necessário para upload dos resultados SARIF
+      security-events: write
+      # Necessário para publicar resultados no OpenSSF (OIDC token)
+      id-token: write
 
     steps:
       - name: Checkout Repository
@@ -29,9 +39,10 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
+          # Publica resultados no OpenSSF Scorecard API
           publish_results: true
 
       - name: Upload Scorecard Results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
