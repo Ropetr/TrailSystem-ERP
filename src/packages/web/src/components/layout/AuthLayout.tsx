@@ -2,7 +2,6 @@
 // PLANAC ERP - Auth Layout (Login, etc)
 // =============================================
 
-import React from 'react';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
