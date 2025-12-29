@@ -18,7 +18,7 @@
 // />
 // =============================================
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Icons } from './Icons';
 import api from '@/services/api';
 
