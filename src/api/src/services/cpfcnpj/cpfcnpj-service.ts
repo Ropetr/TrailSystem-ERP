@@ -412,3 +412,152 @@ export async function enriquecerClienteComCpf(
   
   return { atualizado: true, campos_atualizados: camposAtualizados };
 }
+
+export async function importarFornecedorDoCpf(
+  cpf: string,
+  token: string,
+  db: D1Database,
+  empresaId: string,
+  userId: string,
+  sobrescrever: boolean = false
+): Promise<{ fornecedor_id: string; criado: boolean; atualizado: boolean }> {
+  const resultado = await consultarCpfCompleto(cpf, token, db, empresaId);
+  
+  if (!resultado.cliente_sugerido) {
+    throw new Error('Não foi possível obter dados do CPF');
+  }
+  
+  const sugerido = resultado.cliente_sugerido;
+  
+  const existente = await db.prepare(`
+    SELECT id FROM fornecedores WHERE empresa_id = ? AND cpf_cnpj = ?
+  `).bind(empresaId, sugerido.cpf_cnpj).first<{ id: string }>();
+  
+  const now = new Date().toISOString();
+  
+  if (existente) {
+    if (!sobrescrever) {
+      return { fornecedor_id: existente.id, criado: false, atualizado: false };
+    }
+    
+    await db.prepare(`
+      UPDATE fornecedores SET
+        razao_social = COALESCE(?, razao_social),
+        email = COALESCE(?, email),
+        telefone = COALESCE(?, telefone),
+        celular = COALESCE(?, celular),
+        updated_at = ?
+      WHERE id = ?
+    `).bind(
+      sugerido.razao_social,
+      sugerido.email,
+      sugerido.telefone,
+      sugerido.celular,
+      now,
+      existente.id
+    ).run();
+    
+    return { fornecedor_id: existente.id, criado: false, atualizado: true };
+  }
+  
+  const fornecedorId = crypto.randomUUID();
+  
+  await db.prepare(`
+    INSERT INTO fornecedores (
+      id, empresa_id, tipo, razao_social, cpf_cnpj,
+      email, telefone, celular,
+      ativo, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    fornecedorId,
+    empresaId,
+    'PF',
+    sugerido.razao_social,
+    sugerido.cpf_cnpj,
+    sugerido.email,
+    sugerido.telefone,
+    sugerido.celular,
+    1,
+    now,
+    now
+  ).run();
+  
+  return { fornecedor_id: fornecedorId, criado: true, atualizado: false };
+}
+
+export async function enriquecerFornecedorComCpf(
+  fornecedorId: string,
+  token: string,
+  db: D1Database,
+  empresaId: string,
+  sobrescrever: boolean = false
+): Promise<{ atualizado: boolean; campos_atualizados: string[] }> {
+  const fornecedor = await db.prepare(`
+    SELECT * FROM fornecedores WHERE id = ? AND empresa_id = ?
+  `).bind(fornecedorId, empresaId).first<Record<string, unknown>>();
+  
+  if (!fornecedor) {
+    throw new Error('Fornecedor não encontrado');
+  }
+  
+  if (fornecedor.tipo !== 'PF' || !fornecedor.cpf_cnpj) {
+    throw new Error('Fornecedor deve ser PF com CPF cadastrado');
+  }
+  
+  const resultado = await consultarCpfCompleto(
+    fornecedor.cpf_cnpj as string,
+    token,
+    db,
+    empresaId
+  );
+  
+  if (!resultado.cliente_sugerido) {
+    throw new Error('Não foi possível obter dados do CPF');
+  }
+  
+  const sugerido = resultado.cliente_sugerido;
+  const camposAtualizados: string[] = [];
+  const updates: Record<string, unknown> = {};
+  
+  if (sobrescrever || !fornecedor.razao_social) {
+    if (sugerido.razao_social && sugerido.razao_social !== fornecedor.razao_social) {
+      updates.razao_social = sugerido.razao_social;
+      camposAtualizados.push('razao_social');
+    }
+  }
+  
+  if (sobrescrever || !fornecedor.email) {
+    if (sugerido.email && sugerido.email !== fornecedor.email) {
+      updates.email = sugerido.email;
+      camposAtualizados.push('email');
+    }
+  }
+  
+  if (sobrescrever || !fornecedor.telefone) {
+    if (sugerido.telefone && sugerido.telefone !== fornecedor.telefone) {
+      updates.telefone = sugerido.telefone;
+      camposAtualizados.push('telefone');
+    }
+  }
+  
+  if (sobrescrever || !fornecedor.celular) {
+    if (sugerido.celular && sugerido.celular !== fornecedor.celular) {
+      updates.celular = sugerido.celular;
+      camposAtualizados.push('celular');
+    }
+  }
+  
+  if (camposAtualizados.length === 0) {
+    return { atualizado: false, campos_atualizados: [] };
+  }
+  
+  const now = new Date().toISOString();
+  updates.updated_at = now;
+  
+  const setClauses = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+  const values = [...Object.values(updates), fornecedorId];
+  
+  await db.prepare(`UPDATE fornecedores SET ${setClauses} WHERE id = ?`).bind(...values).run();
+  
+  return { atualizado: true, campos_atualizados: camposAtualizados };
+}
