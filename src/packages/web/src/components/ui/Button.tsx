@@ -2,7 +2,6 @@
 // PLANAC ERP - Button Component
 // =============================================
 
-import React from 'react';
 import { Icons } from './Icons';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
