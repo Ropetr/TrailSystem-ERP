@@ -41,6 +41,9 @@ export interface Bindings {
   // Secrets - Notificações
   EMAIL_API_KEY?: string; // Resend
   WHATSAPP_API_KEY?: string; // API Brasil
+  
+  // Secrets - Cosmos/Bluesoft
+  COSMOS_TOKEN?: string; // Token API Cosmos para cadastro automático de produtos
 }
 
 // =============================================
