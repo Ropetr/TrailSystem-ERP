@@ -7,6 +7,21 @@ import { z } from 'zod';
 import type { Bindings, Variables } from '../types';
 import { authMiddleware, requirePermission } from '../middleware/auth';
 import { registrarAuditoria } from '../utils/auditoria';
+import {
+  consultarOfficePorCnpj,
+  consultarSimplesPorCnpj,
+  consultarCnpjCompleto,
+  consultarCep,
+  importarFornecedorDoCnpj,
+  enriquecerFornecedorComCnpj,
+} from '../services/cnpja';
+import {
+  consultarCpfCompleto,
+  consultarSaldo,
+  CPFCNPJ_PACOTES,
+  importarFornecedorDoCpf,
+  enriquecerFornecedorComCpf,
+} from '../services/cpfcnpj';
 
 const fornecedores = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -377,6 +392,358 @@ fornecedores.post('/:id/avaliar', requirePermission('fornecedores', 'editar'), a
   `).bind(avaliacao, new Date().toISOString(), id, user.empresa_id).run();
   
   return c.json({ success: true, message: 'Avaliação registrada' });
+});
+
+// ============================================
+// CEP Lookup Endpoint (Free via CNPjá)
+// ============================================
+
+// GET /fornecedores/cep/:cep - Consultar endereço por CEP (gratuito)
+fornecedores.get('/cep/:cep', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cep } = c.req.param();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const startTime = Date.now();
+    const endereco = await consultarCep(cep, token);
+    
+    return c.json({
+      success: true,
+      data: {
+        cep: endereco.zip,
+        logradouro: endereco.street,
+        bairro: endereco.district,
+        cidade: endereco.city,
+        uf: endereco.state,
+        codigo_ibge: endereco.cityIbge?.toString(),
+        codigo_ibge_uf: endereco.stateIbge?.toString(),
+      },
+      tempo_resposta_ms: Date.now() - startTime
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CEP';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// ============================================
+// CNPjá Integration Endpoints (PJ - Fornecedores)
+// ============================================
+
+// GET /fornecedores/cnpja/office/:cnpj - Consultar dados cadastrais via CNPjá
+fornecedores.get('/cnpja/office/:cnpj', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const startTime = Date.now();
+    const office = await consultarOfficePorCnpj(cnpj, token);
+    
+    return c.json({
+      success: true,
+      data: office,
+      tempo_resposta_ms: Date.now() - startTime
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// GET /fornecedores/cnpja/simples/:cnpj - Consultar status do Simples Nacional
+fornecedores.get('/cnpja/simples/:cnpj', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const startTime = Date.now();
+    const simples = await consultarSimplesPorCnpj(cnpj, token);
+    
+    return c.json({
+      success: true,
+      data: simples,
+      tempo_resposta_ms: Date.now() - startTime
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// GET /fornecedores/cnpja/:cnpj - Consulta completa com sugestão de fornecedor
+fornecedores.get('/cnpja/:cnpj', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+  const user = c.get('user');
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await consultarCnpjCompleto(
+      cnpj,
+      token,
+      c.env.DB,
+      user.empresa_id
+    );
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// ============================================
+// CPF.CNPJ Integration Endpoints (PF - Fornecedores)
+// ============================================
+
+// GET /fornecedores/cpf/saldo - Consultar saldo de créditos CPF.CNPJ
+fornecedores.get('/cpf/saldo', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const token = c.env.CPFCNPJ_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CPF.CNPJ não configurado' }, 500);
+  }
+
+  try {
+    const saldo = await consultarSaldo(token, CPFCNPJ_PACOTES.CPF_LOOKALIKE);
+    
+    return c.json({
+      success: true,
+      data: saldo
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar saldo';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// GET /fornecedores/cpf/:cpf - Consulta CPF com sugestão de fornecedor PF
+fornecedores.get('/cpf/:cpf', requirePermission('fornecedores', 'visualizar'), async (c) => {
+  const { cpf } = c.req.param();
+  const user = c.get('user');
+
+  const token = c.env.CPFCNPJ_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CPF.CNPJ não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await consultarCpfCompleto(
+      cpf,
+      token,
+      c.env.DB,
+      user.empresa_id
+    );
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CPF';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// ============================================
+// Import/Enrich Endpoints for Fornecedores
+// ============================================
+
+// POST /fornecedores/cnpja/importar - Criar fornecedor PJ a partir do CNPJ
+fornecedores.post('/cnpja/importar', requirePermission('fornecedores', 'criar'), async (c) => {
+  const user = c.get('user');
+  const { cnpj, sobrescrever = false } = await c.req.json();
+
+  if (!cnpj) {
+    return c.json({ success: false, error: 'CNPJ é obrigatório' }, 400);
+  }
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await importarFornecedorDoCnpj(
+      cnpj,
+      token,
+      c.env.DB,
+      user.empresa_id,
+      user.id,
+      sobrescrever
+    );
+
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: user.empresa_id,
+      usuario_id: user.id,
+      acao: resultado.criado ? 'criar' : (resultado.atualizado ? 'editar' : 'consultar'),
+      tabela: 'fornecedores',
+      registro_id: resultado.fornecedor_id,
+      dados_novos: { cnpj, fonte: 'cnpja', sobrescrever }
+    });
+
+    return c.json({
+      success: true,
+      data: resultado,
+      message: resultado.criado 
+        ? 'Fornecedor PJ criado com sucesso' 
+        : (resultado.atualizado ? 'Fornecedor PJ atualizado com sucesso' : 'Fornecedor já existe')
+    }, resultado.criado ? 201 : 200);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao importar fornecedor';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// POST /fornecedores/:id/cnpja/enriquecer - Enriquecer fornecedor PJ existente com dados do CNPjá
+fornecedores.post('/:id/cnpja/enriquecer', requirePermission('fornecedores', 'editar'), async (c) => {
+  const { id } = c.req.param();
+  const user = c.get('user');
+  const { sobrescrever = false } = await c.req.json();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await enriquecerFornecedorComCnpj(
+      id,
+      token,
+      c.env.DB,
+      user.empresa_id,
+      sobrescrever
+    );
+
+    if (resultado.atualizado) {
+      await registrarAuditoria(c.env.DB, {
+        empresa_id: user.empresa_id,
+        usuario_id: user.id,
+        acao: 'enriquecer',
+        tabela: 'fornecedores',
+        registro_id: id,
+        dados_novos: { fonte: 'cnpja', campos_atualizados: resultado.campos_atualizados }
+      });
+    }
+
+    return c.json({
+      success: true,
+      data: resultado,
+      message: resultado.atualizado 
+        ? `Fornecedor PJ enriquecido: ${resultado.campos_atualizados.join(', ')}` 
+        : 'Nenhum campo atualizado'
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao enriquecer fornecedor';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// POST /fornecedores/cpf/importar - Criar fornecedor PF a partir do CPF
+fornecedores.post('/cpf/importar', requirePermission('fornecedores', 'criar'), async (c) => {
+  const user = c.get('user');
+  const { cpf, sobrescrever = false } = await c.req.json();
+
+  if (!cpf) {
+    return c.json({ success: false, error: 'CPF é obrigatório' }, 400);
+  }
+
+  const token = c.env.CPFCNPJ_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CPF.CNPJ não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await importarFornecedorDoCpf(
+      cpf,
+      token,
+      c.env.DB,
+      user.empresa_id,
+      user.id,
+      sobrescrever
+    );
+
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: user.empresa_id,
+      usuario_id: user.id,
+      acao: resultado.criado ? 'criar' : (resultado.atualizado ? 'editar' : 'consultar'),
+      tabela: 'fornecedores',
+      registro_id: resultado.fornecedor_id,
+      dados_novos: { cpf, fonte: 'cpfcnpj', sobrescrever }
+    });
+
+    return c.json({
+      success: true,
+      data: resultado,
+      message: resultado.criado 
+        ? 'Fornecedor PF criado com sucesso' 
+        : (resultado.atualizado ? 'Fornecedor PF atualizado com sucesso' : 'Fornecedor já existe')
+    }, resultado.criado ? 201 : 200);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao importar fornecedor';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// POST /fornecedores/:id/cpf/enriquecer - Enriquecer fornecedor PF existente com dados do CPF.CNPJ
+fornecedores.post('/:id/cpf/enriquecer', requirePermission('fornecedores', 'editar'), async (c) => {
+  const { id } = c.req.param();
+  const user = c.get('user');
+  const { sobrescrever = false } = await c.req.json();
+
+  const token = c.env.CPFCNPJ_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CPF.CNPJ não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await enriquecerFornecedorComCpf(
+      id,
+      token,
+      c.env.DB,
+      user.empresa_id,
+      sobrescrever
+    );
+
+    if (resultado.atualizado) {
+      await registrarAuditoria(c.env.DB, {
+        empresa_id: user.empresa_id,
+        usuario_id: user.id,
+        acao: 'enriquecer',
+        tabela: 'fornecedores',
+        registro_id: id,
+        dados_novos: { fonte: 'cpfcnpj', campos_atualizados: resultado.campos_atualizados }
+      });
+    }
+
+    return c.json({
+      success: true,
+      data: resultado,
+      message: resultado.atualizado 
+        ? `Fornecedor PF enriquecido: ${resultado.campos_atualizados.join(', ')}` 
+        : 'Nenhum campo atualizado'
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao enriquecer fornecedor';
+    return c.json({ success: false, error: message }, 400);
+  }
 });
 
 export default fornecedores;
