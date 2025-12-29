@@ -25,7 +25,6 @@ import {
   DashboardPage,
   EmpresasPage,
   EmpresaFormPage,
-  FiliaisPage,
   UsuariosPage,
   UsuarioFormPage,
   PerfisPage,
