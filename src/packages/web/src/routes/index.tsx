@@ -3,7 +3,7 @@
 // Atualizado: 26/12/2025 - Rotas hierárquicas Módulo > Categoria > Item
 // =============================================
 
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/stores/auth.store';
 
