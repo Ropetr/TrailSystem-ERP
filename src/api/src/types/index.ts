@@ -47,6 +47,9 @@ export interface Bindings {
   
   // Secrets - CNPjá
   CNPJA_TOKEN?: string; // Token API CNPjá para consulta de CNPJ
+  
+  // Secrets - CPF.CNPJ
+  CPFCNPJ_TOKEN?: string; // Token API CPF.CNPJ para consulta de CPF (consumidor final)
 }
 
 // =============================================

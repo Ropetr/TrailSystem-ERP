@@ -6,6 +6,7 @@
 import type {
   CNPjaOfficeResponse,
   CNPjaSimplesResponse,
+  CNPjaZipResponse,
   CNPjaConsultaParams,
   CNPjaClienteSugerido,
   CNPjaConsultaResultado,
@@ -491,4 +492,35 @@ export async function enriquecerClienteComCnpj(
   await db.prepare(`UPDATE clientes SET ${setClauses} WHERE id = ?`).bind(...values).run();
   
   return { atualizado: true, campos_atualizados: camposAtualizados };
+}
+
+export async function consultarCep(
+  cep: string,
+  token: string
+): Promise<CNPjaZipResponse> {
+  const cepLimpo = cep.replace(/\D/g, '');
+  
+  if (cepLimpo.length !== 8) {
+    throw new Error('CEP inválido - deve ter 8 dígitos');
+  }
+  
+  const url = `${CNPJA_API_URL}/zip/${cepLimpo}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': token,
+      'Accept': 'application/json',
+    },
+  });
+  
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('CEP não encontrado');
+    }
+    const errorText = await response.text();
+    throw new Error(`CNPjá API error: ${response.status} - ${errorText}`);
+  }
+  
+  return response.json() as Promise<CNPjaZipResponse>;
 }
