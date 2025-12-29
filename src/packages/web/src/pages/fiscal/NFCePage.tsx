@@ -2,7 +2,7 @@
 // PLANAC ERP - PDV / Emissão de NFC-e
 // =============================================
 
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
