@@ -2,7 +2,7 @@
 // PLANAC ERP - Input Component
 // =============================================
 
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;

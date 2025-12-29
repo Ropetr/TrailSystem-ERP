@@ -2,7 +2,7 @@
 // PLANAC ERP - Tabs Component
 // =============================================
 
-import React, { useState, createContext, useContext } from "react";
+import { useState, createContext, useContext } from 'react';
 
 // Context
 interface TabsContextType {

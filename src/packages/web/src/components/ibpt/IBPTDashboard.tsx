@@ -3,7 +3,7 @@
 // Visualização de estatísticas e consulta
 // =============================================
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 // ===== TIPOS =====
 
