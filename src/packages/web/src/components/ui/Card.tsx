@@ -2,7 +2,6 @@
 // PLANAC ERP - Card Component
 // =============================================
 
-import React from 'react';
 
 interface CardProps {
   children: React.ReactNode;
