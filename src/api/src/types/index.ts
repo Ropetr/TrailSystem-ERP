@@ -44,6 +44,9 @@ export interface Bindings {
   
   // Secrets - Cosmos/Bluesoft
   COSMOS_TOKEN?: string; // Token API Cosmos para cadastro automático de produtos
+  
+  // Secrets - CNPjá
+  CNPJA_TOKEN?: string; // Token API CNPjá para consulta de CNPJ
 }
 
 // =============================================

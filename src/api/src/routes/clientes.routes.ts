@@ -8,6 +8,13 @@ import type { Bindings, Variables } from '../types';
 import { requireAuth, requirePermission } from '../middleware/auth';
 import { registrarAuditoria } from '../utils/auditoria';
 import { validarCpfCnpj } from '../utils/helpers';
+import {
+  consultarOfficePorCnpj,
+  consultarSimplesPorCnpj,
+  consultarCnpjCompleto,
+  importarClienteDoCnpj,
+  enriquecerClienteComCnpj,
+} from '../services/cnpja';
 
 const clientes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -420,6 +427,177 @@ clientes.post('/:id/bloquear', requirePermission('clientes', 'editar'), async (c
     success: true, 
     message: bloquear ? 'Cliente bloqueado' : 'Cliente desbloqueado' 
   });
+});
+
+// ============================================
+// CNPjá Integration Endpoints
+// ============================================
+
+// GET /clientes/cnpja/office/:cnpj - Consultar dados cadastrais via CNPjá
+clientes.get('/cnpja/office/:cnpj', requirePermission('clientes', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+  const usuario = c.get('usuario');
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const startTime = Date.now();
+    const office = await consultarOfficePorCnpj(cnpj, token);
+    
+    return c.json({
+      success: true,
+      data: office,
+      tempo_resposta_ms: Date.now() - startTime
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// GET /clientes/cnpja/simples/:cnpj - Consultar status do Simples Nacional
+clientes.get('/cnpja/simples/:cnpj', requirePermission('clientes', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const startTime = Date.now();
+    const simples = await consultarSimplesPorCnpj(cnpj, token);
+    
+    return c.json({
+      success: true,
+      data: simples,
+      tempo_resposta_ms: Date.now() - startTime
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// GET /clientes/cnpja/:cnpj - Consulta completa com sugestão de cliente
+clientes.get('/cnpja/:cnpj', requirePermission('clientes', 'visualizar'), async (c) => {
+  const { cnpj } = c.req.param();
+  const usuario = c.get('usuario');
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await consultarCnpjCompleto(
+      cnpj,
+      token,
+      c.env.DB,
+      usuario.empresa_id
+    );
+    
+    return c.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao consultar CNPjá';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// POST /clientes/cnpja/importar - Criar cliente a partir do CNPJ
+clientes.post('/cnpja/importar', requirePermission('clientes', 'criar'), async (c) => {
+  const usuario = c.get('usuario');
+  const { cnpj, sobrescrever = false } = await c.req.json();
+
+  if (!cnpj) {
+    return c.json({ success: false, error: 'CNPJ é obrigatório' }, 400);
+  }
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await importarClienteDoCnpj(
+      cnpj,
+      token,
+      c.env.DB,
+      usuario.empresa_id,
+      usuario.id,
+      sobrescrever
+    );
+
+    await registrarAuditoria(c.env.DB, {
+      empresa_id: usuario.empresa_id,
+      usuario_id: usuario.id,
+      acao: resultado.criado ? 'criar' : (resultado.atualizado ? 'editar' : 'consultar'),
+      tabela: 'clientes',
+      registro_id: resultado.cliente_id,
+      dados_novos: { cnpj, fonte: 'cnpja', sobrescrever }
+    });
+
+    return c.json({
+      success: true,
+      data: resultado,
+      message: resultado.criado 
+        ? 'Cliente criado com sucesso' 
+        : (resultado.atualizado ? 'Cliente atualizado com sucesso' : 'Cliente já existe')
+    }, resultado.criado ? 201 : 200);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao importar cliente';
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// POST /clientes/:id/cnpja/enriquecer - Enriquecer cliente existente com dados do CNPjá
+clientes.post('/:id/cnpja/enriquecer', requirePermission('clientes', 'editar'), async (c) => {
+  const { id } = c.req.param();
+  const usuario = c.get('usuario');
+  const { sobrescrever = false } = await c.req.json();
+
+  const token = c.env.CNPJA_TOKEN;
+  if (!token) {
+    return c.json({ success: false, error: 'Token CNPjá não configurado' }, 500);
+  }
+
+  try {
+    const resultado = await enriquecerClienteComCnpj(
+      id,
+      token,
+      c.env.DB,
+      usuario.empresa_id,
+      sobrescrever
+    );
+
+    if (resultado.atualizado) {
+      await registrarAuditoria(c.env.DB, {
+        empresa_id: usuario.empresa_id,
+        usuario_id: usuario.id,
+        acao: 'enriquecer',
+        tabela: 'clientes',
+        registro_id: id,
+        dados_novos: { fonte: 'cnpja', campos_atualizados: resultado.campos_atualizados }
+      });
+    }
+
+    return c.json({
+      success: true,
+      data: resultado,
+      message: resultado.atualizado 
+        ? `Cliente enriquecido: ${resultado.campos_atualizados.join(', ')}` 
+        : 'Nenhum campo atualizado'
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro ao enriquecer cliente';
+    return c.json({ success: false, error: message }, 400);
+  }
 });
 
 export default clientes;
