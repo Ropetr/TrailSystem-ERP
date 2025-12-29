@@ -2,7 +2,7 @@
 // PLANAC ERP - Toast Component
 // =============================================
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 import { Icons } from './Icons';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
