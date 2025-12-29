@@ -2,7 +2,6 @@
 // PLANAC ERP - Spinner Component
 // =============================================
 
-import React from 'react';
 
 interface SpinnerProps {
   size?: 'sm' | 'md' | 'lg';
