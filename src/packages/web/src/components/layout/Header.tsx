@@ -3,7 +3,7 @@
 // Cores iOS/Samsung Dark Mode
 // =============================================
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Icons } from "../ui/Icons";
 import { useAuth } from "@/stores/auth.store";
