@@ -33,6 +33,7 @@ import compras from './routes/compras';
 
 // Routes - Estoque
 import estoque from './routes/estoque';
+import inventario from './routes/inventario';
 
 // Routes - Fiscal/Integracao
 import fiscal from './routes/fiscal';
@@ -96,6 +97,7 @@ app.get('/health', (c) => {
           comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos'],
           financeiro: ['/v1/contas-pagar', '/v1/contas-receber', '/v1/cobranca'],
           compras: ['/v1/compras'],
+          estoque: ['/v1/estoque', '/v1/inventario'],
           fiscal: ['/v1/fiscal', '/v1/ibpt', '/v1/certificados'],
           config: ['/v1/empresas-config', '/v1/jobs']
         }
@@ -129,6 +131,7 @@ app.route('/v1/compras', compras);
 
 // ===== API v1 - Estoque =====
 app.route('/v1/estoque', estoque);
+app.route('/v1/inventario', inventario);
 
 // ===== API v1 - Fiscal/Integracao =====
 app.route('/v1/fiscal', fiscal);
@@ -177,8 +180,9 @@ app.notFound((c) => {
                   '/v1/contas-pagar/*',
                   '/v1/contas-receber/*',
                   '/v1/cobranca/*',
-                  '/v1/compras/*',
-                  '/v1/estoque/*',
+                                    '/v1/compras/*',
+                                    '/v1/estoque/*',
+                                    '/v1/inventario/*',
                   '/v1/fiscal/*',
                   '/v1/ibpt/*',
                   '/v1/certificados/*',
