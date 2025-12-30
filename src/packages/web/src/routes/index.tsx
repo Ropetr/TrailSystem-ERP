@@ -11,6 +11,7 @@ import { useAuth } from '@/stores/auth.store';
 // Layouts
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 
 // Auth Pages
 import {
@@ -140,6 +141,17 @@ import {
 
 // Admin Pages
 import { AdminDashboardPage } from '@/pages/admin';
+import { ClientesListPage } from '@/pages/admin/clientes/ClientesListPage';
+import { ClienteNovoPage } from '@/pages/admin/clientes/ClienteNovoPage';
+import { ClienteDetalhePage } from '@/pages/admin/clientes/ClienteDetalhePage';
+import { ModulosPage } from '@/pages/admin/catalogo/ModulosPage';
+import { PlanosPage } from '@/pages/admin/catalogo/PlanosPage';
+import { AssinaturasPage } from '@/pages/admin/billing/AssinaturasPage';
+import { TicketsPage as AdminTicketsPage } from '@/pages/admin/suporte/TicketsPage';
+import { AtivacoesPage } from '@/pages/admin/licenciamento/AtivacoesPage';
+import { SaudePage } from '@/pages/admin/monitoramento/SaudePage';
+import { LogsPage } from '@/pages/admin/auditoria/LogsPage';
+import { GeralPage as AdminGeralPage } from '@/pages/admin/configuracoes/GeralPage';
 
 // Loading component
 function PageLoading() {
@@ -180,16 +192,25 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Helper function to determine default path based on user type
+function getDefaultAppPath(usuario: { email?: string } | null): string {
+  if (usuario?.email === 'admin@trailsystem.com.br') {
+    return '/admin';
+  }
+  return '/dashboard';
+}
+
 // Public Route Component (redirect if authenticated)
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, usuario } = useAuth();
 
   if (isLoading) {
     return <PageLoading />;
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    const defaultPath = getDefaultAppPath(usuario);
+    return <Navigate to={defaultPath} replace />;
   }
 
   return <>{children}</>;
@@ -250,7 +271,87 @@ export function AppRoutes() {
         }
       />
 
-      {/* ========== PROTECTED ROUTES ========== */}
+      {/* ========== ADMIN ROUTES (Protected - Softwarehouse) ========== */}
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <Suspense fallback={<PageLoading />}>
+                <Routes>
+                  <Route path="/" element={<AdminDashboardPage />} />
+                  
+                  {/* Clientes/Tenants */}
+                  <Route path="/clientes" element={<ClientesListPage />} />
+                  <Route path="/clientes/novo" element={<ClienteNovoPage />} />
+                  <Route path="/clientes/:id" element={<ClienteDetalhePage />} />
+                  
+                  {/* Catálogo */}
+                  <Route path="/catalogo/modulos" element={<ModulosPage />} />
+                  <Route path="/catalogo/planos" element={<PlanosPage />} />
+                  <Route path="/catalogo/addons" element={<EmDesenvolvimento titulo="Add-ons" />} />
+                  
+                  {/* Billing */}
+                  <Route path="/billing/assinaturas" element={<AssinaturasPage />} />
+                  <Route path="/billing/faturas" element={<EmDesenvolvimento titulo="Faturas" />} />
+                  <Route path="/billing/pagamentos" element={<EmDesenvolvimento titulo="Pagamentos" />} />
+                  
+                  {/* Licenciamento */}
+                  <Route path="/licenciamento/ativacoes" element={<AtivacoesPage />} />
+                  <Route path="/licenciamento/provisionamento" element={<EmDesenvolvimento titulo="Provisionamento" />} />
+                  
+                  {/* Parametrizações */}
+                  <Route path="/parametrizacoes/templates" element={<EmDesenvolvimento titulo="Templates" />} />
+                  <Route path="/parametrizacoes/overrides" element={<EmDesenvolvimento titulo="Overrides" />} />
+                  
+                  {/* Segurança */}
+                  <Route path="/seguranca/usuarios" element={<EmDesenvolvimento titulo="Usuários Admin" />} />
+                  <Route path="/seguranca/papeis" element={<EmDesenvolvimento titulo="Papéis" />} />
+                  <Route path="/seguranca/sessoes" element={<EmDesenvolvimento titulo="Sessões" />} />
+                  
+                  {/* Integrações */}
+                  <Route path="/integracoes/gateways" element={<EmDesenvolvimento titulo="Gateways" />} />
+                  <Route path="/integracoes/credenciais" element={<EmDesenvolvimento titulo="Credenciais" />} />
+                  <Route path="/integracoes/webhooks" element={<EmDesenvolvimento titulo="Webhooks" />} />
+                  
+                  {/* Suporte */}
+                  <Route path="/suporte/tickets" element={<AdminTicketsPage />} />
+                  <Route path="/suporte/playbooks" element={<EmDesenvolvimento titulo="Playbooks" />} />
+                  <Route path="/suporte/ferramentas" element={<EmDesenvolvimento titulo="Ferramentas" />} />
+                  
+                  {/* Monitoramento */}
+                  <Route path="/monitoramento/saude" element={<SaudePage />} />
+                  <Route path="/monitoramento/uso" element={<EmDesenvolvimento titulo="Uso por Cliente" />} />
+                  <Route path="/monitoramento/alertas" element={<EmDesenvolvimento titulo="Alertas" />} />
+                  
+                  {/* Comunicação */}
+                  <Route path="/comunicacao/notificacoes" element={<EmDesenvolvimento titulo="Notificações" />} />
+                  <Route path="/comunicacao/releases" element={<EmDesenvolvimento titulo="Release Notes" />} />
+                  
+                  {/* Relatórios */}
+                  <Route path="/relatorios/mrr" element={<EmDesenvolvimento titulo="MRR/ARR" />} />
+                  <Route path="/relatorios/churn" element={<EmDesenvolvimento titulo="Churn" />} />
+                  <Route path="/relatorios/inadimplencia" element={<EmDesenvolvimento titulo="Inadimplência" />} />
+                  
+                  {/* Auditoria */}
+                  <Route path="/auditoria/logs" element={<LogsPage />} />
+                  <Route path="/auditoria/lgpd" element={<EmDesenvolvimento titulo="LGPD" />} />
+                  
+                  {/* Configurações */}
+                  <Route path="/configuracoes/geral" element={<AdminGeralPage />} />
+                  <Route path="/configuracoes/politicas" element={<EmDesenvolvimento titulo="Políticas" />} />
+                  <Route path="/configuracoes/versoes" element={<EmDesenvolvimento titulo="Versões" />} />
+                  
+                  {/* Catch all - redireciona para dashboard admin */}
+                  <Route path="*" element={<Navigate to="/admin" replace />} />
+                </Routes>
+              </Suspense>
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ========== PROTECTED ROUTES (ERP - User View) ========== */}
       <Route
         path="/*"
         element={
@@ -258,12 +359,9 @@ export function AppRoutes() {
             <MainLayout>
               <Suspense fallback={<PageLoading />}>
                 <Routes>
-                                    {/* ========== DASHBOARD ========== */}
-                                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                                    <Route path="/dashboard" element={<DashboardPage />} />
-
-                                    {/* ========== ADMIN ========== */}
-                                    <Route path="/admin" element={<AdminDashboardPage />} />
+                  {/* ========== DASHBOARD ========== */}
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
 
                   {/* ========================================== */}
                   {/* CADASTROS - Módulo Central de Dados Base   */}
