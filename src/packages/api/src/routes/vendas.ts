@@ -92,7 +92,8 @@ vendas.get('/:id', async (c) => {
 
   try {
     const venda = await c.env.DB.prepare(`
-      SELECT pv.*, c.razao_social as cliente_razao_social, c.email as cliente_email
+      SELECT pv.*, c.razao_social as cliente_razao_social, c.email as cliente_email,
+             c.limite_credito as cliente_limite_credito
       FROM pedidos_venda pv
       LEFT JOIN clientes c ON c.id = pv.cliente_id
       WHERE pv.id = ?
@@ -106,19 +107,48 @@ vendas.get('/:id', async (c) => {
       SELECT pvi.*, p.nome as produto_nome, p.codigo as produto_codigo
       FROM pedidos_venda_itens pvi
       LEFT JOIN produtos p ON p.id = pvi.produto_id
-      WHERE pvi.pedido_venda_id = ?
-      ORDER BY pvi.item
+      WHERE pvi.pedido_id = ?
+      ORDER BY pvi.sequencia
     `).bind(id).all();
 
     const parcelas = await c.env.DB.prepare(`
-      SELECT * FROM pedidos_venda_parcelas WHERE pedido_venda_id = ? ORDER BY parcela
+      SELECT * FROM pedidos_venda_parcelas WHERE pedido_id = ? ORDER BY numero
     `).bind(id).all();
+
+    // Buscar entregas fracionadas
+    const entregas = await c.env.DB.prepare(`
+      SELECT * FROM pedidos_venda_entregas WHERE pedido_venda_id = ? ORDER BY numero
+    `).bind(id).all();
+
+    // Buscar créditos usados
+    const creditosUsados = await c.env.DB.prepare(`
+      SELECT cu.*, cc.origem, cc.descricao as credito_descricao
+      FROM clientes_creditos_uso cu
+      JOIN clientes_creditos cc ON cc.id = cu.credito_id
+      WHERE cu.pedido_venda_id = ?
+    `).bind(id).all();
+
+    // Buscar saldo de crédito disponível do cliente
+    const vendaData = venda as any;
+    const saldoCredito = await c.env.DB.prepare(`
+      SELECT SUM(valor_saldo) as saldo_disponivel
+      FROM clientes_creditos
+      WHERE cliente_id = ? AND status = 'ativo'
+    `).bind(vendaData.cliente_id).first<{ saldo_disponivel: number }>();
 
     return c.json({
       success: true,
-      data: { ...venda, itens: itens.results, parcelas: parcelas.results }
+      data: { 
+        ...venda, 
+        itens: itens.results, 
+        parcelas: parcelas.results,
+        entregas: entregas.results,
+        creditos_usados: creditosUsados.results,
+        cliente_saldo_credito: saldoCredito?.saldo_disponivel || 0
+      }
     });
   } catch (error: any) {
+    console.error('Erro ao buscar venda:', error);
     return c.json({ success: false, error: 'Erro ao buscar venda' }, 500);
   }
 });
@@ -414,6 +444,378 @@ vendas.get('/relatorio/dashboard', async (c) => {
     });
   } catch (error: any) {
     return c.json({ success: false, error: 'Erro ao gerar dashboard' }, 500);
+  }
+});
+
+// =============================================
+// POST /vendas/:id/usar-credito - Usar crédito na venda
+// =============================================
+vendas.post('/:id/usar-credito', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const body = await c.req.json<{
+      credito_id: string;
+      valor: number;
+      usuario_id?: string;
+    }>();
+
+    if (!body.credito_id || !body.valor) {
+      return c.json({ success: false, error: 'Crédito e valor são obrigatórios' }, 400);
+    }
+
+    const venda = await c.env.DB.prepare(`
+      SELECT * FROM pedidos_venda WHERE id = ?
+    `).bind(id).first<any>();
+
+    if (!venda) {
+      return c.json({ success: false, error: 'Venda não encontrada' }, 404);
+    }
+
+    if (venda.status !== 'pendente' && venda.status !== 'aprovada') {
+      return c.json({ success: false, error: 'Venda não pode mais receber créditos' }, 400);
+    }
+
+    // Verificar crédito
+    const credito = await c.env.DB.prepare(`
+      SELECT * FROM clientes_creditos WHERE id = ? AND status = 'ativo'
+    `).bind(body.credito_id).first<any>();
+
+    if (!credito) {
+      return c.json({ success: false, error: 'Crédito não encontrado ou inativo' }, 404);
+    }
+
+    if (credito.cliente_id !== venda.cliente_id) {
+      return c.json({ success: false, error: 'Crédito não pertence ao cliente da venda' }, 400);
+    }
+
+    if (body.valor > credito.valor_saldo) {
+      return c.json({ success: false, error: 'Valor excede o saldo do crédito' }, 400);
+    }
+
+    const now = new Date().toISOString();
+    const novoSaldo = credito.valor_saldo - body.valor;
+    const novoStatus = novoSaldo <= 0 ? 'usado' : 'ativo';
+
+    // Atualizar crédito
+    await c.env.DB.prepare(`
+      UPDATE clientes_creditos 
+      SET valor_usado = valor_usado + ?, 
+          valor_saldo = ?,
+          status = ?,
+          pedido_venda_id = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).bind(body.valor, novoSaldo, novoStatus, id, now, body.credito_id).run();
+
+    // Registrar uso
+    const usoId = crypto.randomUUID();
+    await c.env.DB.prepare(`
+      INSERT INTO clientes_creditos_uso (
+        id, credito_id, pedido_venda_id, valor, data_uso, usuario_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(usoId, body.credito_id, id, body.valor, now.split('T')[0], body.usuario_id || null, now).run();
+
+    return c.json({
+      success: true,
+      message: 'Crédito aplicado com sucesso',
+      data: { valor_aplicado: body.valor, saldo_restante: novoSaldo }
+    });
+  } catch (error: any) {
+    console.error('Erro ao usar crédito:', error);
+    return c.json({ success: false, error: 'Erro ao usar crédito' }, 500);
+  }
+});
+
+// =============================================
+// POST /vendas/:id/reservar-estoque - Reservar estoque para a venda
+// =============================================
+vendas.post('/:id/reservar-estoque', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const body = await c.req.json<{ usuario_id?: string }>();
+
+    const venda = await c.env.DB.prepare(`
+      SELECT * FROM pedidos_venda WHERE id = ?
+    `).bind(id).first<any>();
+
+    if (!venda) {
+      return c.json({ success: false, error: 'Venda não encontrada' }, 404);
+    }
+
+    // Buscar itens da venda
+    const itens = await c.env.DB.prepare(`
+      SELECT * FROM pedidos_venda_itens WHERE pedido_id = ?
+    `).bind(id).all();
+
+    if (!itens.results || itens.results.length === 0) {
+      return c.json({ success: false, error: 'Venda sem itens' }, 400);
+    }
+
+    const now = new Date().toISOString();
+    const validade = new Date();
+    validade.setDate(validade.getDate() + 7); // Reserva válida por 7 dias
+
+    const reservaStatements = (itens.results as any[]).map(item => {
+      return c.env.DB.prepare(`
+        INSERT INTO estoque_reservas (
+          id, empresa_id, filial_id, produto_id, pedido_venda_id, item_id,
+          quantidade_reservada, quantidade_saldo, status, data_reserva, data_validade,
+          usuario_id, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ativo', ?, ?, ?, ?, ?)
+      `).bind(
+        crypto.randomUUID(), venda.empresa_id, venda.filial_id, item.produto_id,
+        id, item.id, item.quantidade, item.quantidade, now.split('T')[0],
+        validade.toISOString().split('T')[0], body.usuario_id || null, now, now
+      );
+    });
+
+    await c.env.DB.batch(reservaStatements);
+
+    return c.json({
+      success: true,
+      message: 'Estoque reservado com sucesso',
+      data: { itens_reservados: itens.results.length }
+    });
+  } catch (error: any) {
+    console.error('Erro ao reservar estoque:', error);
+    return c.json({ success: false, error: 'Erro ao reservar estoque' }, 500);
+  }
+});
+
+// =============================================
+// POST /vendas/:id/criar-entregas - Criar entregas fracionadas
+// =============================================
+vendas.post('/:id/criar-entregas', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const body = await c.req.json<{
+      entregas: Array<{
+        data_prevista: string;
+        forma_financeiro?: string;
+        itens: Array<{
+          item_id: string;
+          quantidade: number;
+        }>;
+        observacao?: string;
+      }>;
+    }>();
+
+    if (!body.entregas || body.entregas.length === 0) {
+      return c.json({ success: false, error: 'Informe pelo menos uma entrega' }, 400);
+    }
+
+    const venda = await c.env.DB.prepare(`
+      SELECT * FROM pedidos_venda WHERE id = ?
+    `).bind(id).first<any>();
+
+    if (!venda) {
+      return c.json({ success: false, error: 'Venda não encontrada' }, 404);
+    }
+
+    // Contar entregas existentes
+    const countResult = await c.env.DB.prepare(`
+      SELECT COUNT(*) as total FROM pedidos_venda_entregas WHERE pedido_venda_id = ?
+    `).bind(id).first<{ total: number }>();
+
+    let numeroBase = (countResult?.total || 0) + 1;
+    const now = new Date().toISOString();
+    const entregasCriadas: Array<{ id: string; numero: string }> = [];
+
+    for (const entrega of body.entregas) {
+      const entregaId = crypto.randomUUID();
+      const numeroEntrega = `.E${numeroBase}`;
+
+      // Calcular valor da entrega
+      let valorProdutos = 0;
+      for (const item of entrega.itens) {
+        const itemPedido = await c.env.DB.prepare(`
+          SELECT preco_unitario FROM pedidos_venda_itens WHERE id = ?
+        `).bind(item.item_id).first<{ preco_unitario: number }>();
+        
+        if (itemPedido) {
+          valorProdutos += item.quantidade * itemPedido.preco_unitario;
+        }
+      }
+
+      // Criar entrega
+      await c.env.DB.prepare(`
+        INSERT INTO pedidos_venda_entregas (
+          id, pedido_venda_id, numero, status, data_prevista,
+          valor_produtos, valor_total, forma_financeiro, observacao,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, 'pendente', ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        entregaId, id, numeroEntrega, entrega.data_prevista,
+        valorProdutos, valorProdutos, entrega.forma_financeiro || 'proporcional',
+        entrega.observacao || null, now, now
+      ).run();
+
+      // Criar itens da entrega
+      const itemStatements = entrega.itens.map(item => {
+        return c.env.DB.prepare(`
+          INSERT INTO pedidos_venda_entregas_itens (
+            id, entrega_id, item_id, quantidade, created_at
+          ) VALUES (?, ?, ?, ?, ?)
+        `).bind(crypto.randomUUID(), entregaId, item.item_id, item.quantidade, now);
+      });
+
+      if (itemStatements.length > 0) {
+        await c.env.DB.batch(itemStatements);
+      }
+
+      entregasCriadas.push({ id: entregaId, numero: numeroEntrega });
+      numeroBase++;
+    }
+
+    return c.json({
+      success: true,
+      message: `${entregasCriadas.length} entrega(s) criada(s) com sucesso`,
+      data: { entregas: entregasCriadas }
+    }, 201);
+  } catch (error: any) {
+    console.error('Erro ao criar entregas:', error);
+    return c.json({ success: false, error: 'Erro ao criar entregas' }, 500);
+  }
+});
+
+// =============================================
+// GET /vendas/:id/entregas - Listar entregas da venda
+// =============================================
+vendas.get('/:id/entregas', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const entregas = await c.env.DB.prepare(`
+      SELECT e.*,
+        (SELECT COUNT(*) FROM pedidos_venda_entregas_itens WHERE entrega_id = e.id) as qtd_itens
+      FROM pedidos_venda_entregas e
+      WHERE e.pedido_venda_id = ?
+      ORDER BY e.numero
+    `).bind(id).all();
+
+    return c.json({
+      success: true,
+      data: entregas.results
+    });
+  } catch (error: any) {
+    return c.json({ success: false, error: 'Erro ao listar entregas' }, 500);
+  }
+});
+
+// =============================================
+// POST /vendas/:id/separar - Iniciar separação da venda (entrega única)
+// =============================================
+vendas.post('/:id/separar', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const venda = await c.env.DB.prepare(`
+      SELECT status FROM pedidos_venda WHERE id = ?
+    `).bind(id).first<{ status: string }>();
+
+    if (!venda) {
+      return c.json({ success: false, error: 'Venda não encontrada' }, 404);
+    }
+
+    if (venda.status !== 'aprovada' && venda.status !== 'pendente') {
+      return c.json({ success: false, error: 'Venda não pode ser separada' }, 400);
+    }
+
+    await c.env.DB.prepare(`
+      UPDATE pedidos_venda 
+      SET status = 'separando', data_separacao = datetime('now'), updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(id).run();
+
+    return c.json({ success: true, message: 'Separação iniciada' });
+  } catch (error: any) {
+    return c.json({ success: false, error: 'Erro ao iniciar separação' }, 500);
+  }
+});
+
+// =============================================
+// POST /vendas/:id/confirmar-separacao - Confirmar separação
+// =============================================
+vendas.post('/:id/confirmar-separacao', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const venda = await c.env.DB.prepare(`
+      SELECT status FROM pedidos_venda WHERE id = ?
+    `).bind(id).first<{ status: string }>();
+
+    if (!venda) {
+      return c.json({ success: false, error: 'Venda não encontrada' }, 404);
+    }
+
+    if (venda.status !== 'separando') {
+      return c.json({ success: false, error: 'Venda não está em separação' }, 400);
+    }
+
+    // Atualizar quantidades separadas nos itens
+    await c.env.DB.prepare(`
+      UPDATE pedidos_venda_itens 
+      SET quantidade_separada = quantidade
+      WHERE pedido_id = ?
+    `).bind(id).run();
+
+    await c.env.DB.prepare(`
+      UPDATE pedidos_venda 
+      SET status = 'separado', updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(id).run();
+
+    return c.json({ success: true, message: 'Separação confirmada' });
+  } catch (error: any) {
+    return c.json({ success: false, error: 'Erro ao confirmar separação' }, 500);
+  }
+});
+
+// =============================================
+// POST /vendas/:id/confirmar-entrega - Confirmar entrega realizada
+// =============================================
+vendas.post('/:id/confirmar-entrega', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const venda = await c.env.DB.prepare(`
+      SELECT status FROM pedidos_venda WHERE id = ?
+    `).bind(id).first<{ status: string }>();
+
+    if (!venda) {
+      return c.json({ success: false, error: 'Venda não encontrada' }, 404);
+    }
+
+    if (venda.status !== 'faturada' && venda.status !== 'em_entrega') {
+      return c.json({ success: false, error: 'Venda não está em entrega' }, 400);
+    }
+
+    // Atualizar quantidades entregues
+    await c.env.DB.prepare(`
+      UPDATE pedidos_venda_itens 
+      SET quantidade_entregue = quantidade_separada
+      WHERE pedido_id = ?
+    `).bind(id).run();
+
+    // Baixar reservas de estoque
+    await c.env.DB.prepare(`
+      UPDATE estoque_reservas 
+      SET status = 'baixado', quantidade_baixada = quantidade_reservada, quantidade_saldo = 0, data_baixa = datetime('now'), updated_at = datetime('now')
+      WHERE pedido_venda_id = ? AND status = 'ativo'
+    `).bind(id).run();
+
+    await c.env.DB.prepare(`
+      UPDATE pedidos_venda 
+      SET status = 'entregue', data_entrega_realizada = datetime('now'), updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(id).run();
+
+    return c.json({ success: true, message: 'Entrega confirmada' });
+  } catch (error: any) {
+    return c.json({ success: false, error: 'Erro ao confirmar entrega' }, 500);
   }
 });
 
