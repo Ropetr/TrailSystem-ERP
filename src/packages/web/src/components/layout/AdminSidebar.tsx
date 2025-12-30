@@ -210,13 +210,14 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         `}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200 dark:border-gray-800">
-          <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-lg">T</span>
-          </div>
-          <div>
-            <h1 className="font-bold text-gray-900 dark:text-white">TrailSystem</h1>
-            <p className="text-xs text-red-500 font-medium">Admin Panel</p>
+        <div className="flex items-center px-4 py-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex flex-col">
+            <img 
+              src="/logo-horizontal-sem-slogan.png" 
+              alt="TrailSystem" 
+              className="h-9 w-auto dark:brightness-0 dark:invert"
+            />
+            <p className="text-xs text-red-500 font-medium mt-1 ml-1">Admin Panel</p>
           </div>
         </div>
 
