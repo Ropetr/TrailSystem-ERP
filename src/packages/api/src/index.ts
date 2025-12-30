@@ -27,6 +27,7 @@ import creditos from './routes/creditos';
 import contasPagar from './routes/contas-pagar';
 import contasReceber from './routes/contas-receber';
 import cobranca from './routes/cobranca';
+import limiteCredito from './routes/limite-credito';
 
 // Routes - Compras
 import compras from './routes/compras';
@@ -95,7 +96,7 @@ app.get('/health', (c) => {
         routes: {
           core: ['/v1/auth', '/v1/usuarios', '/v1/perfis'],
           comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos'],
-          financeiro: ['/v1/contas-pagar', '/v1/contas-receber', '/v1/cobranca'],
+          financeiro: ['/v1/contas-pagar', '/v1/contas-receber', '/v1/cobranca', '/v1/limite-credito'],
           compras: ['/v1/compras'],
           estoque: ['/v1/estoque', '/v1/inventario'],
           fiscal: ['/v1/fiscal', '/v1/ibpt', '/v1/certificados'],
@@ -125,6 +126,7 @@ app.route('/v1/creditos', creditos);
 app.route('/v1/contas-pagar', contasPagar);
 app.route('/v1/contas-receber', contasReceber);
 app.route('/v1/cobranca', cobranca);
+app.route('/v1/limite-credito', limiteCredito);
 
 // ===== API v1 - Compras =====
 app.route('/v1/compras', compras);
@@ -179,8 +181,9 @@ app.notFound((c) => {
                   '/v1/creditos/*',
                   '/v1/contas-pagar/*',
                   '/v1/contas-receber/*',
-                  '/v1/cobranca/*',
-                                    '/v1/compras/*',
+                                    '/v1/cobranca/*',
+                                    '/v1/limite-credito/*',
+                                                      '/v1/compras/*',
                                     '/v1/estoque/*',
                                     '/v1/inventario/*',
                   '/v1/fiscal/*',
