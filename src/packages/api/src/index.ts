@@ -25,6 +25,9 @@ import creditos from './routes/creditos';
 import devolucoes from './routes/devolucoes';
 import trocas from './routes/trocas';
 import consignacoes from './routes/consignacoes';
+import garantias from './routes/garantias';
+import entregasGps from './routes/entregas-gps';
+import transferencias from './routes/transferencias';
 
 // Routes - Financeiro
 import contasPagar from './routes/contas-pagar';
@@ -98,7 +101,7 @@ app.get('/health', (c) => {
     environment: c.env.ENVIRONMENT || 'development',
         routes: {
           core: ['/v1/auth', '/v1/usuarios', '/v1/perfis'],
-          comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos', '/v1/devolucoes', '/v1/trocas', '/v1/consignacoes'],
+          comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos', '/v1/devolucoes', '/v1/trocas', '/v1/consignacoes', '/v1/garantias', '/v1/entregas-gps', '/v1/transferencias'],
           financeiro: ['/v1/contas-pagar', '/v1/contas-receber', '/v1/cobranca', '/v1/limite-credito'],
           compras: ['/v1/compras'],
           estoque: ['/v1/estoque', '/v1/inventario'],
@@ -127,6 +130,9 @@ app.route('/v1/creditos', creditos);
 app.route('/v1/devolucoes', devolucoes);
 app.route('/v1/trocas', trocas);
 app.route('/v1/consignacoes', consignacoes);
+app.route('/v1/garantias', garantias);
+app.route('/v1/entregas-gps', entregasGps);
+app.route('/v1/transferencias', transferencias);
 
 // ===== API v1 - Financeiro =====
 app.route('/v1/contas-pagar', contasPagar);
@@ -187,8 +193,11 @@ app.notFound((c) => {
                                     '/v1/creditos/*',
                                     '/v1/devolucoes/*',
                                                                         '/v1/trocas/*',
-                                                                        '/v1/consignacoes/*',
-                                                                        '/v1/contas-pagar/*',
+                                                                                                                                                '/v1/consignacoes/*',
+                                                                                                                                                                                                                        '/v1/garantias/*',
+                                                                                                                                                '/v1/entregas-gps/*',
+                                                                                                                                                '/v1/transferencias/*',
+                                                                                                                                                '/v1/contas-pagar/*',
                   '/v1/contas-receber/*',
                                     '/v1/cobranca/*',
                                     '/v1/limite-credito/*',
