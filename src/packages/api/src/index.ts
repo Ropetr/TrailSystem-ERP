@@ -22,6 +22,8 @@ import orcamentos from './routes/orcamentos';
 import vendas from './routes/vendas';
 import entregas from './routes/entregas';
 import creditos from './routes/creditos';
+import devolucoes from './routes/devolucoes';
+import trocas from './routes/trocas';
 
 // Routes - Financeiro
 import contasPagar from './routes/contas-pagar';
@@ -95,7 +97,7 @@ app.get('/health', (c) => {
     environment: c.env.ENVIRONMENT || 'development',
         routes: {
           core: ['/v1/auth', '/v1/usuarios', '/v1/perfis'],
-          comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos'],
+          comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos', '/v1/devolucoes', '/v1/trocas'],
           financeiro: ['/v1/contas-pagar', '/v1/contas-receber', '/v1/cobranca', '/v1/limite-credito'],
           compras: ['/v1/compras'],
           estoque: ['/v1/estoque', '/v1/inventario'],
@@ -121,6 +123,8 @@ app.route('/v1/orcamentos', orcamentos);
 app.route('/v1/vendas', vendas);
 app.route('/v1/entregas', entregas);
 app.route('/v1/creditos', creditos);
+app.route('/v1/devolucoes', devolucoes);
+app.route('/v1/trocas', trocas);
 
 // ===== API v1 - Financeiro =====
 app.route('/v1/contas-pagar', contasPagar);
@@ -178,8 +182,10 @@ app.notFound((c) => {
                   '/v1/orcamentos',
                   '/v1/vendas',
                   '/v1/entregas/*',
-                  '/v1/creditos/*',
-                  '/v1/contas-pagar/*',
+                                    '/v1/creditos/*',
+                                    '/v1/devolucoes/*',
+                                    '/v1/trocas/*',
+                                    '/v1/contas-pagar/*',
                   '/v1/contas-receber/*',
                                     '/v1/cobranca/*',
                                     '/v1/limite-credito/*',
