@@ -2,6 +2,7 @@
  * TrailSystem - Redefinir Senha Page
  */
 
+import React from 'react';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '@/services/api';

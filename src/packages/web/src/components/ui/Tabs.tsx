@@ -2,6 +2,7 @@
 // PLANAC ERP - Tabs Component
 // =============================================
 
+import React from 'react';
 import { useState, createContext, useContext } from 'react';
 
 // Context

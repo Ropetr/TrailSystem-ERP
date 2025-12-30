@@ -3,6 +3,7 @@
 // Componente React para upload e gestão
 // =============================================
 
+import React from 'react';
 import { useState, useCallback, useEffect } from 'react';
 
 // ===== TIPOS =====

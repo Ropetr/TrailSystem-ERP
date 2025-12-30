@@ -3,6 +3,7 @@
 // Configurar token, visualizar status, importar CSV
 // =============================================
 
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 
 // ===== TIPOS =====

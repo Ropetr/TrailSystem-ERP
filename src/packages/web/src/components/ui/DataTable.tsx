@@ -2,6 +2,7 @@
 // PLANAC ERP - DataTable Component
 // =============================================
 
+import React from 'react';
 import { useState } from 'react';
 import { Icons } from './Icons';
 import { DropdownMenu } from './DropdownMenu';

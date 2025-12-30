@@ -2,6 +2,7 @@
  * TrailSystem - Login Page
  */
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/stores/auth.store';
@@ -31,10 +32,20 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
+  // Função para verificar se é admin (baseado no email por enquanto)
+  const isAdminUser = (userEmail: string | undefined) => {
+    if (!userEmail) return false;
+    return userEmail === 'admin@trailsystem.com.br';
+  };
+
   useEffect(() => {
-    // Redirecionar para dashboard se já autenticado
+    // Redirecionar baseado no tipo do usuário se já autenticado
     if (isAuthenticated && !isLoading && usuario) {
-      navigate('/dashboard');
+      if (isAdminUser(usuario.email)) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [isAuthenticated, isLoading, usuario, navigate]);
 
@@ -48,8 +59,12 @@ export default function LoginPage() {
       const result = await login(email, password);
       
       if (result.success) {
-        // Redirecionar para dashboard após login bem-sucedido
-        navigate('/dashboard');
+        // Redirecionar baseado no tipo do usuário
+        if (isAdminUser(email)) {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(result.error || 'Email ou senha inválidos');
       }

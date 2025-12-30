@@ -5,6 +5,7 @@
 // Corrigido: 18/12/2025 - Fix hover do submenu (delay e ponte)
 // =============================================
 
+import React from 'react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';

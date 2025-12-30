@@ -2,6 +2,7 @@
 // PLANAC ERP - CRM Pipeline (Kanban) Page
 // =============================================
 
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
