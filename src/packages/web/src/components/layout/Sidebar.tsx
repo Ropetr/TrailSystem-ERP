@@ -482,11 +482,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="h-16 flex items-center px-4 border-b border-gray-200 dark:border-[#2c2c2e]">
-          <NavLink to="/dashboard" className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
-              <span className="text-white font-bold text-lg">P</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">TRAILSYSTEM</span>
+          <NavLink to="/dashboard" className="flex items-center">
+            <img 
+              src="/logo-horizontal-sem-slogan.png" 
+              alt="TrailSystem" 
+              className="h-10 w-auto dark:brightness-0 dark:invert"
+            />
           </NavLink>
         </div>
 
