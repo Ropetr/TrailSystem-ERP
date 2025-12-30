@@ -26,6 +26,7 @@ import creditos from './routes/creditos';
 // Routes - Financeiro
 import contasPagar from './routes/contas-pagar';
 import contasReceber from './routes/contas-receber';
+import cobranca from './routes/cobranca';
 
 // Routes - Estoque
 import estoque from './routes/estoque';
@@ -87,12 +88,13 @@ app.get('/health', (c) => {
     version: '2.1.0',
     timestamp: new Date().toISOString(),
     environment: c.env.ENVIRONMENT || 'development',
-        routes: {
-          core: ['/v1/auth', '/v1/usuarios', '/v1/perfis'],
-          comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos'],
-          fiscal: ['/v1/fiscal', '/v1/ibpt', '/v1/certificados'],
-          config: ['/v1/empresas-config', '/v1/jobs']
-        }
+    routes: {
+      core: ['/v1/auth', '/v1/usuarios', '/v1/perfis'],
+      comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos'],
+      financeiro: ['/v1/contas-pagar', '/v1/contas-receber', '/v1/cobranca'],
+      fiscal: ['/v1/fiscal', '/v1/ibpt', '/v1/certificados'],
+      config: ['/v1/empresas-config', '/v1/jobs']
+    }
   });
 });
 
@@ -116,6 +118,7 @@ app.route('/v1/creditos', creditos);
 // ===== API v1 - Financeiro =====
 app.route('/v1/contas-pagar', contasPagar);
 app.route('/v1/contas-receber', contasReceber);
+app.route('/v1/cobranca', cobranca);
 
 // ===== API v1 - Estoque =====
 app.route('/v1/estoque', estoque);
@@ -152,25 +155,28 @@ app.notFound((c) => {
   return c.json({
     error: 'Not Found',
     message: `Route ${c.req.method} ${c.req.path} not found`,
-    available_routes: [
-      '/health',
-      '/api/auth/*',
-      '/v1/usuarios',
-      '/v1/perfis',
-      '/v1/clientes',
-      '/v1/fornecedores',
-      '/v1/produtos',
-      '/v1/orcamentos',
-      '/v1/vendas',
-      '/v1/contas-pagar/*',
-      '/v1/contas-receber/*',
-      '/v1/estoque/*',
-      '/v1/fiscal/*',
-      '/v1/ibpt/*',
-      '/v1/certificados/*',
-      '/v1/empresas-config/*',
-      '/v1/jobs/*'
-    ]
+        available_routes: [
+          '/health',
+          '/api/auth/*',
+          '/v1/usuarios',
+          '/v1/perfis',
+          '/v1/clientes',
+          '/v1/fornecedores',
+          '/v1/produtos',
+          '/v1/orcamentos',
+          '/v1/vendas',
+          '/v1/entregas/*',
+          '/v1/creditos/*',
+          '/v1/contas-pagar/*',
+          '/v1/contas-receber/*',
+          '/v1/cobranca/*',
+          '/v1/estoque/*',
+          '/v1/fiscal/*',
+          '/v1/ibpt/*',
+          '/v1/certificados/*',
+          '/v1/empresas-config/*',
+          '/v1/jobs/*'
+        ]
   }, 404);
 });
 
