@@ -3,6 +3,7 @@
 // Cores iOS/Samsung Dark Mode (preto puro)
 // =============================================
 
+import React from 'react';
 import { useState } from 'react';
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";

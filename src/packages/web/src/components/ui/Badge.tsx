@@ -2,6 +2,7 @@
 // PLANAC ERP - Badge Component
 // =============================================
 
+import React from 'react';
 
 interface BadgeProps {
   children: React.ReactNode;

@@ -2,6 +2,7 @@
 // PLANAC ERP - DRE (Demonstração do Resultado)
 // =============================================
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';

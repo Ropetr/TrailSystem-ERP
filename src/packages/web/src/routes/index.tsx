@@ -3,6 +3,7 @@
 // Atualizado: 26/12/2025 - Rotas hierárquicas Módulo > Categoria > Item
 // =============================================
 
+import React from 'react';
 import { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/stores/auth.store';
@@ -137,6 +138,9 @@ import {
   BaseConhecimentoPage,
 } from '@/pages/suporte';
 
+// Admin Pages
+import { AdminDashboardPage } from '@/pages/admin';
+
 // Loading component
 function PageLoading() {
   return (
@@ -254,9 +258,12 @@ export function AppRoutes() {
             <MainLayout>
               <Suspense fallback={<PageLoading />}>
                 <Routes>
-                  {/* ========== DASHBOARD ========== */}
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
+                                    {/* ========== DASHBOARD ========== */}
+                                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                                    <Route path="/dashboard" element={<DashboardPage />} />
+
+                                    {/* ========== ADMIN ========== */}
+                                    <Route path="/admin" element={<AdminDashboardPage />} />
 
                   {/* ========================================== */}
                   {/* CADASTROS - Módulo Central de Dados Base   */}

@@ -3,6 +3,7 @@
 // Atualizado: 2025-12-17 18:00
 // =============================================
 
+import React from 'react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';

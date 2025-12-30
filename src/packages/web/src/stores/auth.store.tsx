@@ -3,6 +3,7 @@
 // Fix: Manter sessão após F5 (17/12/2025)
 // =============================================
 
+import React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Usuario } from '@/types';
 import authService from '@/services/auth.service';

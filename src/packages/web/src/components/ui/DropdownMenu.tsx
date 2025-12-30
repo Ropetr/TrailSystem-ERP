@@ -2,6 +2,7 @@
 // PLANAC ERP - Dropdown Menu (3 pontinhos)
 // =============================================
 
+import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { Icons } from './Icons';
 

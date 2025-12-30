@@ -2,6 +2,7 @@
 // PLANAC ERP - Input Component
 // =============================================
 
+import React from 'react';
 import { forwardRef } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
