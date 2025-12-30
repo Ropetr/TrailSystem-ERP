@@ -9,7 +9,7 @@ import { useAuth } from '@/stores/auth.store';
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, isAuthenticated, isLoading, user } = useAuth();
+  const { login, isAuthenticated, isLoading, usuario } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,15 +32,11 @@ export default function LoginPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    // CORREÇÃO: Redirecionar baseado no tipo do usuário
-    if (isAuthenticated && !isLoading && user) {
-      if (user.type === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+    // Redirecionar para dashboard se já autenticado
+    if (isAuthenticated && !isLoading && usuario) {
+      navigate('/dashboard');
     }
-  }, [isAuthenticated, isLoading, user, navigate]);
+  }, [isAuthenticated, isLoading, usuario, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,14 +48,10 @@ export default function LoginPage() {
       const result = await login(email, password);
       
       if (result.success) {
-        // CORREÇÃO: Redirecionar baseado no tipo do usuário
-        if (result.userType === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/dashboard');
-        }
+        // Redirecionar para dashboard após login bem-sucedido
+        navigate('/dashboard');
       } else {
-        setError(result.message || 'Email ou senha inválidos');
+        setError(result.error || 'Email ou senha inválidos');
       }
     } catch (err) {
       setError('Erro ao fazer login. Tente novamente.');
