@@ -644,5 +644,443 @@ orcamentos.post('/mesclar', async (c) => {
   }
 });
 
+// =============================================
+// POST /orcamentos/:id/desmembrar - Desmembrar orçamento em filhos
+// =============================================
+orcamentos.post('/:id/desmembrar', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const body = await c.req.json<{
+      grupos: Array<{
+        itens_ids: string[];
+        cliente_id?: string;
+        observacao?: string;
+      }>;
+      usuario_id?: string;
+    }>();
+
+    if (!body.grupos || body.grupos.length < 1) {
+      return c.json({ success: false, error: 'Informe pelo menos um grupo de itens para desmembrar' }, 400);
+    }
+
+    // Buscar orçamento pai
+    const orcamentoPai = await c.env.DB.prepare(`
+      SELECT * FROM orcamentos WHERE id = ?
+    `).bind(id).first<{
+      id: string;
+      empresa_id: string;
+      filial_id: string;
+      numero: string;
+      cliente_id: string;
+      vendedor_id: string;
+      tabela_preco_id: string;
+      condicao_pagamento_id: string;
+      status: string;
+    }>();
+
+    if (!orcamentoPai) {
+      return c.json({ success: false, error: 'Orçamento não encontrado' }, 404);
+    }
+
+    if (orcamentoPai.status !== 'pendente' && orcamentoPai.status !== 'rascunho') {
+      return c.json({ success: false, error: 'Apenas orçamentos pendentes podem ser desmembrados' }, 400);
+    }
+
+    // Buscar itens do orçamento
+    const itensResult = await c.env.DB.prepare(`
+      SELECT * FROM orcamentos_itens WHERE orcamento_id = ?
+    `).bind(id).all<{
+      id: string;
+      produto_id: string;
+      ordem: number;
+      quantidade: number;
+      valor_unitario: number;
+      desconto_percentual: number;
+      desconto_valor: number;
+      valor_total: number;
+    }>();
+
+    const itensMap = new Map<string, typeof itensResult.results[0]>();
+    for (const item of itensResult.results || []) {
+      itensMap.set(item.id, item);
+    }
+
+    // Verificar se todos os itens existem
+    for (const grupo of body.grupos) {
+      for (const itemId of grupo.itens_ids) {
+        if (!itensMap.has(itemId)) {
+          return c.json({ success: false, error: `Item ${itemId} não encontrado no orçamento` }, 400);
+        }
+      }
+    }
+
+    // Buscar próximo número filho
+    const maxFilho = await c.env.DB.prepare(`
+      SELECT MAX(numero_filho) as max FROM orcamentos WHERE orcamento_pai_id = ?
+    `).bind(id).first<{ max: number }>();
+    let proximoFilho = (maxFilho?.max || 0) + 1;
+
+    const now = new Date().toISOString();
+    const filhosCriados: Array<{ id: string; numero: string; numero_filho: number }> = [];
+
+    // Criar orçamentos filhos
+    for (const grupo of body.grupos) {
+      const filhoId = crypto.randomUUID();
+      const clienteId = grupo.cliente_id || orcamentoPai.cliente_id;
+
+      // Calcular totais do filho
+      let subtotal = 0;
+      let totalDesconto = 0;
+      const itensDoGrupo: typeof itensResult.results = [];
+
+      for (const itemId of grupo.itens_ids) {
+        const item = itensMap.get(itemId);
+        if (item) {
+          itensDoGrupo.push(item);
+          subtotal += item.quantidade * item.valor_unitario;
+          totalDesconto += item.desconto_valor || 0;
+        }
+      }
+
+      const valorTotal = subtotal - totalDesconto;
+      const dataValidade = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // Inserir orçamento filho
+      await c.env.DB.prepare(`
+        INSERT INTO orcamentos (
+          id, empresa_id, filial_id, numero, numero_filho, orcamento_pai_id, origem,
+          cliente_id, vendedor_id, tabela_preco_id, condicao_pagamento_id,
+          data_emissao, data_validade, status, subtotal, desconto_total, valor_total,
+          observacao, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'desmembrado', ?, ?, ?, ?, ?, ?, 'pendente', ?, ?, ?, ?, ?, ?)
+      `).bind(
+        filhoId, orcamentoPai.empresa_id, orcamentoPai.filial_id || null,
+        orcamentoPai.numero, proximoFilho, id,
+        clienteId, orcamentoPai.vendedor_id, orcamentoPai.tabela_preco_id || null,
+        orcamentoPai.condicao_pagamento_id || null,
+        now.split('T')[0], dataValidade, subtotal, totalDesconto, valorTotal,
+        grupo.observacao || `Desmembrado do orçamento ${orcamentoPai.numero}`, now, now
+      ).run();
+
+      // Copiar itens para o filho
+      let ordem = 1;
+      for (const item of itensDoGrupo) {
+        await c.env.DB.prepare(`
+          INSERT INTO orcamentos_itens (
+            id, orcamento_id, produto_id, ordem, quantidade, valor_unitario,
+            desconto_percentual, desconto_valor, valor_total, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          crypto.randomUUID(), filhoId, item.produto_id, ordem++,
+          item.quantidade, item.valor_unitario, item.desconto_percentual || 0,
+          item.desconto_valor || 0, item.valor_total, now
+        ).run();
+      }
+
+      filhosCriados.push({
+        id: filhoId,
+        numero: `${orcamentoPai.numero}.${proximoFilho}`,
+        numero_filho: proximoFilho
+      });
+
+      proximoFilho++;
+    }
+
+    // Registrar histórico de desmembramento
+    await c.env.DB.prepare(`
+      INSERT INTO orcamentos_desmembramento_historico (
+        id, empresa_id, orcamento_pai_id, orcamentos_filhos_ids, usuario_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      crypto.randomUUID(), orcamentoPai.empresa_id, id,
+      JSON.stringify(filhosCriados.map(f => f.id)),
+      body.usuario_id || null, now
+    ).run();
+
+    return c.json({
+      success: true,
+      data: { filhos: filhosCriados },
+      message: `Orçamento desmembrado em ${filhosCriados.length} orçamento(s) filho(s)`
+    });
+  } catch (error: unknown) {
+    console.error('Erro ao desmembrar orçamento:', error);
+    return c.json({ success: false, error: 'Erro ao desmembrar orçamento' }, 500);
+  }
+});
+
+// =============================================
+// GET /orcamentos/:id/filhos - Listar orçamentos filhos
+// =============================================
+orcamentos.get('/:id/filhos', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const filhos = await c.env.DB.prepare(`
+      SELECT o.*, c.razao_social as cliente_nome
+      FROM orcamentos o
+      LEFT JOIN clientes c ON c.id = o.cliente_id
+      WHERE o.orcamento_pai_id = ?
+      ORDER BY o.numero_filho ASC
+    `).bind(id).all();
+
+    return c.json({ success: true, data: filhos.results });
+  } catch (error: unknown) {
+    console.error('Erro ao listar filhos:', error);
+    return c.json({ success: false, error: 'Erro ao listar orçamentos filhos' }, 500);
+  }
+});
+
+// =============================================
+// POST /orcamentos/mesclar-v2 - Mesclar com regras de preço
+// =============================================
+orcamentos.post('/mesclar-v2', async (c) => {
+  try {
+    const body = await c.req.json<{
+      orcamentos_ids: string[];
+      cliente_id: string;
+      regra_preco: 'menor' | 'maior' | 'recente' | 'manual';
+      precos_manuais?: Record<string, number>; // produto_id -> valor_unitario
+      usuario_id?: string;
+    }>();
+
+    if (!body.orcamentos_ids || body.orcamentos_ids.length < 2) {
+      return c.json({ success: false, error: 'Selecione pelo menos 2 orçamentos para mesclar' }, 400);
+    }
+
+    if (!body.cliente_id) {
+      return c.json({ success: false, error: 'Cliente é obrigatório' }, 400);
+    }
+
+    if (!body.regra_preco) {
+      return c.json({ success: false, error: 'Regra de preço é obrigatória' }, 400);
+    }
+
+    // Buscar todos os orçamentos
+    const placeholders = body.orcamentos_ids.map(() => '?').join(',');
+    const orcamentosResult = await c.env.DB.prepare(`
+      SELECT * FROM orcamentos WHERE id IN (${placeholders}) AND status IN ('pendente', 'rascunho')
+    `).bind(...body.orcamentos_ids).all<{
+      id: string;
+      empresa_id: string;
+      filial_id: string;
+      numero: string;
+      vendedor_id: string;
+      created_at: string;
+    }>();
+
+    if (!orcamentosResult.results || orcamentosResult.results.length !== body.orcamentos_ids.length) {
+      return c.json({ success: false, error: 'Um ou mais orçamentos não encontrados ou não estão pendentes' }, 404);
+    }
+
+    const orcamentosData = orcamentosResult.results;
+
+    // Buscar dados do cliente
+    const cliente = await c.env.DB.prepare(`
+      SELECT id, razao_social, cpf_cnpj FROM clientes WHERE id = ?
+    `).bind(body.cliente_id).first<{ id: string; razao_social: string; cpf_cnpj: string }>();
+
+    if (!cliente) {
+      return c.json({ success: false, error: 'Cliente não encontrado' }, 404);
+    }
+
+    // Obter próximo número
+    const primeiro = orcamentosData[0];
+    const maxNumero = await c.env.DB.prepare(`
+      SELECT MAX(CAST(numero AS INTEGER)) as max FROM orcamentos WHERE empresa_id = ?
+    `).bind(primeiro.empresa_id).first<{ max: number }>();
+    const novoNumero = String((maxNumero?.max || 0) + 1).padStart(6, '0');
+
+    // Buscar todos os itens dos orçamentos com data de criação
+    const itensResult = await c.env.DB.prepare(`
+      SELECT oi.*, o.created_at as orcamento_created_at
+      FROM orcamentos_itens oi
+      JOIN orcamentos o ON o.id = oi.orcamento_id
+      WHERE oi.orcamento_id IN (${placeholders})
+      ORDER BY o.created_at DESC
+    `).bind(...body.orcamentos_ids).all<{
+      id: string;
+      orcamento_id: string;
+      produto_id: string;
+      quantidade: number;
+      valor_unitario: number;
+      desconto_percentual: number;
+      desconto_valor: number;
+      valor_total: number;
+      orcamento_created_at: string;
+    }>();
+
+    // Agrupar itens por produto aplicando regra de preço
+    const itensAgrupados = new Map<string, {
+      produto_id: string;
+      quantidade: number;
+      valor_unitario: number;
+      desconto_percentual: number;
+      desconto_valor: number;
+      valor_total: number;
+      created_at: string;
+    }>();
+
+    for (const item of (itensResult.results || [])) {
+      const key = item.produto_id;
+      
+      if (itensAgrupados.has(key)) {
+        const existing = itensAgrupados.get(key)!;
+        existing.quantidade += item.quantidade;
+        
+        // Aplicar regra de preço
+        let novoPreco = existing.valor_unitario;
+        switch (body.regra_preco) {
+          case 'menor':
+            novoPreco = Math.min(existing.valor_unitario, item.valor_unitario);
+            break;
+          case 'maior':
+            novoPreco = Math.max(existing.valor_unitario, item.valor_unitario);
+            break;
+          case 'recente':
+            // O mais recente vem primeiro (ORDER BY created_at DESC)
+            // Então mantemos o primeiro valor encontrado
+            break;
+          case 'manual':
+            if (body.precos_manuais && body.precos_manuais[key]) {
+              novoPreco = body.precos_manuais[key];
+            }
+            break;
+        }
+        
+        existing.valor_unitario = novoPreco;
+        existing.valor_total = existing.quantidade * novoPreco;
+      } else {
+        let valorUnitario = item.valor_unitario;
+        if (body.regra_preco === 'manual' && body.precos_manuais && body.precos_manuais[key]) {
+          valorUnitario = body.precos_manuais[key];
+        }
+        
+        itensAgrupados.set(key, {
+          produto_id: item.produto_id,
+          quantidade: item.quantidade,
+          valor_unitario: valorUnitario,
+          desconto_percentual: item.desconto_percentual || 0,
+          desconto_valor: item.desconto_valor || 0,
+          valor_total: item.quantidade * valorUnitario,
+          created_at: item.orcamento_created_at
+        });
+      }
+    }
+
+    // Calcular totais
+    let subtotal = 0;
+    let totalDesconto = 0;
+    const itensFinais = Array.from(itensAgrupados.values());
+    
+    for (const item of itensFinais) {
+      subtotal += item.valor_total;
+      totalDesconto += item.desconto_valor;
+    }
+
+    const valorTotal = subtotal - totalDesconto;
+    const now = new Date().toISOString();
+    const novoId = crypto.randomUUID();
+    const dataValidade = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Inserir novo orçamento
+    await c.env.DB.prepare(`
+      INSERT INTO orcamentos (
+        id, empresa_id, filial_id, numero, origem, cliente_id,
+        vendedor_id, data_emissao, data_validade, status,
+        subtotal, desconto_total, valor_total,
+        observacao_interna, orcamentos_mesclados, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, 'mesclado', ?, ?, ?, ?, 'pendente', ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      novoId, primeiro.empresa_id, primeiro.filial_id || null, novoNumero,
+      cliente.id, primeiro.vendedor_id,
+      now.split('T')[0], dataValidade, subtotal, totalDesconto, valorTotal,
+      `Mesclado de: ${orcamentosData.map(o => o.numero).join(', ')} | Regra: ${body.regra_preco}`,
+      JSON.stringify(orcamentosData.map(o => ({ id: o.id, numero: o.numero }))),
+      now, now
+    ).run();
+
+    // Inserir itens
+    let ordem = 1;
+    for (const item of itensFinais) {
+      await c.env.DB.prepare(`
+        INSERT INTO orcamentos_itens (
+          id, orcamento_id, produto_id, ordem, quantidade, valor_unitario,
+          desconto_percentual, desconto_valor, valor_total, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        crypto.randomUUID(), novoId, item.produto_id, ordem++,
+        item.quantidade, item.valor_unitario, item.desconto_percentual,
+        item.desconto_valor, item.valor_total, now
+      ).run();
+    }
+
+    // Registrar histórico de mesclagem
+    await c.env.DB.prepare(`
+      INSERT INTO orcamentos_mesclagem_historico (
+        id, empresa_id, orcamento_resultado_id, orcamentos_origem_ids,
+        regra_preco, cliente_id, usuario_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      crypto.randomUUID(), primeiro.empresa_id, novoId,
+      JSON.stringify(body.orcamentos_ids), body.regra_preco,
+      body.cliente_id, body.usuario_id || null, now
+    ).run();
+
+    return c.json({
+      success: true,
+      data: { id: novoId, numero: novoNumero, total_itens: itensFinais.length },
+      message: `Orçamento ${novoNumero} criado com ${itensFinais.length} itens (regra: ${body.regra_preco})`
+    });
+  } catch (error: unknown) {
+    console.error('Erro ao mesclar orçamentos:', error);
+    return c.json({ success: false, error: 'Erro ao mesclar orçamentos' }, 500);
+  }
+});
+
+// =============================================
+// GET /orcamentos/:id/historico-mesclagem - Histórico de mesclagem
+// =============================================
+orcamentos.get('/:id/historico-mesclagem', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const historico = await c.env.DB.prepare(`
+      SELECT h.*, u.nome as usuario_nome
+      FROM orcamentos_mesclagem_historico h
+      LEFT JOIN usuarios u ON u.id = h.usuario_id
+      WHERE h.orcamento_resultado_id = ?
+      ORDER BY h.created_at DESC
+    `).bind(id).all();
+
+    return c.json({ success: true, data: historico.results });
+  } catch (error: unknown) {
+    console.error('Erro ao buscar histórico:', error);
+    return c.json({ success: false, error: 'Erro ao buscar histórico de mesclagem' }, 500);
+  }
+});
+
+// =============================================
+// GET /orcamentos/:id/historico-desmembramento - Histórico de desmembramento
+// =============================================
+orcamentos.get('/:id/historico-desmembramento', async (c) => {
+  const { id } = c.req.param();
+
+  try {
+    const historico = await c.env.DB.prepare(`
+      SELECT h.*, u.nome as usuario_nome
+      FROM orcamentos_desmembramento_historico h
+      LEFT JOIN usuarios u ON u.id = h.usuario_id
+      WHERE h.orcamento_pai_id = ?
+      ORDER BY h.created_at DESC
+    `).bind(id).all();
+
+    return c.json({ success: true, data: historico.results });
+  } catch (error: unknown) {
+    console.error('Erro ao buscar histórico:', error);
+    return c.json({ success: false, error: 'Erro ao buscar histórico de desmembramento' }, 500);
+  }
+});
+
 export default orcamentos;
 
