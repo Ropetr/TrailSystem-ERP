@@ -20,6 +20,8 @@ import fornecedores from './routes/fornecedores';
 import produtos from './routes/produtos';
 import orcamentos from './routes/orcamentos';
 import vendas from './routes/vendas';
+import entregas from './routes/entregas';
+import creditos from './routes/creditos';
 
 // Routes - Financeiro
 import contasPagar from './routes/contas-pagar';
@@ -85,12 +87,12 @@ app.get('/health', (c) => {
     version: '2.1.0',
     timestamp: new Date().toISOString(),
     environment: c.env.ENVIRONMENT || 'development',
-    routes: {
-      core: ['/v1/auth', '/v1/usuarios', '/v1/perfis'],
-      comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas'],
-      fiscal: ['/v1/fiscal', '/v1/ibpt', '/v1/certificados'],
-      config: ['/v1/empresas-config', '/v1/jobs']
-    }
+        routes: {
+          core: ['/v1/auth', '/v1/usuarios', '/v1/perfis'],
+          comercial: ['/v1/clientes', '/v1/fornecedores', '/v1/produtos', '/v1/orcamentos', '/v1/vendas', '/v1/entregas', '/v1/creditos'],
+          fiscal: ['/v1/fiscal', '/v1/ibpt', '/v1/certificados'],
+          config: ['/v1/empresas-config', '/v1/jobs']
+        }
   });
 });
 
@@ -108,6 +110,8 @@ app.route('/v1/fornecedores', fornecedores);
 app.route('/v1/produtos', produtos);
 app.route('/v1/orcamentos', orcamentos);
 app.route('/v1/vendas', vendas);
+app.route('/v1/entregas', entregas);
+app.route('/v1/creditos', creditos);
 
 // ===== API v1 - Financeiro =====
 app.route('/v1/contas-pagar', contasPagar);
