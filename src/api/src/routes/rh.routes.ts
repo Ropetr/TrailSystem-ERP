@@ -573,10 +573,12 @@ rh.get('/ponto/resumo/:funcionarioId', async (c) => {
 // ============================================
 
 const admissaoSchema = z.object({
-  candidato_nome: z.string().min(1).max(200),
-  candidato_cpf: z.string().length(11),
-  candidato_email: z.string().email().optional(),
-  candidato_telefone: z.string().optional(),
+  nome: z.string().min(1).max(200),
+  cpf: z.string().length(11),
+  email: z.string().email().optional(),
+  telefone: z.string().optional(),
+  celular: z.string().optional(),
+  data_nascimento: z.string(),
   cargo_id: z.string().uuid(),
   departamento_id: z.string().uuid().optional(),
   salario_proposto: z.number().min(0),
@@ -669,12 +671,12 @@ rh.post('/admissoes', async (c) => {
   const data = validation.data;
   
   await c.env.DB.prepare(`
-    INSERT INTO admissoes (id, empresa_id, candidato_nome, candidato_cpf, candidato_email,
-                           candidato_telefone, cargo_id, departamento_id, salario_proposto,
+    INSERT INTO admissoes (id, empresa_id, nome, cpf, email,
+                           telefone, celular, data_nascimento, cargo_id, departamento_id, salario_proposto,
                            data_prevista_admissao, tipo_contrato, observacoes, status, created_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'rascunho', ?)
-  `).bind(id, empresaId, data.candidato_nome, data.candidato_cpf, data.candidato_email || null,
-          data.candidato_telefone || null, data.cargo_id, data.departamento_id || null,
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'rascunho', ?)
+  `).bind(id, empresaId, data.nome, data.cpf, data.email || null,
+          data.telefone || null, data.celular || null, data.data_nascimento, data.cargo_id, data.departamento_id || null,
           data.salario_proposto, data.data_prevista_admissao, data.tipo_contrato,
           data.observacoes || null, usuarioId).run();
   
@@ -777,8 +779,8 @@ rh.post('/admissoes/:id/finalizar', async (c) => {
     INSERT INTO funcionarios (id, empresa_id, matricula, nome, cpf, email, telefone, cargo_id,
                               departamento_id, data_admissao, salario, tipo_contrato, ativo, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-  `).bind(funcionarioId, empresaId, matricula, admissao.candidato_nome, admissao.candidato_cpf,
-          admissao.candidato_email, admissao.candidato_telefone, admissao.cargo_id,
+  `).bind(funcionarioId, empresaId, matricula, admissao.nome, admissao.cpf,
+          admissao.email, admissao.telefone, admissao.cargo_id,
           admissao.departamento_id, admissao.data_prevista_admissao, admissao.salario_proposto,
           admissao.tipo_contrato, usuarioId).run();
   
@@ -823,8 +825,8 @@ rh.post('/admissoes/:id/gerar-esocial', async (c) => {
     VALUES (?, ?, 'S-2200', 'evtAdmissao', ?, ?, 'pendente', ?, ?)
   `).bind(eventoId, empresaId, admissao.funcionario_id, admissao.data_efetiva_admissao,
           JSON.stringify({
-            cpfTrab: admissao.candidato_cpf,
-            nmTrab: admissao.candidato_nome,
+            cpfTrab: admissao.cpf,
+            nmTrab: admissao.nome,
             dtNascto: admissao.data_nascimento,
             sexo: admissao.sexo,
             matricula: admissao.matricula,
