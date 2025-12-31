@@ -1,12 +1,28 @@
 // =============================================
 // TRAILSYSTEM ERP - Auth Service
+// Rebuild: 31/12/2025 - Fix hardcoded URL, use env vars
 // =============================================
 
 import api from "./api";
 import type { LoginRequest, LoginResponse, Usuario } from "@/types";
 
-// URL base do auth - API correta
-const AUTH_BASE = "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
+// URL base do auth - usa mesma lógica do api.ts
+const getAuthUrl = () => {
+  // Se VITE_API_URL está definida, usa ela + /auth
+  if (import.meta.env.VITE_API_URL) {
+    return `${import.meta.env.VITE_API_URL}/auth`;
+  }
+  
+  // Em produção (Cloudflare Pages), usa a URL do worker
+  if (typeof window !== "undefined" && window.location.hostname.includes("pages.dev")) {
+    return "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
+  }
+  
+  // Desenvolvimento local - usa proxy do Vite
+  return "/v1/auth";
+};
+
+const AUTH_BASE = getAuthUrl();
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
