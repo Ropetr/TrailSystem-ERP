@@ -6,16 +6,25 @@
 import api from "./api";
 import type { LoginRequest, LoginResponse, Usuario } from "@/types";
 
-// URL base do auth - usa mesma lógica do api.ts
+// URL base do auth - detecta ambiente automaticamente
 const getAuthUrl = () => {
   // Se VITE_API_URL está definida, usa ela + /auth
   if (import.meta.env.VITE_API_URL) {
     return `${import.meta.env.VITE_API_URL}/auth`;
   }
   
-  // Em produção (Cloudflare Pages), usa a URL do worker
-  if (typeof window !== "undefined" && window.location.hostname.includes("pages.dev")) {
-    return "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    
+    // Produção (app.trailsystem.com.br) - usa API de produção
+    if (hostname === "app.trailsystem.com.br") {
+      return "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
+    }
+    
+    // Preview (Cloudflare Pages) - usa API de produção
+    if (hostname.includes("pages.dev")) {
+      return "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
+    }
   }
   
   // Desenvolvimento local - usa proxy do Vite
