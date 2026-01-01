@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 
 // =============================================
 // PLANAC ERP - Módulo Clientes
 // Padrão: Lista + Botão [+] vermelho + Modal Popup
 // =============================================
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://planac-erp-api.planacacabamentos.workers.dev';
 
 // Tipagens
 interface Cliente {
@@ -53,6 +56,7 @@ interface ClienteModalProps {
   isOpen: boolean;
   onClose: () => void;
   cliente?: Cliente | null;
+  onSave?: () => void;
 }
 
 interface Endereco {
@@ -334,30 +338,133 @@ function SelectDropdown({ value, onChange, options, placeholder = 'Selecione...'
 }
 
 // Modal Popup - Novo/Editar Cliente
-function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
+function ClienteModal({ isOpen, onClose, cliente = null, onSave }: ClienteModalProps) {
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState('dados');
   const [consultandoCNPJ, setConsultandoCNPJ] = useState(false);
   const [isEditMode, setIsEditMode] = useState(!cliente); // Novo: modo somente leitura por padrão
   const [showComparacaoModal, setShowComparacaoModal] = useState(false);
   const [dadosAPI, setDadosAPI] = useState<DadosComparacaoAPI | null>(null);
-  
-  const [formData, setFormData] = useState({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const initialFormData = {
     tipo: 'PJ' as 'PF' | 'PJ',
     cpf_cnpj: '',
     razao_social: '',
     nome_fantasia: '',
     inscricao_estadual: '',
     contribuinte_icms: 'nao_contribuinte',
-    consumidor_final: false, // Novo: consumidor final automático
+    consumidor_final: false,
     email: '',
     telefone: '',
     celular: '',
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   // Novo: Endereços como cards
-  const [enderecos, setEnderecos] = useState<Endereco[]>([
+  const initialEnderecos: Endereco[] = [
     { id: '1', tipo: 'fiscal', cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' }
-  ]);
+  ];
+  const [enderecos, setEnderecos] = useState<Endereco[]>(initialEnderecos);
+
+  // CORREÇÃO BUG #2: Reset do formulário quando cliente muda ou modal abre
+  useEffect(() => {
+    if (isOpen) {
+      setSubmitError(null);
+      setActiveTab('dados');
+      
+      if (cliente) {
+        // Modo edição: carregar dados do cliente
+        setIsEditMode(false); // Começa em modo leitura
+        setFormData({
+          tipo: cliente.tipo || 'PJ',
+          cpf_cnpj: cliente.cpf_cnpj || '',
+          razao_social: cliente.razao_social || '',
+          nome_fantasia: cliente.nome_fantasia || '',
+          inscricao_estadual: '',
+          contribuinte_icms: cliente.contribuinte_icms || 'nao_contribuinte',
+          consumidor_final: cliente.tipo === 'PF' || cliente.contribuinte_icms === 'nao_contribuinte',
+          email: cliente.email || '',
+          telefone: cliente.telefone || '',
+          celular: cliente.celular || '',
+        });
+        // TODO: Carregar endereços do cliente via API
+        setEnderecos(initialEnderecos);
+      } else {
+        // Modo criação: resetar formulário
+        setIsEditMode(true);
+        setFormData(initialFormData);
+        setEnderecos(initialEnderecos);
+      }
+    }
+  }, [isOpen, cliente]);
+
+  // CORREÇÃO BUG #1: Função de submit que chama a API
+  const handleSubmit = async () => {
+    if (!formData.razao_social || !formData.cpf_cnpj) {
+      setSubmitError('Preencha os campos obrigatórios: CPF/CNPJ e Razão Social');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const enderecoFiscal = enderecos.find(e => e.tipo === 'fiscal');
+      
+      const payload = {
+        tipo: formData.tipo,
+        razao_social: formData.razao_social,
+        nome_fantasia: formData.nome_fantasia || undefined,
+        cpf_cnpj: formData.cpf_cnpj.replace(/\D/g, ''),
+        inscricao_estadual: formData.inscricao_estadual || undefined,
+        email: formData.email || undefined,
+        telefone: formData.telefone || undefined,
+        celular: formData.celular || undefined,
+        endereco: enderecoFiscal && enderecoFiscal.cep ? {
+          cep: enderecoFiscal.cep,
+          logradouro: enderecoFiscal.logradouro,
+          numero: enderecoFiscal.numero,
+          complemento: enderecoFiscal.complemento || undefined,
+          bairro: enderecoFiscal.bairro,
+          cidade: enderecoFiscal.cidade,
+          uf: enderecoFiscal.uf,
+        } : undefined,
+      };
+
+      const url = cliente 
+        ? `${API_BASE_URL}/clientes/${cliente.id}`
+        : `${API_BASE_URL}/clientes`;
+      
+      const method = cliente ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Erro ao salvar cliente');
+      }
+
+      // Sucesso!
+      onSave?.();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao salvar cliente:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Erro ao salvar cliente');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const tabs = [
     { id: 'dados', label: 'Dados Gerais' },
@@ -874,13 +981,27 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
           
           {/* Footer */}
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50">
-            <p className="text-xs text-gray-400">* Campos obrigatórios</p>
+            <div className="flex-1">
+              <p className="text-xs text-gray-400">* Campos obrigatórios</p>
+              {submitError && (
+                <p className="text-xs text-red-500 mt-1">{submitError}</p>
+              )}
+            </div>
             <div className="flex gap-3">
-              <button onClick={onClose} className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition-colors">
+              <button 
+                onClick={onClose} 
+                disabled={isSubmitting}
+                className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition-colors disabled:opacity-50"
+              >
                 {isEditMode ? 'Cancelar' : 'Fechar'}
               </button>
               {isEditMode && (
-                <button onClick={onClose} className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors shadow-sm">
+                <button 
+                  onClick={handleSubmit} 
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isSubmitting && Icons.loader}
                   {cliente ? 'Salvar' : 'Cadastrar'}
                 </button>
               )}
@@ -949,11 +1070,68 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
 // COMPONENTE PRINCIPAL - CLIENTES PAGE
 // =============================================
 export default function ClientesPage() {
-  const [clientes] = useState<Cliente[]>(clientesMock);
+  const { token } = useAuth();
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [modalOpen, setModalOpen] = useState(false);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
+
+  // Carregar clientes da API
+  const carregarClientes = useCallback(async () => {
+    if (!token) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/clientes`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Erro ao carregar clientes');
+      }
+      
+      // Mapear dados da API para o formato do componente
+      const clientesMapeados: Cliente[] = (result.data || []).map((c: any, index: number) => ({
+        id: c.id,
+        codigo: String(index + 1).padStart(6, '0'),
+        tipo: c.tipo || 'PJ',
+        cpf_cnpj: c.cpf_cnpj || '',
+        razao_social: c.razao_social || '',
+        nome_fantasia: c.nome_fantasia || null,
+        email: c.email || null,
+        telefone: c.telefone || null,
+        celular: c.celular || null,
+        cidade: c.cidade || '',
+        uf: c.uf || '',
+        status: c.ativo === 0 ? 'inativo' : (c.bloqueado ? 'bloqueado' : 'ativo'),
+        contribuinte_icms: c.inscricao_estadual ? 'contribuinte' : 'nao_contribuinte',
+        saldo_devedor: c.saldo_devedor || 0,
+      }));
+      
+      setClientes(clientesMapeados);
+    } catch (err) {
+      console.error('Erro ao carregar clientes:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar clientes');
+      // Fallback para dados mock em caso de erro
+      setClientes(clientesMock);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  // Carregar clientes ao montar o componente
+  useEffect(() => {
+    carregarClientes();
+  }, [carregarClientes]);
 
   const clientesFiltrados = clientes.filter(cliente => {
     const textoCompleto = [
@@ -1049,7 +1227,12 @@ export default function ClientesPage() {
       </div>
       
       {/* MODAL */}
-      <ClienteModal isOpen={modalOpen} onClose={() => setModalOpen(false)} cliente={clienteEditando} />
+      <ClienteModal 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        cliente={clienteEditando}
+        onSave={carregarClientes}
+      />
     </div>
   );
 }
