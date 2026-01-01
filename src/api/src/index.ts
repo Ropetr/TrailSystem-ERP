@@ -76,6 +76,11 @@ import bancos from './routes/bancos.routes';
 import caixas from './routes/caixas.routes';
 
 // =============================================
+// ROTAS - INTEGRAÇÕES BANCÁRIAS
+// =============================================
+import sisprime from './routes/sisprime.routes'; // Sisprime (Banco 084)
+
+// =============================================
 // ROTAS - COMPRAS
 // =============================================
 import compras from './routes/compras.routes';
@@ -409,6 +414,12 @@ app.route('/v1/contas-pagar', contasPagar);
 app.route('/v1/contas-receber', contasReceber);
 app.route('/v1/bancos', bancos);
 app.route('/v1/caixas', caixas);
+
+// =============================================
+// ROTAS - INTEGRAÇÕES BANCÁRIAS
+// =============================================
+app.route('/api/sisprime', sisprime);  // Sisprime (Banco 084) - Boletos e PIX
+app.route('/v1/sisprime', sisprime);   // Alias /v1
 
 // =============================================
 // ROTAS - COMPRAS
