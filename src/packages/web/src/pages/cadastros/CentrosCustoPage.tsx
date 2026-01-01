@@ -22,6 +22,14 @@ interface CentroCusto {
   centro_pai_nome?: string;
   centro_pai_codigo?: string;
   nivel: number;
+  tipo: 'DEPARTAMENTO' | 'FILIAL' | 'PROJETO' | 'PRODUTO' | 'CLIENTE' | 'ATIVIDADE';
+  aceita_lancamento: boolean;
+  responsavel_id?: string;
+  orcamento_mensal: number;
+  filial_id?: string;
+  data_inicio?: string;
+  data_fim?: string;
+  observacoes?: string;
   ativo: boolean;
   total_filhos?: number;
   created_at: string;
@@ -32,8 +40,23 @@ interface CentroCustoForm {
   nome: string;
   descricao: string;
   centro_pai_id: string;
+  tipo: string;
+  aceita_lancamento: boolean;
+  orcamento_mensal: number;
+  data_inicio: string;
+  data_fim: string;
+  observacoes: string;
   ativo: boolean;
 }
+
+const tipoOptions = [
+  { value: 'DEPARTAMENTO', label: 'Departamento' },
+  { value: 'FILIAL', label: 'Filial' },
+  { value: 'PROJETO', label: 'Projeto' },
+  { value: 'PRODUTO', label: 'Produto' },
+  { value: 'CLIENTE', label: 'Cliente' },
+  { value: 'ATIVIDADE', label: 'Atividade' },
+];
 
 export function CentrosCustoPage() {
   const toast = useToast();
@@ -44,13 +67,19 @@ export function CentrosCustoPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState<CentroCustoForm>({
-    codigo: '',
-    nome: '',
-    descricao: '',
-    centro_pai_id: '',
-    ativo: true,
-  });
+    const [form, setForm] = useState<CentroCustoForm>({
+      codigo: '',
+      nome: '',
+      descricao: '',
+      centro_pai_id: '',
+      tipo: 'DEPARTAMENTO',
+      aceita_lancamento: true,
+      orcamento_mensal: 0,
+      data_inicio: '',
+      data_fim: '',
+      observacoes: '',
+      ativo: true,
+    });
 
   useEffect(() => {
     loadData();
@@ -69,29 +98,41 @@ export function CentrosCustoPage() {
     }
   };
 
-  const handleNew = () => {
-    setEditingId(null);
-    setForm({
-      codigo: '',
-      nome: '',
-      descricao: '',
-      centro_pai_id: '',
-      ativo: true,
-    });
-    setShowModal(true);
-  };
+    const handleNew = () => {
+      setEditingId(null);
+      setForm({
+        codigo: '',
+        nome: '',
+        descricao: '',
+        centro_pai_id: '',
+        tipo: 'DEPARTAMENTO',
+        aceita_lancamento: true,
+        orcamento_mensal: 0,
+        data_inicio: '',
+        data_fim: '',
+        observacoes: '',
+        ativo: true,
+      });
+      setShowModal(true);
+    };
 
-  const handleEdit = (centro: CentroCusto) => {
-    setEditingId(centro.id);
-    setForm({
-      codigo: centro.codigo,
-      nome: centro.nome,
-      descricao: centro.descricao || '',
-      centro_pai_id: centro.centro_pai_id || '',
-      ativo: centro.ativo,
-    });
-    setShowModal(true);
-  };
+    const handleEdit = (centro: CentroCusto) => {
+      setEditingId(centro.id);
+      setForm({
+        codigo: centro.codigo,
+        nome: centro.nome,
+        descricao: centro.descricao || '',
+        centro_pai_id: centro.centro_pai_id || '',
+        tipo: centro.tipo || 'DEPARTAMENTO',
+        aceita_lancamento: centro.aceita_lancamento !== false,
+        orcamento_mensal: centro.orcamento_mensal || 0,
+        data_inicio: centro.data_inicio || '',
+        data_fim: centro.data_fim || '',
+        observacoes: centro.observacoes || '',
+        ativo: centro.ativo,
+      });
+      setShowModal(true);
+    };
 
   const handleSave = async () => {
     if (!form.codigo.trim()) {
@@ -105,13 +146,19 @@ export function CentrosCustoPage() {
 
     setIsSaving(true);
     try {
-      const payload = {
-        codigo: form.codigo,
-        nome: form.nome,
-        descricao: form.descricao || null,
-        centro_pai_id: form.centro_pai_id || null,
-        ativo: form.ativo,
-      };
+            const payload = {
+              codigo: form.codigo,
+              nome: form.nome,
+              descricao: form.descricao || null,
+              centro_pai_id: form.centro_pai_id || null,
+              tipo: form.tipo,
+              aceita_lancamento: form.aceita_lancamento,
+              orcamento_mensal: form.orcamento_mensal || 0,
+              data_inicio: form.data_inicio || null,
+              data_fim: form.data_fim || null,
+              observacoes: form.observacoes || null,
+              ativo: form.ativo,
+            };
 
       if (editingId) {
         await api.put(`/centros-custo/${editingId}`, payload);
@@ -384,67 +431,143 @@ export function CentrosCustoPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Codigo *
-                  </label>
-                  <Input
-                    value={form.codigo}
-                    onChange={(e) => setForm({ ...form, codigo: e.target.value })}
-                    placeholder="001"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Centro Pai
-                  </label>
-                  <Select
-                    value={form.centro_pai_id}
-                    onChange={(value) => setForm({ ...form, centro_pai_id: value })}
-                    options={centroPaiOptions}
-                  />
-                </div>
-              </div>
+                        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Codigo *
+                              </label>
+                              <Input
+                                value={form.codigo}
+                                onChange={(e) => setForm({ ...form, codigo: e.target.value })}
+                                placeholder="001"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Tipo
+                              </label>
+                              <Select
+                                value={form.tipo}
+                                onChange={(value) => setForm({ ...form, tipo: value })}
+                                options={tipoOptions}
+                              />
+                            </div>
+                          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome *
-                </label>
-                <Input
-                  value={form.nome}
-                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                  placeholder="Nome do centro de custo"
-                />
-              </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Nome *
+                            </label>
+                            <Input
+                              value={form.nome}
+                              onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                              placeholder="Nome do centro de custo"
+                            />
+                          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descricao
-                </label>
-                <textarea
-                  value={form.descricao}
-                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
-                  placeholder="Descricao do centro de custo..."
-                />
-              </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Centro Pai
+                              </label>
+                              <Select
+                                value={form.centro_pai_id}
+                                onChange={(value) => setForm({ ...form, centro_pai_id: value })}
+                                options={centroPaiOptions}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Orcamento Mensal (R$)
+                              </label>
+                              <Input
+                                type="number"
+                                value={form.orcamento_mensal.toString()}
+                                onChange={(e) => setForm({ ...form, orcamento_mensal: parseFloat(e.target.value) || 0 })}
+                                placeholder="0,00"
+                              />
+                            </div>
+                          </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="ativo"
-                  checked={form.ativo}
-                  onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
-                  className="w-4 h-4 text-red-500 rounded focus:ring-red-500"
-                />
-                <label htmlFor="ativo" className="text-sm text-gray-700">
-                  Centro de custo ativo
-                </label>
-              </div>
-            </div>
+                          {form.tipo === 'PROJETO' && (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Data Inicio
+                                </label>
+                                <Input
+                                  type="date"
+                                  value={form.data_inicio}
+                                  onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Data Fim
+                                </label>
+                                <Input
+                                  type="date"
+                                  value={form.data_fim}
+                                  onChange={(e) => setForm({ ...form, data_fim: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Descricao
+                            </label>
+                            <textarea
+                              value={form.descricao}
+                              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                              rows={2}
+                              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                              placeholder="Descricao do centro de custo..."
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Observacoes
+                            </label>
+                            <textarea
+                              value={form.observacoes}
+                              onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                              rows={2}
+                              className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                              placeholder="Observacoes adicionais..."
+                            />
+                          </div>
+
+                          <div className="flex flex-wrap gap-4">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                id="aceita_lancamento"
+                                checked={form.aceita_lancamento}
+                                onChange={(e) => setForm({ ...form, aceita_lancamento: e.target.checked })}
+                                className="w-4 h-4 text-red-500 rounded focus:ring-red-500"
+                              />
+                              <label htmlFor="aceita_lancamento" className="text-sm text-gray-700">
+                                Aceita lancamentos
+                              </label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                id="ativo"
+                                checked={form.ativo}
+                                onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
+                                className="w-4 h-4 text-red-500 rounded focus:ring-red-500"
+                              />
+                              <label htmlFor="ativo" className="text-sm text-gray-700">
+                                Centro de custo ativo
+                              </label>
+                            </div>
+                          </div>
+                        </div>
 
             {/* Footer */}
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t">

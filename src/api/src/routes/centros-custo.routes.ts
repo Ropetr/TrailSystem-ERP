@@ -18,6 +18,14 @@ const centroCustoSchema = z.object({
   nome: z.string().min(2).max(100),
   descricao: z.string().optional(),
   centro_pai_id: z.string().uuid().optional().nullable(),
+  tipo: z.enum(['DEPARTAMENTO', 'FILIAL', 'PROJETO', 'PRODUTO', 'CLIENTE', 'ATIVIDADE']).default('DEPARTAMENTO'),
+  aceita_lancamento: z.boolean().default(true),
+  responsavel_id: z.string().uuid().optional().nullable(),
+  orcamento_mensal: z.number().min(0).default(0),
+  filial_id: z.string().uuid().optional().nullable(),
+  data_inicio: z.string().optional().nullable(),
+  data_fim: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
   ativo: z.boolean().default(true)
 });
 
@@ -174,13 +182,21 @@ centrosCusto.post('/', requirePermission('financeiro', 'criar'), async (c) => {
 
   const id = crypto.randomUUID();
 
-  await c.env.DB.prepare(`
-    INSERT INTO centros_custo (id, empresa_id, codigo, nome, descricao, centro_pai_id, nivel, ativo)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    id, usuario.empresa_id, data.codigo, data.nome, data.descricao || null,
-    data.centro_pai_id || null, nivel, data.ativo ? 1 : 0
-  ).run();
+    await c.env.DB.prepare(`
+      INSERT INTO centros_custo (
+        id, empresa_id, codigo, nome, descricao, centro_pai_id, nivel, tipo,
+        aceita_lancamento, responsavel_id, orcamento_mensal, filial_id,
+        data_inicio, data_fim, observacoes, ativo
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      id, usuario.empresa_id, data.codigo, data.nome, data.descricao || null,
+      data.centro_pai_id || null, nivel, data.tipo || 'DEPARTAMENTO',
+      data.aceita_lancamento !== false ? 1 : 0, data.responsavel_id || null,
+      data.orcamento_mensal || 0, data.filial_id || null,
+      data.data_inicio || null, data.data_fim || null, data.observacoes || null,
+      data.ativo ? 1 : 0
+    ).run();
 
   await registrarAuditoria(c.env.DB, {
     empresa_id: usuario.empresa_id,
@@ -247,23 +263,34 @@ centrosCusto.put('/:id', requirePermission('financeiro', 'editar'), async (c) =>
     }
   }
 
-  await c.env.DB.prepare(`
-    UPDATE centros_custo SET
-      codigo = COALESCE(?, codigo),
-      nome = COALESCE(?, nome),
-      descricao = COALESCE(?, descricao),
-      centro_pai_id = ?,
-      nivel = ?,
-      ativo = COALESCE(?, ativo),
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = ? AND empresa_id = ?
-  `).bind(
-    data.codigo, data.nome, data.descricao,
-    data.centro_pai_id !== undefined ? data.centro_pai_id : (centroAtual as any).centro_pai_id,
-    nivel,
-    data.ativo !== undefined ? (data.ativo ? 1 : 0) : null,
-    id, usuario.empresa_id
-  ).run();
+    await c.env.DB.prepare(`
+      UPDATE centros_custo SET
+        codigo = COALESCE(?, codigo),
+        nome = COALESCE(?, nome),
+        descricao = COALESCE(?, descricao),
+        centro_pai_id = ?,
+        nivel = ?,
+        tipo = COALESCE(?, tipo),
+        aceita_lancamento = COALESCE(?, aceita_lancamento),
+        responsavel_id = COALESCE(?, responsavel_id),
+        orcamento_mensal = COALESCE(?, orcamento_mensal),
+        filial_id = COALESCE(?, filial_id),
+        data_inicio = COALESCE(?, data_inicio),
+        data_fim = COALESCE(?, data_fim),
+        observacoes = COALESCE(?, observacoes),
+        ativo = COALESCE(?, ativo),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND empresa_id = ?
+    `).bind(
+      data.codigo, data.nome, data.descricao,
+      data.centro_pai_id !== undefined ? data.centro_pai_id : (centroAtual as any).centro_pai_id,
+      nivel,
+      data.tipo, data.aceita_lancamento !== undefined ? (data.aceita_lancamento ? 1 : 0) : null,
+      data.responsavel_id, data.orcamento_mensal, data.filial_id,
+      data.data_inicio, data.data_fim, data.observacoes,
+      data.ativo !== undefined ? (data.ativo ? 1 : 0) : null,
+      id, usuario.empresa_id
+    ).run();
 
   await registrarAuditoria(c.env.DB, {
     empresa_id: usuario.empresa_id,
