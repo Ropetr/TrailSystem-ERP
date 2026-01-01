@@ -55,6 +55,32 @@ interface ClienteModalProps {
   cliente?: Cliente | null;
 }
 
+interface Endereco {
+  id: string;
+  tipo: 'fiscal' | 'cobranca' | 'entrega';
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+}
+
+interface DadosComparacaoAPI {
+  razao_social?: string;
+  nome_fantasia?: string;
+  inscricao_estadual?: string;
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
+  email?: string;
+  telefone?: string;
+}
+
 interface ClienteAvatarProps {
   tipo: 'PF' | 'PJ';
   contribuinte_icms: string;
@@ -311,6 +337,10 @@ function SelectDropdown({ value, onChange, options, placeholder = 'Selecione...'
 function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
   const [activeTab, setActiveTab] = useState('dados');
   const [consultandoCNPJ, setConsultandoCNPJ] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(!cliente); // Novo: modo somente leitura por padrão
+  const [showComparacaoModal, setShowComparacaoModal] = useState(false);
+  const [dadosAPI, setDadosAPI] = useState<DadosComparacaoAPI | null>(null);
+  
   const [formData, setFormData] = useState({
     tipo: 'PJ' as 'PF' | 'PJ',
     cpf_cnpj: '',
@@ -318,16 +348,16 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
     nome_fantasia: '',
     inscricao_estadual: '',
     contribuinte_icms: 'nao_contribuinte',
+    consumidor_final: false, // Novo: consumidor final automático
     email: '',
     telefone: '',
     celular: '',
-    cep: '',
-    logradouro: '',
-    numero: '',
-    bairro: '',
-    cidade: '',
-    uf: '',
   });
+
+  // Novo: Endereços como cards
+  const [enderecos, setEnderecos] = useState<Endereco[]>([
+    { id: '1', tipo: 'fiscal', cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' }
+  ]);
 
   const tabs = [
     { id: 'dados', label: 'Dados Gerais' },
@@ -336,16 +366,43 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
     { id: 'comercial', label: 'Comercial' },
   ];
 
-  const consultarCNPJ = () => {
+  // Novo: Lógica de Consumidor Final automático
+  // CPF (pessoa física) OU CNPJ sem Inscrição Estadual = Consumidor Final
+  const calcularConsumidorFinal = (tipo: 'PF' | 'PJ', inscricaoEstadual: string): boolean => {
+    if (tipo === 'PF') return true;
+    if (!inscricaoEstadual || inscricaoEstadual.trim() === '' || inscricaoEstadual.toUpperCase() === 'ISENTO') return true;
+    return false;
+  };
+
+  // Atualiza consumidor_final quando tipo ou IE mudam
+  const handleTipoChange = (novoTipo: 'PF' | 'PJ') => {
+    const consumidorFinal = calcularConsumidorFinal(novoTipo, formData.inscricao_estadual);
+    setFormData(prev => ({ ...prev, tipo: novoTipo, consumidor_final: consumidorFinal }));
+  };
+
+  const handleIEChange = (novaIE: string) => {
+    const consumidorFinal = calcularConsumidorFinal(formData.tipo, novaIE);
+    setFormData(prev => ({ ...prev, inscricao_estadual: novaIE, consumidor_final: consumidorFinal }));
+  };
+
+  // Novo: Reconsulta CPF/CNPJ por Enter com popup comparativo
+  const handleCpfCnpjKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && formData.cpf_cnpj) {
+      e.preventDefault();
+      consultarCNPJ(true); // true = mostrar comparação se houver diferenças
+    }
+  };
+
+  const consultarCNPJ = (mostrarComparacao: boolean = false) => {
     if (!formData.cpf_cnpj) return;
     setConsultandoCNPJ(true);
+    
+    // Simula consulta à API (substituir por chamada real)
     setTimeout(() => {
-      setFormData(prev => ({ 
-        ...prev, 
+      const dadosConsultados: DadosComparacaoAPI = {
         razao_social: 'EMPRESA CONSULTADA VIA CNPJá LTDA', 
         nome_fantasia: 'Empresa Teste', 
         inscricao_estadual: '123456789', 
-        contribuinte_icms: 'contribuinte', 
         cep: '87020-000', 
         logradouro: 'Avenida Brasil', 
         numero: '1000', 
@@ -354,9 +411,78 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
         uf: 'PR',
         email: 'contato@empresa.com.br',
         telefone: '(44) 3030-3030',
-      }));
+      };
+
+      // Se mostrarComparacao e há dados existentes, verificar diferenças
+      if (mostrarComparacao && formData.razao_social) {
+        const temDiferencas = 
+          dadosConsultados.razao_social !== formData.razao_social ||
+          dadosConsultados.nome_fantasia !== formData.nome_fantasia ||
+          dadosConsultados.inscricao_estadual !== formData.inscricao_estadual;
+        
+        if (temDiferencas) {
+          setDadosAPI(dadosConsultados);
+          setShowComparacaoModal(true);
+          setConsultandoCNPJ(false);
+          return;
+        }
+      }
+
+      // Aplicar dados diretamente
+      aplicarDadosAPI(dadosConsultados);
       setConsultandoCNPJ(false);
     }, 1500);
+  };
+
+  const aplicarDadosAPI = (dados: DadosComparacaoAPI) => {
+    const consumidorFinal = calcularConsumidorFinal(formData.tipo, dados.inscricao_estadual || '');
+    setFormData(prev => ({ 
+      ...prev, 
+      razao_social: dados.razao_social || prev.razao_social, 
+      nome_fantasia: dados.nome_fantasia || prev.nome_fantasia, 
+      inscricao_estadual: dados.inscricao_estadual || prev.inscricao_estadual, 
+      contribuinte_icms: dados.inscricao_estadual ? 'contribuinte' : 'nao_contribuinte',
+      consumidor_final: consumidorFinal,
+      email: dados.email || prev.email,
+      telefone: dados.telefone || prev.telefone,
+    }));
+    
+    // Atualizar endereço fiscal
+    if (dados.cep || dados.logradouro) {
+      setEnderecos(prev => prev.map(end => 
+        end.tipo === 'fiscal' ? {
+          ...end,
+          cep: dados.cep || end.cep,
+          logradouro: dados.logradouro || end.logradouro,
+          numero: dados.numero || end.numero,
+          bairro: dados.bairro || end.bairro,
+          cidade: dados.cidade || end.cidade,
+          uf: dados.uf || end.uf,
+        } : end
+      ));
+    }
+  };
+
+  // Novo: Adicionar endereço
+  const adicionarEndereco = (tipo: 'cobranca' | 'entrega') => {
+    const novoEndereco: Endereco = {
+      id: crypto.randomUUID(),
+      tipo,
+      cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: ''
+    };
+    setEnderecos(prev => [...prev, novoEndereco]);
+  };
+
+  // Novo: Remover endereço (não pode remover fiscal)
+  const removerEndereco = (id: string) => {
+    setEnderecos(prev => prev.filter(end => end.id !== id || end.tipo === 'fiscal'));
+  };
+
+  // Novo: Atualizar endereço
+  const atualizarEndereco = (id: string, campo: keyof Endereco, valor: string) => {
+    setEnderecos(prev => prev.map(end => 
+      end.id === id ? { ...end, [campo]: valor } : end
+    ));
   };
 
   if (!isOpen) return null;
@@ -370,11 +496,37 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
           
           {/* Header do Modal */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-red-500 to-red-600">
-            <div>
-              <h2 className="text-xl font-bold text-white">{cliente ? 'Editar Cliente' : 'Novo Cliente'}</h2>
-              <p className="text-sm text-red-100">{cliente ? `#${cliente.codigo}` : 'Preencha os dados para cadastrar'}</p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-white">{cliente ? 'Cliente' : 'Novo Cliente'}</h2>
+                <p className="text-sm text-red-100">{cliente ? `#${cliente.codigo}` : 'Preencha os dados para cadastrar'}</p>
+              </div>
+              {/* Novo: Badge de Consumidor Final automático */}
+              {formData.consumidor_final && (
+                <span className="px-3 py-1 bg-white/20 text-white rounded-full text-xs font-medium">
+                  Consumidor Final
+                </span>
+              )}
             </div>
-            <button onClick={onClose} className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors">{Icons.x}</button>
+            <div className="flex items-center gap-2">
+              {/* Novo: Botão de edição (modo somente leitura por padrão) */}
+              {cliente && !isEditMode && (
+                <button 
+                  onClick={() => setIsEditMode(true)} 
+                  className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors flex items-center gap-2"
+                  title="Editar cliente"
+                >
+                  {Icons.edit}
+                  <span className="text-sm">Editar</span>
+                </button>
+              )}
+              {cliente && isEditMode && (
+                <span className="px-3 py-1 bg-white/20 text-white rounded-full text-xs font-medium">
+                  Modo Edição
+                </span>
+              )}
+              <button onClick={onClose} className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors">{Icons.x}</button>
+            </div>
           </div>
           
           {/* Tabs */}
@@ -396,31 +548,36 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
               <div className="space-y-6">
                 {/* Tipo Pessoa */}
                 <div className="flex gap-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="tipo" value="PJ" checked={formData.tipo === 'PJ'} onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'PF' | 'PJ' })} className="w-4 h-4 text-red-500 focus:ring-red-500" />
+                  <label className={`flex items-center gap-2 ${isEditMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+                    <input type="radio" name="tipo" value="PJ" checked={formData.tipo === 'PJ'} onChange={() => handleTipoChange('PJ')} disabled={!isEditMode} className="w-4 h-4 text-red-500 focus:ring-red-500" />
                     <span className="text-sm font-medium text-gray-700">Pessoa Jurídica</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="tipo" value="PF" checked={formData.tipo === 'PF'} onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'PF' | 'PJ' })} className="w-4 h-4 text-red-500 focus:ring-red-500" />
+                  <label className={`flex items-center gap-2 ${isEditMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+                    <input type="radio" name="tipo" value="PF" checked={formData.tipo === 'PF'} onChange={() => handleTipoChange('PF')} disabled={!isEditMode} className="w-4 h-4 text-red-500 focus:ring-red-500" />
                     <span className="text-sm font-medium text-gray-700">Pessoa Física</span>
                   </label>
                 </div>
                 
-                {/* CNPJ + Botão Consultar */}
+                {/* CNPJ + Botão Consultar - Reconsulta por Enter */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{formData.tipo === 'PJ' ? 'CNPJ *' : 'CPF *'}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {formData.tipo === 'PJ' ? 'CNPJ *' : 'CPF *'}
+                      {isEditMode && <span className="text-xs text-gray-400 ml-2">(Enter para reconsultar)</span>}
+                    </label>
                     <div className="flex gap-2">
                       <input 
                         type="text" 
                         value={formData.cpf_cnpj} 
                         onChange={(e) => setFormData({ ...formData, cpf_cnpj: e.target.value })} 
+                        onKeyDown={handleCpfCnpjKeyDown}
                         placeholder={formData.tipo === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'} 
-                        className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20" 
+                        disabled={!isEditMode}
+                        className={`flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                       />
-                      {formData.tipo === 'PJ' && (
+                      {formData.tipo === 'PJ' && isEditMode && (
                         <button 
-                          onClick={consultarCNPJ} 
+                          onClick={() => consultarCNPJ(false)} 
                           disabled={consultandoCNPJ} 
                           className="px-5 py-2.5 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
                         >
@@ -452,7 +609,8 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
                       type="text" 
                       value={formData.razao_social} 
                       onChange={(e) => setFormData({ ...formData, razao_social: e.target.value })} 
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20" 
+                      disabled={!isEditMode}
+                      className={`w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     />
                   </div>
                   {formData.tipo === 'PJ' && (
@@ -462,23 +620,28 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
                         type="text" 
                         value={formData.nome_fantasia} 
                         onChange={(e) => setFormData({ ...formData, nome_fantasia: e.target.value })} 
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20" 
+                        disabled={!isEditMode}
+                        className={`w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                   )}
                 </div>
 
-                {/* IE */}
+                {/* IE - Atualiza Consumidor Final automaticamente */}
                 {formData.tipo === 'PJ' && (
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Inscrição Estadual</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Inscrição Estadual
+                        <span className="text-xs text-gray-400 ml-2">(vazio ou ISENTO = Consumidor Final)</span>
+                      </label>
                       <input 
                         type="text" 
                         value={formData.inscricao_estadual} 
-                        onChange={(e) => setFormData({ ...formData, inscricao_estadual: e.target.value })} 
+                        onChange={(e) => handleIEChange(e.target.value)} 
                         placeholder="ISENTO ou número" 
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20" 
+                        disabled={!isEditMode}
+                        className={`w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                   </div>
@@ -492,7 +655,8 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
                       type="email" 
                       value={formData.email} 
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20" 
+                      disabled={!isEditMode}
+                      className={`w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     />
                   </div>
                   <div>
@@ -502,7 +666,8 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
                       value={formData.telefone} 
                       onChange={(e) => setFormData({ ...formData, telefone: e.target.value })} 
                       placeholder="(00) 0000-0000" 
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20" 
+                      disabled={!isEditMode}
+                      className={`w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     />
                   </div>
                   <div>
@@ -512,7 +677,8 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
                       value={formData.celular} 
                       onChange={(e) => setFormData({ ...formData, celular: e.target.value })} 
                       placeholder="(00) 00000-0000" 
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20" 
+                      disabled={!isEditMode}
+                      className={`w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     />
                   </div>
                 </div>
@@ -522,24 +688,125 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
             {activeTab === 'enderecos' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm text-gray-500">Endereços do cliente</p>
-                  <button className="text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors">
-                    <span className="text-xl leading-none">+</span><span>Novo Endereço</span>
-                  </button>
+                  <div>
+                    <p className="text-sm text-gray-500">Endereços do cliente</p>
+                    <p className="text-xs text-gray-400">Fiscal (obrigatório) • Cobrança (opcional) • Entrega (ilimitado)</p>
+                  </div>
+                  {isEditMode && (
+                    <div className="flex gap-2">
+                      {!enderecos.some(e => e.tipo === 'cobranca') && (
+                        <button 
+                          onClick={() => adicionarEndereco('cobranca')}
+                          className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+                        >
+                          <span className="text-xl leading-none">+</span><span>Cobrança</span>
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => adicionarEndereco('entrega')}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+                      >
+                        <span className="text-xl leading-none">+</span><span>Entrega</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="border border-gray-200 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">✓ Principal</span>
-                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Entrega</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-4">
-                    <div><label className="block text-xs text-gray-500 mb-1">CEP</label><input type="text" value={formData.cep} onChange={(e) => setFormData({ ...formData, cep: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
-                    <div className="col-span-2"><label className="block text-xs text-gray-500 mb-1">Logradouro</label><input type="text" value={formData.logradouro} onChange={(e) => setFormData({ ...formData, logradouro: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
-                    <div><label className="block text-xs text-gray-500 mb-1">Número</label><input type="text" value={formData.numero} onChange={(e) => setFormData({ ...formData, numero: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
-                    <div><label className="block text-xs text-gray-500 mb-1">Bairro</label><input type="text" value={formData.bairro} onChange={(e) => setFormData({ ...formData, bairro: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
-                    <div><label className="block text-xs text-gray-500 mb-1">Cidade</label><input type="text" value={formData.cidade} onChange={(e) => setFormData({ ...formData, cidade: e.target.value })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
-                    <div><label className="block text-xs text-gray-500 mb-1">UF</label><input type="text" value={formData.uf} onChange={(e) => setFormData({ ...formData, uf: e.target.value })} maxLength={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" /></div>
-                  </div>
+                
+                {/* Cards de Endereços */}
+                <div className="space-y-4">
+                  {enderecos.map((endereco, index) => {
+                    const tipoConfig = {
+                      fiscal: { label: 'Fiscal', color: 'bg-green-100 text-green-700', icon: '📋' },
+                      cobranca: { label: 'Cobrança', color: 'bg-blue-100 text-blue-700', icon: '💳' },
+                      entrega: { label: 'Entrega', color: 'bg-orange-100 text-orange-700', icon: '🚚' },
+                    };
+                    const config = tipoConfig[endereco.tipo];
+                    
+                    return (
+                      <div key={endereco.id} className="border border-gray-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{config.icon}</span>
+                            <span className={`px-2 py-1 ${config.color} rounded text-xs font-medium`}>{config.label}</span>
+                            {index === 0 && <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">Principal</span>}
+                            {endereco.tipo === 'fiscal' && <span className="text-xs text-gray-400">(obrigatório)</span>}
+                          </div>
+                          {isEditMode && endereco.tipo !== 'fiscal' && (
+                            <button 
+                              onClick={() => removerEndereco(endereco.id)}
+                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Remover endereço"
+                            >
+                              {Icons.trash}
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-4 gap-4">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">CEP</label>
+                            <input 
+                              type="text" 
+                              value={endereco.cep} 
+                              onChange={(e) => atualizarEndereco(endereco.id, 'cep', e.target.value)} 
+                              disabled={!isEditMode}
+                              className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="block text-xs text-gray-500 mb-1">Logradouro</label>
+                            <input 
+                              type="text" 
+                              value={endereco.logradouro} 
+                              onChange={(e) => atualizarEndereco(endereco.id, 'logradouro', e.target.value)} 
+                              disabled={!isEditMode}
+                              className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Número</label>
+                            <input 
+                              type="text" 
+                              value={endereco.numero} 
+                              onChange={(e) => atualizarEndereco(endereco.id, 'numero', e.target.value)} 
+                              disabled={!isEditMode}
+                              className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Bairro</label>
+                            <input 
+                              type="text" 
+                              value={endereco.bairro} 
+                              onChange={(e) => atualizarEndereco(endereco.id, 'bairro', e.target.value)} 
+                              disabled={!isEditMode}
+                              className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Cidade</label>
+                            <input 
+                              type="text" 
+                              value={endereco.cidade} 
+                              onChange={(e) => atualizarEndereco(endereco.id, 'cidade', e.target.value)} 
+                              disabled={!isEditMode}
+                              className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">UF</label>
+                            <input 
+                              type="text" 
+                              value={endereco.uf} 
+                              onChange={(e) => atualizarEndereco(endereco.id, 'uf', e.target.value)} 
+                              maxLength={2}
+                              disabled={!isEditMode}
+                              className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-sm ${!isEditMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -609,12 +876,71 @@ function ClienteModal({ isOpen, onClose, cliente = null }: ClienteModalProps) {
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50">
             <p className="text-xs text-gray-400">* Campos obrigatórios</p>
             <div className="flex gap-3">
-              <button onClick={onClose} className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition-colors">Cancelar</button>
-              <button onClick={onClose} className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors shadow-sm">{cliente ? 'Salvar' : 'Cadastrar'}</button>
+              <button onClick={onClose} className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition-colors">
+                {isEditMode ? 'Cancelar' : 'Fechar'}
+              </button>
+              {isEditMode && (
+                <button onClick={onClose} className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors shadow-sm">
+                  {cliente ? 'Salvar' : 'Cadastrar'}
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Modal de Comparação de Dados - Reconsulta CPF/CNPJ */}
+      {showComparacaoModal && dadosAPI && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowComparacaoModal(false)} />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-500 to-blue-600">
+                <h3 className="text-lg font-bold text-white">Dados Atualizados Encontrados</h3>
+                <p className="text-sm text-blue-100">Compare os dados atuais com os dados da consulta</p>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="text-sm font-medium text-gray-500 mb-3">Dados Atuais</h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="text-gray-500">Razão Social:</span> <span className="font-medium">{formData.razao_social || '-'}</span></p>
+                      <p><span className="text-gray-500">Nome Fantasia:</span> <span className="font-medium">{formData.nome_fantasia || '-'}</span></p>
+                      <p><span className="text-gray-500">IE:</span> <span className="font-medium">{formData.inscricao_estadual || '-'}</span></p>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+                    <h4 className="text-sm font-medium text-blue-600 mb-3">Dados da Consulta (Novos)</h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="text-gray-500">Razão Social:</span> <span className={`font-medium ${dadosAPI.razao_social !== formData.razao_social ? 'text-blue-600' : ''}`}>{dadosAPI.razao_social || '-'}</span></p>
+                      <p><span className="text-gray-500">Nome Fantasia:</span> <span className={`font-medium ${dadosAPI.nome_fantasia !== formData.nome_fantasia ? 'text-blue-600' : ''}`}>{dadosAPI.nome_fantasia || '-'}</span></p>
+                      <p><span className="text-gray-500">IE:</span> <span className={`font-medium ${dadosAPI.inscricao_estadual !== formData.inscricao_estadual ? 'text-blue-600' : ''}`}>{dadosAPI.inscricao_estadual || '-'}</span></p>
+                    </div>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-gray-500 text-center">Campos em azul indicam diferenças encontradas</p>
+              </div>
+              
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                <button 
+                  onClick={() => setShowComparacaoModal(false)} 
+                  className="px-5 py-2.5 text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                >
+                  Manter Dados Atuais
+                </button>
+                <button 
+                  onClick={() => { aplicarDadosAPI(dadosAPI); setShowComparacaoModal(false); }} 
+                  className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors shadow-sm"
+                >
+                  Aplicar Novos Dados
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
