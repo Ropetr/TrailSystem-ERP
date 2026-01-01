@@ -82,6 +82,16 @@ import {
   PedidoCompraFormPage,
 } from '@/pages/compras';
 
+// Cadastros Pages
+import {
+  CategoriasPage,
+  MarcasPage,
+  UnidadesPage,
+  TabelasPrecosPage,
+  CondicoesPagamentoPage,
+  VendedoresPage,
+} from '@/pages/cadastros';
+
 // Logística Pages
 import {
   EntregasPage,
@@ -408,14 +418,14 @@ export function AppRoutes() {
                   <Route path="/cadastros/financeiro/centros-custo/novo" element={<EmDesenvolvimento titulo="Novo Centro de Custo" />} />
                   <Route path="/cadastros/financeiro/centros-custo/:id" element={<EmDesenvolvimento titulo="Editar Centro de Custo" />} />
                   
-                  <Route path="/cadastros/financeiro/condicoes-pagamento" element={<EmDesenvolvimento titulo="Condições de Pagamento" />} />
-                  <Route path="/cadastros/financeiro/condicoes-pagamento/novo" element={<EmDesenvolvimento titulo="Nova Condição" />} />
-                  <Route path="/cadastros/financeiro/condicoes-pagamento/:id" element={<EmDesenvolvimento titulo="Editar Condição" />} />
+                  <Route path="/cadastros/financeiro/condicoes-pagamento" element={<CondicoesPagamentoPage />} />
 
                   {/* --- Comercial (Cadastros) --- */}
-                  <Route path="/cadastros/comercial/tabelas-preco" element={<EmDesenvolvimento titulo="Tabelas de Preço" />} />
-                  <Route path="/cadastros/comercial/tabelas-preco/novo" element={<EmDesenvolvimento titulo="Nova Tabela" />} />
-                  <Route path="/cadastros/comercial/tabelas-preco/:id" element={<EmDesenvolvimento titulo="Editar Tabela" />} />
+                  <Route path="/cadastros/comercial/tabelas-preco" element={<TabelasPrecosPage />} />
+                  <Route path="/cadastros/comercial/categorias" element={<CategoriasPage />} />
+                  <Route path="/cadastros/comercial/marcas" element={<MarcasPage />} />
+                  <Route path="/cadastros/comercial/unidades" element={<UnidadesPage />} />
+                  <Route path="/cadastros/comercial/vendedores" element={<VendedoresPage />} />
 
                   {/* --- Patrimônio (Cadastros) --- */}
                   <Route path="/cadastros/patrimonio/veiculos" element={<EmDesenvolvimento titulo="Veículos" />} />
