@@ -95,18 +95,19 @@ export function ContasPagarPage() {
     loadContas();
   }, []);
 
-  const loadContas = async () => {
-    try {
-      const response = await api.get<{ success: boolean; data: ContaPagar[] }>('/financeiro/contas-pagar');
-      if (response.success) {
-        setContas(response.data);
+    const loadContas = async () => {
+      try {
+        const response = await api.get<{ success: boolean; data: ContaPagar[] }>('/contas-pagar');
+        if (response.success) {
+          setContas(response.data || []);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar contas a pagar:', error);
+        toast.error('Erro ao carregar contas a pagar');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      toast.error('Erro ao carregar contas a pagar');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
   const handlePagar = async () => {
     if (!contaPagar || !pagamentoForm.valor) {
@@ -120,7 +121,7 @@ export function ContasPagarPage() {
         (pagamentoForm.multa || 0) - 
         (pagamentoForm.desconto || 0);
 
-      await api.post(`/financeiro/contas-pagar/${contaPagar.id}/pagar`, {
+      await api.post(`/contas-pagar/${contaPagar.id}/pagar`, {
         ...pagamentoForm,
         valor: valorTotal,
       });
@@ -141,7 +142,7 @@ export function ContasPagarPage() {
     }
 
     try {
-      await api.post('/financeiro/contas-pagar', novaContaForm);
+      await api.post('/contas-pagar', novaContaForm);
       toast.success('Conta criada com sucesso');
       setShowNovaContaModal(false);
       setNovaContaForm({
@@ -161,7 +162,7 @@ export function ContasPagarPage() {
     if (!confirm('Deseja realmente cancelar esta conta?')) return;
 
     try {
-      await api.post(`/financeiro/contas-pagar/${conta.id}/cancelar`);
+      await api.post(`/contas-pagar/${conta.id}/cancelar`);
       toast.success('Conta cancelada');
       loadContas();
     } catch (error) {

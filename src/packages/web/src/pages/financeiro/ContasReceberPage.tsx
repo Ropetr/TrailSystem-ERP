@@ -78,18 +78,19 @@ export function ContasReceberPage() {
     loadContas();
   }, []);
 
-  const loadContas = async () => {
-    try {
-      const response = await api.get<{ success: boolean; data: ContaReceber[] }>('/financeiro/contas-receber');
-      if (response.success) {
-        setContas(response.data);
+    const loadContas = async () => {
+      try {
+        const response = await api.get<{ success: boolean; data: ContaReceber[] }>('/contas-receber');
+        if (response.success) {
+          setContas(response.data || []);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar contas a receber:', error);
+        toast.error('Erro ao carregar contas a receber');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      toast.error('Erro ao carregar contas a receber');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
   const handleReceber = async () => {
     if (!contaReceber || !recebimentoForm.valor) {
@@ -103,7 +104,7 @@ export function ContasReceberPage() {
         (recebimentoForm.multa || 0) - 
         (recebimentoForm.desconto || 0);
 
-      await api.post(`/financeiro/contas-receber/${contaReceber.id}/receber`, {
+      await api.post(`/contas-receber/${contaReceber.id}/receber`, {
         ...recebimentoForm,
         valor: valorTotal,
       });
@@ -121,9 +122,9 @@ export function ContasReceberPage() {
     if (!contaBoleto) return;
 
     try {
-      const response = await api.post<{ success: boolean; data: any }>(
-        `/financeiro/contas-receber/${contaBoleto.id}/boleto`
-      );
+            const response = await api.post<{ success: boolean; data: any }>(
+              `/contas-receber/${contaBoleto.id}/boleto`
+            );
       
       if (response.success) {
         toast.success('Boleto emitido com sucesso');
@@ -141,7 +142,7 @@ export function ContasReceberPage() {
 
   const handleEnviarCobranca = async (conta: ContaReceber) => {
     try {
-      await api.post(`/financeiro/contas-receber/${conta.id}/enviar-cobranca`);
+      await api.post(`/contas-receber/${conta.id}/enviar-cobranca`);
       toast.success('Cobrança enviada por e-mail e WhatsApp');
     } catch (error) {
       toast.error('Erro ao enviar cobrança');

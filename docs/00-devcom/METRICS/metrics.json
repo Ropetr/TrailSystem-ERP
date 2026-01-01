@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "generated_at": "2026-01-01T19:36:36.228Z",
+  "git": {
+    "hash": "38d3876",
+    "branch": "devin/1767296183-measure-metrics-chars"
+  },
+  "summary": {
+    "total_docs_folders": 10,
+    "total_route_files": 73,
+    "total_migrations": 54,
+    "total_docs_lines": 0,
+    "total_docs_chars": 0
+  },
+  "documentation": {
+    "folders": {
+      "01-sumario": {
+        "file_count": 0,
+        "files": []
+      },
+      "02-regras-negocio": {
+        "file_count": 0,
+        "files": []
+      },
+      "03-casos-uso": {
+        "file_count": 0,
+        "files": []
+      },
+      "04-fluxogramas": {
+        "file_count": 0,
+        "files": []
+      },
+      "05-modelo-dados": {
+        "file_count": 0,
+        "files": []
+      },
+      "06-especificacao-telas": {
+        "file_count": 0,
+        "files": []
+      },
+      "07-apis": {
+        "file_count": 0,
+        "files": []
+      },
+      "08-integracoes": {
+        "file_count": 0,
+        "files": []
+      },
+      "09-manuais": {
+        "file_count": 0,
+        "files": []
+      },
+      "10-anexos": {
+        "file_count": 0,
+        "files": []
+      }
+    },
+    "total_files": 0,
+    "estimated_lines": 0,
+    "estimated_chars": 0
+  },
+  "source_code": {
+    "api_routes": {
+      "total": 73,
+      "files": [
+        "adrcst.routes.ts",
+        "agenda.routes.ts",
+        "arquivos.routes.ts",
+        "auditoria.routes.ts",
+        "auth.routes.ts",
+        "banco-brasil.routes.ts",
+        "bancos.routes.ts",
+        "bi.routes.ts",
+        "caixa.routes.ts",
+        "caixas.routes.ts",
+        "categorias.routes.ts",
+        "centros-custo.routes.ts",
+        "certificados.routes.ts",
+        "clientes.routes.ts",
+        "comissoes.routes.ts",
+        "compras.routes.ts",
+        "condicoes-pagamento.routes.ts",
+        "configuracoes-sistema.routes.ts",
+        "configuracoes.routes.ts",
+        "consignacoes.routes.ts",
+        "contabilidade.routes.ts",
+        "contas-pagar.routes.ts",
+        "contas-receber.routes.ts",
+        "contratos.routes.ts",
+        "crm.routes.ts",
+        "devolucoes.routes.ts",
+        "ecommerce.routes.ts",
+        "empresas-config.routes.ts",
+        "empresas.routes.ts",
+        "entregas.routes.ts",
+        "estoque.routes.ts",
+        "filiais.routes.ts",
+        "fiscal.routes.ts",
+        "folha-pagamento.routes.ts",
+        "fornecedores.routes.ts",
+        "garantias.routes.ts",
+        "ibpt.routes.ts",
+        "import-export.routes.ts",
+        "inventarios.routes.ts",
+        "jobs.routes.ts",
+        "lancamentos-contabeis.routes.ts",
+        "locais-estoque.routes.ts",
+        "marcas.routes.ts",
+        "motoristas.routes.ts",
+        "notas-fiscais.routes.ts",
+        "notificacoes.routes.ts",
+        "ocorrencias.routes.ts",
+        "orcamentos.routes.ts",
+        "ordens-servico.routes.ts",
+        "patrimonio.routes.ts",
+        "pdv.routes.ts",
+        "pedidos.routes.ts",
+        "perfis.routes.ts",
+        "plano-contas.routes.ts",
+        "produtos.routes.ts",
+        "rastreamento.routes.ts",
+        "rh.routes.ts",
+        "rotas.routes.ts",
+        "safra.routes.ts",
+        "sicoob.routes.ts",
+        "sisprime.routes.ts",
+        "tabelas-preco.routes.ts",
+        "tags.routes.ts",
+        "tarefas.routes.ts",
+        "tickets.routes.ts",
+        "transferencias.routes.ts",
+        "transportadoras.routes.ts",
+        "trocas.routes.ts",
+        "unidades.routes.ts",
+        "usuarios.routes.ts",
+        "veiculos.routes.ts",
+        "vendedores.routes.ts",
+        "workflows.routes.ts"
+      ]
+    },
+    "migrations": {
+      "total": 54,
+      "files": [
+        "0001_base.sql",
+        "0002_core_usuarios.sql",
+        "0003_seed_permissoes.sql",
+        "0004_seed_inicial.sql",
+        "0005_cadastros.sql",
+        "0006_estoque.sql",
+        "0007_comercial.sql",
+        "0008_complementos.sql",
+        "0009_financeiro.sql",
+        "0010_fiscal.sql",
+        "0011_pdv.sql",
+        "0012_crm.sql",
+        "0013_compras.sql",
+        "0014_logistica.sql",
+        "0015_rh.sql",
+        "0016_contabil.sql",
+        "0017_outros.sql",
+        "0018_agenda_arquivos.sql",
+        "0019_auditoria_comissoes.sql",
+        "0020_consignacoes_devolucoes.sql",
+        "0021_certificados_config.sql",
+        "0022_fiscal_dfe.sql",
+        "0023_fiscal_nfse.sql",
+        "0024_financeiro_boletos.sql",
+        "0025_financeiro_pix.sql",
+        "0026_fiscal_sped.sql",
+        "0027_rh_esocial_reinf.sql",
+        "0028_acbr_integracao.sql",
+        "0042_cosmos_integration.sql",
+        "0043_tributacao_vendas_beneficios.sql",
+        "0044_cnpja_integration.sql",
+        "0045_cpfcnpj_integration.sql",
+        "0050_fluxo_venda_completa.sql",
+        "0051_fluxo_recebimento_financeiro.sql",
+        "0052_fluxo_orcamento_mesclar_desmembrar.sql",
+        "0053_fluxo_compra_completa.sql",
+        "0054_fluxo_inventario.sql",
+        "0055_fluxo_limite_credito.sql",
+        "0056_fluxo_devolucao_troca.sql",
+        "0057_fluxo_consignacao.sql",
+        "0058_fluxo_garantia.sql",
+        "0059_fluxo_entrega_gps.sql",
+        "0060_fluxo_transferencia_filiais.sql",
+        "0061_fluxo_precificacao.sql",
+        "0062_fluxo_bonificacao.sql",
+        "0063_fluxo_pdv.sql",
+        "0064_fluxo_rh_esocial.sql",
+        "0065_fluxo_ecommerce_nuvemshop.sql",
+        "0066_inscricoes_estaduais_multiplas.sql",
+        "0066_sistema_tags.sql",
+        "0067_sisprime_integration.sql",
+        "0068_bancos_integracao.sql",
+        "0069_adrcst_module.sql",
+        "0069_plano_contas_centros_custo_completo.sql"
+      ]
+    }
+  },
+  "declared_metrics": {
+    "note": "Valores declarados no README (fonte de verdade para negócio)",
+    "regras_negocio": 313,
+    "casos_uso": 185,
+    "fluxogramas": 25,
+    "tabelas_modelo_dados": 207,
+    "telas_especificadas": 203,
+    "integracoes_externas": 10
+  }
+}
