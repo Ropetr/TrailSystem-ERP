@@ -14,3 +14,5 @@ export { Badge } from "./Badge";
 export { Spinner } from "./Spinner";
 export { ToastProvider, useToast } from "./Toast";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./Tabs";
+export { DocumentoInput } from "./DocumentoInput";
+export { DataComparisonPopup } from "./DataComparisonPopup";

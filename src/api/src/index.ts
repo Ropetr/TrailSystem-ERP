@@ -151,6 +151,7 @@ import workflows from './routes/workflows.routes';
 import agenda from './routes/agenda.routes';
 import jobs from './routes/jobs.routes'; // NOVO - Jobs agendados
 import configSistema from './routes/configuracoes-sistema.routes';
+import tags from './routes/tags.routes'; // NOVO - Sistema de Tags
 
 // =============================================
 // TIPOS
@@ -197,20 +198,40 @@ const app = new Hono<{ Bindings: Env }>();
 // MIDDLEWARES GLOBAIS
 // =============================================
 
-// CORS
+// CORS - Função para validar origens permitidas
+const allowedOrigins = [
+  'http://localhost:3000', 
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://planac.com.br', 
+  'https://planacdistribuidora.com.br',
+  'https://trailsystem.com.br',
+  'https://app.trailsystem.com.br',
+  'https://claude.ai'
+];
+
+const isAllowedOrigin = (origin: string | undefined): boolean => {
+  if (!origin) return false;
+  
+  // Origens exatas
+  if (allowedOrigins.includes(origin)) return true;
+  
+  // Subdomínios permitidos
+  if (origin.endsWith('.planac.com.br')) return true;
+  if (origin.endsWith('.planacdistribuidora.com.br')) return true;
+  if (origin.endsWith('.trailsystem.com.br')) return true;
+  
+  // Cloudflare Pages (preview deployments)
+  if (origin.endsWith('.pages.dev')) return true;
+  if (origin.endsWith('.trailsystem-erp.pages.dev')) return true;
+  
+  return false;
+};
+
 app.use('*', cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://localhost:5173', 
-    'https://planac.com.br', 
-    'https://*.planac.com.br',
-    'https://planacdistribuidora.com.br',
-    'https://*.planacdistribuidora.com.br',
-    'https://trailsystem.com.br',
-    'https://*.trailsystem.com.br',
-    'https://app.trailsystem.com.br',
-    'https://claude.ai'
-  ],
+  origin: (origin) => {
+    return isAllowedOrigin(origin) ? origin : allowedOrigins[0];
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposeHeaders: ['X-Total-Count', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
@@ -264,7 +285,7 @@ app.get('/', (c) => {
       bi: ['/api/bi'],
       suporte: ['/api/tickets', '/api/ocorrencias'],
       servicos: ['/api/ordens-servico', '/api/contratos', '/api/garantias', '/api/devolucoes', '/api/trocas'],
-      sistema: ['/api/auditoria', '/api/notificacoes', '/api/arquivos', '/api/import-export', '/api/workflows', '/api/agenda', '/api/jobs', '/api/config-sistema']
+      sistema: ['/api/auditoria', '/api/notificacoes', '/api/arquivos', '/api/import-export', '/api/workflows', '/api/agenda', '/api/jobs', '/api/config-sistema', '/api/tags']
     }
   });
 });
@@ -417,6 +438,7 @@ app.route('/api/workflows', workflows);
 app.route('/api/agenda', agenda);
 app.route('/api/jobs', jobs); // NOVO
 app.route('/api/config-sistema', configSistema);
+app.route('/api/tags', tags); // NOVO - Sistema de Tags
 
 // =============================================
 // ERROR HANDLING

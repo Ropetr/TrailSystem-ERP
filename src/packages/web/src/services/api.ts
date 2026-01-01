@@ -11,9 +11,18 @@ const getApiUrl = () => {
     return import.meta.env.VITE_API_URL;
   }
   
-  // Em produção (Cloudflare Pages), usa a URL do worker
-  if (typeof window !== "undefined" && window.location.hostname.includes("pages.dev")) {
-    return "https://trailsystem-erp-api.trailsystemacabamentos.workers.dev/v1";
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    
+    // Produção (app.trailsystem.com.br) - usa API de produção
+    if (hostname === "app.trailsystem.com.br") {
+      return "https://planac-erp-api.planacacabamentos.workers.dev/api";
+    }
+    
+    // Preview (Cloudflare Pages) - usa API de produção
+    if (hostname.includes("pages.dev")) {
+      return "https://planac-erp-api.planacacabamentos.workers.dev/api";
+    }
   }
   
   // Desenvolvimento local - usa proxy

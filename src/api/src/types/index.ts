@@ -412,3 +412,59 @@ export interface JobExecucao {
   finalizado_em?: string;
   duracao_ms?: number;
 }
+
+// =============================================
+// Sistema de Tags (NOVO)
+// =============================================
+
+export interface TagCategoria {
+  id: string;
+  empresa_id: string;
+  parent_id?: string;
+  nome: string;
+  slug: string;
+  descricao?: string;
+  icone?: string;
+  ordem: number;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Tag {
+  id: string;
+  empresa_id: string;
+  categoria_id?: string;
+  nome: string;
+  slug: string;
+  cor_hex: string;
+  icone?: string;
+  descricao?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TagVinculo {
+  id: string;
+  empresa_id: string;
+  tag_id: string;
+  entidade_tipo: string;
+  entidade_id: string;
+  created_by?: string;
+  created_at: string;
+}
+
+// Tipos de entidades que podem receber tags
+export type TagEntidadeTipo = 
+  | 'clientes'
+  | 'fornecedores'
+  | 'produtos'
+  | 'pedidos_venda'
+  | 'orcamentos'
+  | 'notas_fiscais'
+  | 'contas_pagar'
+  | 'contas_receber'
+  | 'oportunidades'
+  | 'leads'
+  | 'entregas';

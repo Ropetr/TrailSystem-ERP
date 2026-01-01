@@ -152,6 +152,7 @@ import { AtivacoesPage } from '@/pages/admin/licenciamento/AtivacoesPage';
 import { SaudePage } from '@/pages/admin/monitoramento/SaudePage';
 import { LogsPage } from '@/pages/admin/auditoria/LogsPage';
 import { GeralPage as AdminGeralPage } from '@/pages/admin/configuracoes/GeralPage';
+import { TagsPage } from '@/pages/admin/configuracoes/TagsPage';
 
 // Loading component
 function PageLoading() {
@@ -528,6 +529,7 @@ export function AppRoutes() {
                   <Route path="/configuracoes/comercial" element={<EmDesenvolvimento titulo="Configurações Comerciais" />} />
                   <Route path="/configuracoes/email" element={<EmDesenvolvimento titulo="Configurações de E-mail" />} />
                   <Route path="/configuracoes/integracoes" element={<IntegracaoPage />} />
+                  <Route path="/configuracoes/tags" element={<TagsPage />} />
 
                   {/* ========== REDIRECTS LEGADOS ========== */}
                   {/* Mantém compatibilidade com URLs antigas */}
