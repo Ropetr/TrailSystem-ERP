@@ -11,3 +11,6 @@ export { VendedoresPage } from './VendedoresPage';
 export { FornecedorFormPage } from './FornecedorFormPage';
 export { ContasBancariasPage } from './ContasBancariasPage';
 export { ContaBancariaFormPage } from './ContaBancariaFormPage';
+export { TransportadorasPage } from './TransportadorasPage';
+export { VeiculosPage } from './VeiculosPage';
+export { CentrosCustoPage } from './CentrosCustoPage';
