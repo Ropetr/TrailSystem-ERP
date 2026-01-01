@@ -151,6 +151,7 @@ import workflows from './routes/workflows.routes';
 import agenda from './routes/agenda.routes';
 import jobs from './routes/jobs.routes'; // NOVO - Jobs agendados
 import configSistema from './routes/configuracoes-sistema.routes';
+import tags from './routes/tags.routes'; // NOVO - Sistema de Tags
 
 // =============================================
 // TIPOS
@@ -264,7 +265,7 @@ app.get('/', (c) => {
       bi: ['/api/bi'],
       suporte: ['/api/tickets', '/api/ocorrencias'],
       servicos: ['/api/ordens-servico', '/api/contratos', '/api/garantias', '/api/devolucoes', '/api/trocas'],
-      sistema: ['/api/auditoria', '/api/notificacoes', '/api/arquivos', '/api/import-export', '/api/workflows', '/api/agenda', '/api/jobs', '/api/config-sistema']
+      sistema: ['/api/auditoria', '/api/notificacoes', '/api/arquivos', '/api/import-export', '/api/workflows', '/api/agenda', '/api/jobs', '/api/config-sistema', '/api/tags']
     }
   });
 });
@@ -417,6 +418,7 @@ app.route('/api/workflows', workflows);
 app.route('/api/agenda', agenda);
 app.route('/api/jobs', jobs); // NOVO
 app.route('/api/config-sistema', configSistema);
+app.route('/api/tags', tags); // NOVO - Sistema de Tags
 
 // =============================================
 // ERROR HANDLING

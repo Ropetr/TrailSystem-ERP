@@ -94,6 +94,9 @@ export { default as configuracoesSistema } from './configuracoes-sistema.routes'
 // PDV
 export { default as pdv } from './pdv.routes';
 
+// Sistema de Tags
+export { default as tags } from './tags.routes';
+
 // ============================================
 // RESUMO
 // ============================================
