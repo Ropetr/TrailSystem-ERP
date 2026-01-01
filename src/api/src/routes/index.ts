@@ -98,6 +98,13 @@ export { default as pdv } from './pdv.routes';
 export { default as tags } from './tags.routes';
 
 // ============================================
+// INTEGRAÇÕES BANCÁRIAS
+// ============================================
+
+// Sisprime (Banco 084)
+export { default as sisprime } from './sisprime.routes';
+
+// ============================================
 // RESUMO
 // ============================================
 // Bloco 1: 7 rotas  (Alta Prioridade)
