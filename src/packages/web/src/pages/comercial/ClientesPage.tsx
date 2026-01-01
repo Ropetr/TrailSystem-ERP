@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@/stores/auth.store';
 
 // =============================================
 // PLANAC ERP - Módulo Clientes
