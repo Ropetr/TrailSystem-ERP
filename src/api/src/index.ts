@@ -69,6 +69,7 @@ import fiscal from './routes/fiscal.routes';           // NF-e, NFC-e, NFS-e, CT
 import ibpt from './routes/ibpt.routes';               // Lei da Transparência
 import certificados from './routes/certificados.routes'; // Certificados A1
 import notasFiscais from './routes/notas-fiscais.routes';
+import adrcst from './routes/adrcst.routes';           // ADRC-ST - Recuperação ICMS-ST (Paraná)
 
 // =============================================
 // ROTAS - FINANCEIRO
@@ -284,7 +285,7 @@ app.get('/', (c) => {
       cadastros: ['/api/clientes', '/api/fornecedores', '/api/produtos', '/api/categorias', '/api/marcas', '/api/unidades', '/api/transportadoras', '/api/motoristas', '/api/veiculos', '/api/vendedores'],
       comercial: ['/api/tabelas-preco', '/api/condicoes-pagamento', '/api/orcamentos', '/api/pedidos', '/api/comissoes'],
       estoque: ['/api/estoque', '/api/inventarios', '/api/transferencias', '/api/locais-estoque'],
-      fiscal: ['/api/fiscal', '/api/ibpt', '/api/certificados', '/api/notas-fiscais'],
+      fiscal: ['/api/fiscal', '/api/ibpt', '/api/certificados', '/api/notas-fiscais', '/api/adrcst'],
       financeiro: ['/api/contas-pagar', '/api/contas-receber', '/api/bancos', '/api/caixas'],
       compras: ['/api/compras', '/api/consignacoes'],
       logistica: ['/api/entregas', '/api/rotas', '/api/rastreamento'],
@@ -407,12 +408,14 @@ app.route('/api/fiscal', fiscal);             // Nuvem Fiscal - NF-e, NFC-e, NFS
 app.route('/api/ibpt', ibpt);                 // IBPT - Lei da Transparência
 app.route('/api/certificados', certificados); // Certificados A1
 app.route('/api/notas-fiscais', notasFiscais);
+app.route('/api/adrcst', adrcst);             // ADRC-ST - Recuperação ICMS-ST (Paraná)
 
 // Alias /v1 para fiscal
 app.route('/v1/fiscal', fiscal);
 app.route('/v1/ibpt', ibpt);
 app.route('/v1/certificados', certificados);
 app.route('/v1/notas-fiscais', notasFiscais);
+app.route('/v1/adrcst', adrcst);
 
 // =============================================
 // ROTAS - FINANCEIRO
