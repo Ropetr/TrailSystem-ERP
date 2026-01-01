@@ -301,11 +301,16 @@ app.get('/health', (c) => {
 });
 
 // =============================================
-// ROTAS - CORE
+// ROTAS - CORE (suporte /api e /v1 para compatibilidade)
 // =============================================
 app.route('/api/auth', auth);
 app.route('/api/usuarios', usuarios);
 app.route('/api/perfis', perfis);
+
+// Alias /v1 -> /api para compatibilidade com frontends antigos
+app.route('/v1/auth', auth);
+app.route('/v1/usuarios', usuarios);
+app.route('/v1/perfis', perfis);
 
 // =============================================
 // ROTAS - EMPRESA & CONFIG
@@ -314,6 +319,12 @@ app.route('/api/empresas', empresas);
 app.route('/api/filiais', filiais);
 app.route('/api/configuracoes', configuracoes);
 app.route('/api/empresas-config', empresasConfig); // NOVO
+
+// Alias /v1 para empresa & config
+app.route('/v1/empresas', empresas);
+app.route('/v1/filiais', filiais);
+app.route('/v1/configuracoes', configuracoes);
+app.route('/v1/empresas-config', empresasConfig);
 
 // =============================================
 // ROTAS - CADASTROS
@@ -329,6 +340,18 @@ app.route('/api/motoristas', motoristas);
 app.route('/api/veiculos', veiculos);
 app.route('/api/vendedores', vendedores);
 
+// Alias /v1 para cadastros
+app.route('/v1/clientes', clientes);
+app.route('/v1/fornecedores', fornecedores);
+app.route('/v1/produtos', produtos);
+app.route('/v1/categorias', categorias);
+app.route('/v1/marcas', marcas);
+app.route('/v1/unidades', unidades);
+app.route('/v1/transportadoras', transportadoras);
+app.route('/v1/motoristas', motoristas);
+app.route('/v1/veiculos', veiculos);
+app.route('/v1/vendedores', vendedores);
+
 // =============================================
 // ROTAS - COMERCIAL
 // =============================================
@@ -338,6 +361,13 @@ app.route('/api/orcamentos', orcamentos);
 app.route('/api/pedidos', pedidos);
 app.route('/api/comissoes', comissoes);
 
+// Alias /v1 para comercial
+app.route('/v1/tabelas-preco', tabelasPreco);
+app.route('/v1/condicoes-pagamento', condicoesPagamento);
+app.route('/v1/orcamentos', orcamentos);
+app.route('/v1/pedidos', pedidos);
+app.route('/v1/comissoes', comissoes);
+
 // =============================================
 // ROTAS - ESTOQUE
 // =============================================
@@ -345,6 +375,12 @@ app.route('/api/estoque', estoque);
 app.route('/api/inventarios', inventarios);
 app.route('/api/transferencias', transferencias);
 app.route('/api/locais-estoque', locaisEstoque);
+
+// Alias /v1 para estoque
+app.route('/v1/estoque', estoque);
+app.route('/v1/inventarios', inventarios);
+app.route('/v1/transferencias', transferencias);
+app.route('/v1/locais-estoque', locaisEstoque);
 
 // =============================================
 // ROTAS - FISCAL (NOVO)
@@ -354,6 +390,12 @@ app.route('/api/ibpt', ibpt);                 // IBPT - Lei da Transparência
 app.route('/api/certificados', certificados); // Certificados A1
 app.route('/api/notas-fiscais', notasFiscais);
 
+// Alias /v1 para fiscal
+app.route('/v1/fiscal', fiscal);
+app.route('/v1/ibpt', ibpt);
+app.route('/v1/certificados', certificados);
+app.route('/v1/notas-fiscais', notasFiscais);
+
 // =============================================
 // ROTAS - FINANCEIRO
 // =============================================
@@ -361,6 +403,12 @@ app.route('/api/contas-pagar', contasPagar);
 app.route('/api/contas-receber', contasReceber);
 app.route('/api/bancos', bancos);
 app.route('/api/caixas', caixas);
+
+// Alias /v1 para financeiro
+app.route('/v1/contas-pagar', contasPagar);
+app.route('/v1/contas-receber', contasReceber);
+app.route('/v1/bancos', bancos);
+app.route('/v1/caixas', caixas);
 
 // =============================================
 // ROTAS - COMPRAS
@@ -439,6 +487,17 @@ app.route('/api/agenda', agenda);
 app.route('/api/jobs', jobs); // NOVO
 app.route('/api/config-sistema', configSistema);
 app.route('/api/tags', tags); // NOVO - Sistema de Tags
+
+// Alias /v1 para sistema
+app.route('/v1/auditoria', auditoria);
+app.route('/v1/notificacoes', notificacoes);
+app.route('/v1/arquivos', arquivos);
+app.route('/v1/import-export', importExport);
+app.route('/v1/workflows', workflows);
+app.route('/v1/agenda', agenda);
+app.route('/v1/jobs', jobs);
+app.route('/v1/config-sistema', configSistema);
+app.route('/v1/tags', tags);
 
 // =============================================
 // ERROR HANDLING
