@@ -198,20 +198,40 @@ const app = new Hono<{ Bindings: Env }>();
 // MIDDLEWARES GLOBAIS
 // =============================================
 
-// CORS
+// CORS - Função para validar origens permitidas
+const allowedOrigins = [
+  'http://localhost:3000', 
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://planac.com.br', 
+  'https://planacdistribuidora.com.br',
+  'https://trailsystem.com.br',
+  'https://app.trailsystem.com.br',
+  'https://claude.ai'
+];
+
+const isAllowedOrigin = (origin: string | undefined): boolean => {
+  if (!origin) return false;
+  
+  // Origens exatas
+  if (allowedOrigins.includes(origin)) return true;
+  
+  // Subdomínios permitidos
+  if (origin.endsWith('.planac.com.br')) return true;
+  if (origin.endsWith('.planacdistribuidora.com.br')) return true;
+  if (origin.endsWith('.trailsystem.com.br')) return true;
+  
+  // Cloudflare Pages (preview deployments)
+  if (origin.endsWith('.pages.dev')) return true;
+  if (origin.endsWith('.trailsystem-erp.pages.dev')) return true;
+  
+  return false;
+};
+
 app.use('*', cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://localhost:5173', 
-    'https://planac.com.br', 
-    'https://*.planac.com.br',
-    'https://planacdistribuidora.com.br',
-    'https://*.planacdistribuidora.com.br',
-    'https://trailsystem.com.br',
-    'https://*.trailsystem.com.br',
-    'https://app.trailsystem.com.br',
-    'https://claude.ai'
-  ],
+  origin: (origin) => {
+    return isAllowedOrigin(origin) ? origin : allowedOrigins[0];
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposeHeaders: ['X-Total-Count', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
