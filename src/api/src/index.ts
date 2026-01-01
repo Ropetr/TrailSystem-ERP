@@ -458,6 +458,14 @@ app.route('/api/entregas', entregas);
 app.route('/api/rotas', rotas);
 app.route('/api/rastreamento', rastreamento);
 
+// Alias /api/logistica/* para compatibilidade com frontend
+app.route('/api/logistica/entregas', entregas);
+app.route('/api/logistica/rotas', rotas);
+app.route('/api/logistica/rastreio', rastreamento);
+app.route('/api/logistica/veiculos', veiculos);
+app.route('/api/logistica/motoristas', motoristas);
+app.route('/api/logistica/manutencoes', veiculos); // Manutenções são sub-rota de veículos
+
 // =============================================
 // ROTAS - CRM
 // =============================================
