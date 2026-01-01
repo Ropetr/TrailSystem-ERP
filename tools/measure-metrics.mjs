@@ -90,6 +90,37 @@ function countLines(dirPath, extension = '.md') {
 }
 
 /**
+ * Conta caracteres em arquivos
+ */
+function countCharacters(dirPath, extension = '.md') {
+  let totalChars = 0;
+  
+  if (!existsSync(dirPath)) {
+    return 0;
+  }
+  
+  const items = readdirSync(dirPath);
+  
+  for (const item of items) {
+    const fullPath = join(dirPath, item);
+    const stat = statSync(fullPath);
+    
+    if (stat.isFile() && item.endsWith(extension)) {
+      try {
+        const output = execSync(`wc -c < "${fullPath}"`, { encoding: 'utf8' });
+        totalChars += parseInt(output.trim(), 10) || 0;
+      } catch {
+        // Ignora erros
+      }
+    } else if (stat.isDirectory()) {
+      totalChars += countCharacters(fullPath, extension);
+    }
+  }
+  
+  return totalChars;
+}
+
+/**
  * Obtém hash do último commit
  */
 function getGitInfo() {
@@ -151,6 +182,11 @@ function measureMetrics() {
     return acc + countLines(join(DOCS_PATH, key));
   }, 0);
   
+  // Total de caracteres de documentação
+  const totalDocsChars = Object.keys(docs).reduce((acc, key) => {
+    return acc + countCharacters(join(DOCS_PATH, key));
+  }, 0);
+  
   // Construir objeto de métricas
   const metrics = {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -162,7 +198,8 @@ function measureMetrics() {
       total_docs_folders: Object.keys(docs).length,
       total_route_files: routeFiles.length,
       total_migrations: migrations.count,
-      total_docs_lines: totalDocsLines
+      total_docs_lines: totalDocsLines,
+      total_docs_chars: totalDocsChars
     },
     
     documentation: {
@@ -176,7 +213,8 @@ function measureMetrics() {
         ])
       ),
       total_files: Object.values(docs).reduce((acc, v) => acc + v.count, 0),
-      estimated_lines: totalDocsLines
+      estimated_lines: totalDocsLines,
+      estimated_chars: totalDocsChars
     },
     
     source_code: {
@@ -231,6 +269,7 @@ function printSummary(metrics) {
   console.log(`   Pastas: ${metrics.summary.total_docs_folders}`);
   console.log(`   Arquivos: ${metrics.documentation.total_files}`);
   console.log(`   Linhas (estimado): ~${metrics.summary.total_docs_lines.toLocaleString()}`);
+  console.log(`   Caracteres (estimado): ~${metrics.summary.total_docs_chars.toLocaleString()}`);
   console.log('');
   console.log('💻 Código:');
   console.log(`   Rotas API: ${metrics.summary.total_route_files}`);
