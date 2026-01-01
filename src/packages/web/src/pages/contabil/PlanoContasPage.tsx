@@ -18,22 +18,23 @@ interface ContaContabil {
   id: string;
   codigo: string;
   nome: string;
-  tipo: 'ativo' | 'passivo' | 'receita' | 'despesa' | 'patrimonio';
-  natureza: 'devedora' | 'credora';
+  tipo: 'ATIVO' | 'PASSIVO' | 'RECEITA' | 'DESPESA' | 'PATRIMONIO';
+  natureza: 'DEVEDORA' | 'CREDORA';
   nivel: number;
   conta_pai_id?: string;
+  sintetica: boolean;
   aceita_lancamento: boolean;
-  ativa: boolean;
-  saldo_atual: number;
-  filhos?: ContaContabil[];
+  ativo: boolean;
+  saldo_atual?: number;
+  filhas?: ContaContabil[];
 }
 
-const tipoConfig = {
-  ativo: { label: 'Ativo', color: 'bg-blue-100 text-blue-700', icon: '📊' },
-  passivo: { label: 'Passivo', color: 'bg-red-100 text-red-700', icon: '💳' },
-  receita: { label: 'Receita', color: 'bg-green-100 text-green-700', icon: '📈' },
-  despesa: { label: 'Despesa', color: 'bg-orange-100 text-orange-700', icon: '📉' },
-  patrimonio: { label: 'Patrimônio', color: 'bg-purple-100 text-purple-700', icon: '🏦' },
+const tipoConfig: Record<string, { label: string; color: string; icon: string }> = {
+  ATIVO: { label: 'Ativo', color: 'bg-blue-100 text-blue-700', icon: '📊' },
+  PASSIVO: { label: 'Passivo', color: 'bg-red-100 text-red-700', icon: '💳' },
+  RECEITA: { label: 'Receita', color: 'bg-green-100 text-green-700', icon: '📈' },
+  DESPESA: { label: 'Despesa', color: 'bg-orange-100 text-orange-700', icon: '📉' },
+  PATRIMONIO: { label: 'Patrimônio', color: 'bg-purple-100 text-purple-700', icon: '🏦' },
 };
 
 export function PlanoContasPage() {
@@ -48,78 +49,80 @@ export function PlanoContasPage() {
   // Modal
   const [showContaModal, setShowContaModal] = useState(false);
   const [contaEdit, setContaEdit] = useState<ContaContabil | null>(null);
-  const [formData, setFormData] = useState({
-    codigo: '',
-    nome: '',
-    tipo: 'ativo',
-    natureza: 'devedora',
-    conta_pai_id: '',
-    aceita_lancamento: true,
-  });
+    const [formData, setFormData] = useState({
+      codigo: '',
+      nome: '',
+      tipo: 'ATIVO',
+      natureza: 'DEVEDORA',
+      conta_pai_id: '',
+      sintetica: false,
+      aceita_lancamento: true,
+    });
 
   useEffect(() => {
     loadContas();
   }, []);
 
-  const loadContas = async () => {
-    try {
-      const response = await api.get<{ success: boolean; data: ContaContabil[] }>('/contabil/plano-contas');
-      if (response.success) {
-        setContas(response.data);
+    const loadContas = async () => {
+      try {
+        const response = await api.get<{ success: boolean; data: ContaContabil[] }>('/plano-contas/arvore');
+        if (response.success) {
+          setContas(response.data);
+        }
+      } catch (error) {
+        toast.error('Erro ao carregar plano de contas');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      toast.error('Erro ao carregar plano de contas');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  const handleSalvar = async () => {
-    if (!formData.codigo || !formData.nome) {
-      toast.error('Preencha código e nome da conta');
-      return;
-    }
-
-    try {
-      if (contaEdit) {
-        await api.put(`/contabil/plano-contas/${contaEdit.id}`, formData);
-        toast.success('Conta atualizada');
-      } else {
-        await api.post('/contabil/plano-contas', formData);
-        toast.success('Conta criada');
+    const handleSalvar = async () => {
+      if (!formData.codigo || !formData.nome) {
+        toast.error('Preencha código e nome da conta');
+        return;
       }
 
-      setShowContaModal(false);
-      resetForm();
-      loadContas();
-    } catch (error) {
-      toast.error('Erro ao salvar conta');
-    }
-  };
+      try {
+        if (contaEdit) {
+          await api.put(`/plano-contas/${contaEdit.id}`, formData);
+          toast.success('Conta atualizada');
+        } else {
+          await api.post('/plano-contas', formData);
+          toast.success('Conta criada');
+        }
 
-  const handleDesativar = async (conta: ContaContabil) => {
-    if (!confirm(`Deseja ${conta.ativa ? 'desativar' : 'ativar'} esta conta?`)) return;
+        setShowContaModal(false);
+        resetForm();
+        loadContas();
+      } catch (error) {
+        toast.error('Erro ao salvar conta');
+      }
+    };
 
-    try {
-      await api.put(`/contabil/plano-contas/${conta.id}/status`, { ativa: !conta.ativa });
-      toast.success(`Conta ${conta.ativa ? 'desativada' : 'ativada'}`);
-      loadContas();
-    } catch (error) {
-      toast.error('Erro ao alterar status');
-    }
-  };
+    const handleDesativar = async (conta: ContaContabil) => {
+      if (!confirm(`Deseja ${conta.ativo ? 'desativar' : 'ativar'} esta conta?`)) return;
 
-  const resetForm = () => {
-    setContaEdit(null);
-    setFormData({
-      codigo: '',
-      nome: '',
-      tipo: 'ativo',
-      natureza: 'devedora',
-      conta_pai_id: '',
-      aceita_lancamento: true,
-    });
-  };
+      try {
+        await api.put(`/plano-contas/${conta.id}`, { ativo: !conta.ativo });
+        toast.success(`Conta ${conta.ativo ? 'desativada' : 'ativada'}`);
+        loadContas();
+      } catch (error) {
+        toast.error('Erro ao alterar status');
+      }
+    };
+
+    const resetForm = () => {
+      setContaEdit(null);
+      setFormData({
+        codigo: '',
+        nome: '',
+        tipo: 'ATIVO',
+        natureza: 'DEVEDORA',
+        conta_pai_id: '',
+        sintetica: false,
+        aceita_lancamento: true,
+      });
+    };
 
   const toggleExpand = (contaId: string) => {
     const newExpanded = new Set(expandedContas);
@@ -131,12 +134,12 @@ export function PlanoContasPage() {
     setExpandedContas(newExpanded);
   };
 
-  const expandAll = () => {
-    const getAllIds = (contas: ContaContabil[]): string[] => {
-      return contas.flatMap(c => [c.id, ...(c.filhos ? getAllIds(c.filhos) : [])]);
+    const expandAll = () => {
+      const getAllIds = (contas: ContaContabil[]): string[] => {
+        return contas.flatMap(c => [c.id, ...(c.filhas ? getAllIds(c.filhas) : [])]);
+      };
+      setExpandedContas(new Set(getAllIds(contas)));
     };
-    setExpandedContas(new Set(getAllIds(contas)));
-  };
 
   const collapseAll = () => {
     setExpandedContas(new Set());
@@ -148,95 +151,96 @@ export function PlanoContasPage() {
 
   const contasRaiz = contas.filter(c => !c.conta_pai_id);
 
-  const filterContas = (contas: ContaContabil[]): ContaContabil[] => {
-    return contas.filter(conta => {
-      const matchSearch = conta.codigo.includes(search) || 
-                         conta.nome.toLowerCase().includes(search.toLowerCase());
-      const matchTipo = !tipoFilter || conta.tipo === tipoFilter;
+    const filterContas = (contas: ContaContabil[]): ContaContabil[] => {
+      return contas.filter(conta => {
+        const matchSearch = conta.codigo.includes(search) || 
+                           conta.nome.toLowerCase().includes(search.toLowerCase());
+        const matchTipo = !tipoFilter || conta.tipo === tipoFilter;
       
-      if (conta.filhos && conta.filhos.length > 0) {
-        const filteredFilhos = filterContas(conta.filhos);
-        if (filteredFilhos.length > 0) {
-          return true;
+        if (conta.filhas && conta.filhas.length > 0) {
+          const filteredFilhas = filterContas(conta.filhas);
+          if (filteredFilhas.length > 0) {
+            return true;
+          }
         }
-      }
       
-      return matchSearch && matchTipo;
-    });
-  };
+        return matchSearch && matchTipo;
+      });
+    };
 
-  const renderContaArvore = (conta: ContaContabil, depth: number = 0) => {
-    const hasFilhos = conta.filhos && conta.filhos.length > 0;
-    const isExpanded = expandedContas.has(conta.id);
-    const config = tipoConfig[conta.tipo];
+    const renderContaArvore = (conta: ContaContabil, depth: number = 0) => {
+      const hasFilhas = conta.filhas && conta.filhas.length > 0;
+      const isExpanded = expandedContas.has(conta.id);
+      const config = tipoConfig[conta.tipo];
 
-    return (
-      <React.Fragment key={conta.id}>
-        <div 
-          className={`flex items-center justify-between p-2 hover:bg-gray-50 border-b ${!conta.ativa ? 'opacity-50' : ''}`}
-          style={{ paddingLeft: `${20 + depth * 24}px` }}
-        >
-          <div className="flex items-center gap-2 flex-1">
-            {hasFilhos ? (
-              <button onClick={() => toggleExpand(conta.id)} className="text-gray-400 hover:text-gray-600">
-                {isExpanded ? '▼' : '▶'}
-              </button>
-            ) : (
-              <span className="w-4"></span>
-            )}
+      return (
+        <React.Fragment key={conta.id}>
+          <div 
+            className={`flex items-center justify-between p-2 hover:bg-gray-50 border-b ${!conta.ativo ? 'opacity-50' : ''}`}
+            style={{ paddingLeft: `${20 + depth * 24}px` }}
+          >
+            <div className="flex items-center gap-2 flex-1">
+              {hasFilhas ? (
+                <button onClick={() => toggleExpand(conta.id)} className="text-gray-400 hover:text-gray-600">
+                  {isExpanded ? '▼' : '▶'}
+                </button>
+              ) : (
+                <span className="w-4"></span>
+              )}
             
-            <span className="font-mono text-sm text-gray-500 w-24">{conta.codigo}</span>
-            <span className={conta.nivel <= 2 ? 'font-semibold' : ''}>{conta.nome}</span>
+              <span className="font-mono text-sm text-gray-500 w-24">{conta.codigo}</span>
+              <span className={conta.nivel <= 2 ? 'font-semibold' : ''}>{conta.nome}</span>
             
-            {conta.aceita_lancamento && (
-              <Badge variant="default" className="text-xs">Analítica</Badge>
-            )}
-          </div>
+              {conta.aceita_lancamento && (
+                <Badge variant="default" className="text-xs">Analítica</Badge>
+              )}
+            </div>
           
-          <div className="flex items-center gap-4">
-            <span className={`font-mono text-sm ${conta.saldo_atual < 0 ? 'text-red-600' : ''}`}>
-              {formatCurrency(conta.saldo_atual)}
-            </span>
+            <div className="flex items-center gap-4">
+              <span className={`font-mono text-sm ${(conta.saldo_atual || 0) < 0 ? 'text-red-600' : ''}`}>
+                {formatCurrency(conta.saldo_atual || 0)}
+              </span>
             
-            <div className="flex gap-1">
-              <button
-                onClick={() => {
-                  setContaEdit(conta);
-                  setFormData({
-                    codigo: conta.codigo,
-                    nome: conta.nome,
-                    tipo: conta.tipo,
-                    natureza: conta.natureza,
-                    conta_pai_id: conta.conta_pai_id || '',
-                    aceita_lancamento: conta.aceita_lancamento,
-                  });
-                  setShowContaModal(true);
-                }}
-                className="p-1 text-gray-400 hover:text-blue-600"
-              >
-                <Icons.edit className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDesativar(conta)}
-                className={`p-1 ${conta.ativa ? 'text-gray-400 hover:text-red-600' : 'text-gray-400 hover:text-green-600'}`}
-              >
-                {conta.ativa ? <Icons.x className="w-4 h-4" /> : <Icons.check className="w-4 h-4" />}
-              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => {
+                    setContaEdit(conta);
+                    setFormData({
+                      codigo: conta.codigo,
+                      nome: conta.nome,
+                      tipo: conta.tipo,
+                      natureza: conta.natureza,
+                      conta_pai_id: conta.conta_pai_id || '',
+                      sintetica: conta.sintetica,
+                      aceita_lancamento: conta.aceita_lancamento,
+                    });
+                    setShowContaModal(true);
+                  }}
+                  className="p-1 text-gray-400 hover:text-blue-600"
+                >
+                  <Icons.edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleDesativar(conta)}
+                  className={`p-1 ${conta.ativo ? 'text-gray-400 hover:text-red-600' : 'text-gray-400 hover:text-green-600'}`}
+                >
+                  {conta.ativo ? <Icons.x className="w-4 h-4" /> : <Icons.check className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         
-        {hasFilhos && isExpanded && conta.filhos!.map(filho => renderContaArvore(filho, depth + 1))}
-      </React.Fragment>
-    );
-  };
+          {hasFilhas && isExpanded && conta.filhas!.map(filha => renderContaArvore(filha, depth + 1))}
+        </React.Fragment>
+      );
+    };
 
-  // Stats
-  const stats = {
-    total: contas.length,
-    ativas: contas.filter(c => c.ativa).length,
-    analiticas: contas.filter(c => c.aceita_lancamento).length,
-  };
+    // Stats
+    const stats = {
+      total: contas.length,
+      ativas: contas.filter(c => c.ativo).length,
+      analiticas: contas.filter(c => c.aceita_lancamento).length,
+    };
 
   return (
     <div className="space-y-6">
@@ -327,12 +331,12 @@ export function PlanoContasPage() {
               onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
               placeholder="Ex: 1.1.01"
             />
-            <Select
-              label="Tipo *"
-              value={formData.tipo}
-              onChange={(v) => setFormData({ ...formData, tipo: v, natureza: ['ativo', 'despesa'].includes(v) ? 'devedora' : 'credora' })}
-              options={Object.entries(tipoConfig).map(([k, v]) => ({ value: k, label: v.label }))}
-            />
+                        <Select
+                          label="Tipo *"
+                          value={formData.tipo}
+                          onChange={(v) => setFormData({ ...formData, tipo: v, natureza: ['ATIVO', 'DESPESA'].includes(v) ? 'DEVEDORA' : 'CREDORA' })}
+                          options={Object.entries(tipoConfig).map(([k, v]) => ({ value: k, label: v.label }))}
+                        />
           </div>
           
           <Input
@@ -343,24 +347,24 @@ export function PlanoContasPage() {
           />
           
           <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Natureza"
-              value={formData.natureza}
-              onChange={(v) => setFormData({ ...formData, natureza: v })}
-              options={[
-                { value: 'devedora', label: 'Devedora' },
-                { value: 'credora', label: 'Credora' },
-              ]}
-            />
-            <Select
-              label="Conta Pai"
-              value={formData.conta_pai_id}
-              onChange={(v) => setFormData({ ...formData, conta_pai_id: v })}
-              options={[
-                { value: '', label: 'Nenhuma (Raiz)' },
-                ...contas.filter(c => !c.aceita_lancamento).map(c => ({ value: c.id, label: `${c.codigo} - ${c.nome}` })),
-              ]}
-            />
+                        <Select
+                          label="Natureza"
+                          value={formData.natureza}
+                          onChange={(v) => setFormData({ ...formData, natureza: v })}
+                          options={[
+                            { value: 'DEVEDORA', label: 'Devedora' },
+                            { value: 'CREDORA', label: 'Credora' },
+                          ]}
+                        />
+                        <Select
+                          label="Conta Pai"
+                          value={formData.conta_pai_id}
+                          onChange={(v) => setFormData({ ...formData, conta_pai_id: v })}
+                          options={[
+                            { value: '', label: 'Nenhuma (Raiz)' },
+                            ...contas.filter(c => c.sintetica).map(c => ({ value: c.id, label: `${c.codigo} - ${c.nome}` })),
+                          ]}
+                        />
           </div>
           
           <label className="flex items-center gap-2">
