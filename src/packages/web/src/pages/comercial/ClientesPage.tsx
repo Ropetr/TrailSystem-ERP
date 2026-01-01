@@ -6,7 +6,20 @@ import { useAuth } from '@/stores/auth.store';
 // Padrão: Lista + Botão [+] vermelho + Modal Popup
 // =============================================
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://planac-erp-api.planacacabamentos.workers.dev';
+// URL base da API - deve incluir /api para corresponder às rotas do backend
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname === "app.trailsystem.com.br" || hostname.includes("pages.dev")) {
+      return "https://planac-erp-api.planacacabamentos.workers.dev/api";
+    }
+  }
+  return "/api"; // Desenvolvimento local
+};
+const API_BASE_URL = getApiBaseUrl();
 
 // Tipagens
 interface Cliente {
