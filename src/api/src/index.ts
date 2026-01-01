@@ -41,6 +41,7 @@ import transportadoras from './routes/transportadoras.routes';
 import motoristas from './routes/motoristas.routes';
 import veiculos from './routes/veiculos.routes';
 import vendedores from './routes/vendedores.routes';
+import centrosCusto from './routes/centros-custo.routes';
 
 // =============================================
 // ROTAS - COMERCIAL
@@ -348,6 +349,7 @@ app.route('/api/transportadoras', transportadoras);
 app.route('/api/motoristas', motoristas);
 app.route('/api/veiculos', veiculos);
 app.route('/api/vendedores', vendedores);
+app.route('/api/centros-custo', centrosCusto);
 
 // Alias /v1 para cadastros
 app.route('/v1/clientes', clientes);
@@ -360,6 +362,7 @@ app.route('/v1/transportadoras', transportadoras);
 app.route('/v1/motoristas', motoristas);
 app.route('/v1/veiculos', veiculos);
 app.route('/v1/vendedores', vendedores);
+app.route('/v1/centros-custo', centrosCusto);
 
 // =============================================
 // ROTAS - COMERCIAL

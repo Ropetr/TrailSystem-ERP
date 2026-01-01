@@ -93,6 +93,9 @@ import {
   VendedoresPage,
   ContasBancariasPage,
   ContaBancariaFormPage,
+  TransportadorasPage,
+  VeiculosPage,
+  CentrosCustoPage,
 } from '@/pages/cadastros';
 
 // Logística Pages
@@ -388,9 +391,7 @@ export function AppRoutes() {
                   <Route path="/cadastros/entidades/fornecedores/novo" element={<FornecedorFormPage />} />
                   <Route path="/cadastros/entidades/fornecedores/:id" element={<FornecedorFormPage />} />
                   
-                  <Route path="/cadastros/entidades/transportadoras" element={<EmDesenvolvimento titulo="Transportadoras" />} />
-                  <Route path="/cadastros/entidades/transportadoras/novo" element={<EmDesenvolvimento titulo="Nova Transportadora" />} />
-                  <Route path="/cadastros/entidades/transportadoras/:id" element={<EmDesenvolvimento titulo="Editar Transportadora" />} />
+                                    <Route path="/cadastros/entidades/transportadoras" element={<TransportadorasPage />} />
                   
                   <Route path="/cadastros/entidades/colaboradores" element={<FuncionariosPage />} />
                   <Route path="/cadastros/entidades/colaboradores/novo" element={<EmDesenvolvimento titulo="Novo Colaborador" />} />
@@ -418,9 +419,7 @@ export function AppRoutes() {
                   
                   <Route path="/cadastros/financeiro/plano-contas" element={<PlanoContasPage />} />
                   
-                  <Route path="/cadastros/financeiro/centros-custo" element={<EmDesenvolvimento titulo="Centros de Custo" />} />
-                  <Route path="/cadastros/financeiro/centros-custo/novo" element={<EmDesenvolvimento titulo="Novo Centro de Custo" />} />
-                  <Route path="/cadastros/financeiro/centros-custo/:id" element={<EmDesenvolvimento titulo="Editar Centro de Custo" />} />
+                                    <Route path="/cadastros/financeiro/centros-custo" element={<CentrosCustoPage />} />
                   
                   <Route path="/cadastros/financeiro/condicoes-pagamento" element={<CondicoesPagamentoPage />} />
 
@@ -432,9 +431,7 @@ export function AppRoutes() {
                   <Route path="/cadastros/comercial/vendedores" element={<VendedoresPage />} />
 
                   {/* --- Patrimônio (Cadastros) --- */}
-                  <Route path="/cadastros/patrimonio/veiculos" element={<EmDesenvolvimento titulo="Veículos" />} />
-                  <Route path="/cadastros/patrimonio/veiculos/novo" element={<EmDesenvolvimento titulo="Novo Veículo" />} />
-                  <Route path="/cadastros/patrimonio/veiculos/:id" element={<EmDesenvolvimento titulo="Editar Veículo" />} />
+                                    <Route path="/cadastros/patrimonio/veiculos" element={<VeiculosPage />} />
                   
                   <Route path="/cadastros/patrimonio/bens" element={<AtivosPage />} />
                   <Route path="/cadastros/patrimonio/bens/novo" element={<EmDesenvolvimento titulo="Novo Bem" />} />
