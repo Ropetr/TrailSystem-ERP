@@ -91,6 +91,8 @@ import {
   TabelasPrecosPage,
   CondicoesPagamentoPage,
   VendedoresPage,
+  ContasBancariasPage,
+  ContaBancariaFormPage,
 } from '@/pages/cadastros';
 
 // Logística Pages
@@ -410,9 +412,9 @@ export function AppRoutes() {
                   <Route path="/cadastros/empresa/filiais/:filialId/inscricoes-estaduais" element={<InscricoesEstaduaisPage />} />
 
                   {/* --- Financeiro (Cadastros) --- */}
-                  <Route path="/cadastros/financeiro/contas-bancarias" element={<EmDesenvolvimento titulo="Contas Bancárias" />} />
-                  <Route path="/cadastros/financeiro/contas-bancarias/novo" element={<EmDesenvolvimento titulo="Nova Conta Bancária" />} />
-                  <Route path="/cadastros/financeiro/contas-bancarias/:id" element={<EmDesenvolvimento titulo="Editar Conta Bancária" />} />
+                                    <Route path="/cadastros/financeiro/contas-bancarias" element={<ContasBancariasPage />} />
+                                    <Route path="/cadastros/financeiro/contas-bancarias/novo" element={<ContaBancariaFormPage />} />
+                                    <Route path="/cadastros/financeiro/contas-bancarias/:id" element={<ContaBancariaFormPage />} />
                   
                   <Route path="/cadastros/financeiro/plano-contas" element={<PlanoContasPage />} />
                   
