@@ -79,6 +79,10 @@ import caixas from './routes/caixas.routes';
 // ROTAS - INTEGRAÇÕES BANCÁRIAS
 // =============================================
 import sisprime from './routes/sisprime.routes'; // Sisprime (Banco 084)
+import sicoob from './routes/sicoob.routes'; // Sicoob (Banco 756)
+import bancoBrasil from './routes/banco-brasil.routes'; // Banco do Brasil (Banco 001)
+import caixa from './routes/caixa.routes'; // Caixa Econômica Federal (Banco 104)
+import safra from './routes/safra.routes'; // Banco Safra (Banco 422)
 
 // =============================================
 // ROTAS - COMPRAS
@@ -420,6 +424,14 @@ app.route('/v1/caixas', caixas);
 // =============================================
 app.route('/api/sisprime', sisprime);  // Sisprime (Banco 084) - Boletos e PIX
 app.route('/v1/sisprime', sisprime);   // Alias /v1
+app.route('/api/sicoob', sicoob);      // Sicoob (Banco 756) - Boletos e PIX
+app.route('/v1/sicoob', sicoob);       // Alias /v1
+app.route('/api/banco-brasil', bancoBrasil);  // Banco do Brasil (Banco 001) - Boletos e PIX
+app.route('/v1/banco-brasil', bancoBrasil);   // Alias /v1
+app.route('/api/caixa', caixa);        // Caixa Econômica Federal (Banco 104) - Boletos e PIX
+app.route('/v1/caixa', caixa);         // Alias /v1
+app.route('/api/safra', safra);        // Banco Safra (Banco 422) - Boletos e PIX
+app.route('/v1/safra', safra);         // Alias /v1
 
 // =============================================
 // ROTAS - COMPRAS
