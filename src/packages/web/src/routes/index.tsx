@@ -28,6 +28,7 @@ import {
   EmpresasPage,
   EmpresaFormPage,
   FiliaisPage,
+  InscricoesEstaduaisPage,
   UsuariosPage,
   UsuarioFormPage,
   PerfisPage,
@@ -406,6 +407,7 @@ export function AppRoutes() {
                   <Route path="/cadastros/empresa/filiais" element={<EmpresasPage />} />
                   <Route path="/cadastros/empresa/filiais/novo" element={<EmpresaFormPage />} />
                   <Route path="/cadastros/empresa/filiais/:id" element={<EmpresaFormPage />} />
+                  <Route path="/cadastros/empresa/filiais/:filialId/inscricoes-estaduais" element={<InscricoesEstaduaisPage />} />
 
                   {/* --- Financeiro (Cadastros) --- */}
                   <Route path="/cadastros/financeiro/contas-bancarias" element={<EmDesenvolvimento titulo="Contas Bancárias" />} />
