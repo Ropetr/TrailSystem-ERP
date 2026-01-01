@@ -105,6 +105,11 @@ export { default as tags } from './tags.routes';
 export { default as sisprime } from './sisprime.routes';
 
 // ============================================
+// FISCAL - ADRC-ST (Parana)
+// ============================================
+export { default as adrcst } from './adrcst.routes';
+
+// ============================================
 // RESUMO
 // ============================================
 // Bloco 1: 7 rotas  (Alta Prioridade)
