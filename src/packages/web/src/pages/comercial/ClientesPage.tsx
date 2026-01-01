@@ -452,7 +452,10 @@ function ClienteModal({ isOpen, onClose, cliente = null, onSave }: ClienteModalP
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Erro ao salvar cliente');
+        const errorMessage = typeof result.error === 'string' 
+          ? result.error 
+          : (result.message || result.error?.message || 'Erro ao salvar cliente');
+        throw new Error(errorMessage);
       }
 
       // Sucesso!
