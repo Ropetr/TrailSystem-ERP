@@ -1,6 +1,6 @@
-# PLANAC ERP - Wrangler Configuration
-# Atualizado: 16/12/2025 - Correcao de IDs e adicao de bindings
-name = "planac-erp-api"
+# TRAILSYSTEM ERP - Wrangler Configuration
+# Atualizado: 02/01/2026 - Rebranding Planac -> TrailSystem
+name = "trailsystem-erp-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
