@@ -9,18 +9,41 @@ import type { Env } from '../types/env';
 const auth = new Hono<{ Bindings: Env }>();
 
 // Função para criar hash SHA-256 (compatível com Workers)
-async function hashPassword(password: string): Promise<string> {
+async function hashPassword(password: string, salt?: string): Promise<string> {
+  // Se não tiver salt, gera um novo (para criação de senha)
+  const actualSalt = salt || crypto.randomUUID().replace(/-/g, '').substring(0, 32);
+  
+  const encoder = new TextEncoder();
+  // Combina salt + password para o hash
+  const data = encoder.encode(actualSalt + password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  // Retorna no formato salt:hash
+  return `${actualSalt}:${hash}`;
+}
+
+// Função para verificar senha (suporta formato salt:hash e hash simples)
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  // Verifica se o hash armazenado tem formato salt:hash
+  if (storedHash.includes(':')) {
+    const [salt, hash] = storedHash.split(':');
+    const encoder = new TextEncoder();
+    const data = encoder.encode(salt + password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return computedHash === hash;
+  }
+  
+  // Fallback para hash simples (sem salt) - compatibilidade com hashes antigos
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Função para verificar senha
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hash;
+  const computedHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return computedHash === storedHash;
 }
 
 // ===== LOGIN =====
