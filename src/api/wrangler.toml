@@ -1,10 +1,10 @@
 # =============================================
-# 🚀 PLANAC ERP - API Unificada
+# 🚀 TRAILSYSTEM ERP - API Unificada
 # =============================================
 # Arquivo: src/api/wrangler.toml
-# Atualizado: 27/12/2025 - Corrigido bindings
+# Atualizado: 02/01/2026 - Rebranding Planac -> TrailSystem
 
-name = "planac-erp-api"
+name = "trailsystem-erp-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
@@ -22,7 +22,7 @@ command = ""
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"
 NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br"
-APP_NAME = "PLANAC ERP"
+APP_NAME = "TRAILSYSTEM ERP"
 APP_VERSION = "2.0.0"
 
 # =============================================
@@ -88,19 +88,19 @@ crons = [
 # =============================================
 
 [env.development]
-name = "planac-erp-api-dev"
+name = "trailsystem-erp-api-dev"
 [env.development.vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "debug"
 
 [env.staging]
-name = "planac-erp-api-staging"
+name = "trailsystem-erp-api-staging"
 [env.staging.vars]
 ENVIRONMENT = "staging"
 LOG_LEVEL = "debug"
 
 [env.production]
-name = "planac-erp-api"
+name = "trailsystem-erp-api"
 [env.production.vars]
 ENVIRONMENT = "production"
 LOG_LEVEL = "info"

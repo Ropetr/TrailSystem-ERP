@@ -1,26 +1,27 @@
 # =============================================
-# 🚀 PLANAC ERP - Cloudflare Workers Config
+# 🚀 TRAILSYSTEM ERP - Cloudflare Workers Config
 # =============================================
-# Atualizado em: 09/12/2025
+# Atualizado em: 02/01/2026
 # IDs reais da infraestrutura Cloudflare
+# Rebranding: Planac -> TrailSystem
 
-name = "planac-erp-api"
+name = "trailsystem-erp-api"
 main = "packages/api/src/index.ts"
 compatibility_date = "2024-01-01"
 
 # Ambiente de desenvolvimento
 [env.development]
-name = "planac-erp-api-dev"
+name = "trailsystem-erp-api-dev"
 vars = { ENVIRONMENT = "development", NUVEM_FISCAL_URL = "https://api.sandbox.nuvemfiscal.com.br" }
 
 # Ambiente de staging
 [env.staging]
-name = "planac-erp-api-staging"
+name = "trailsystem-erp-api-staging"
 vars = { ENVIRONMENT = "staging", NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br" }
 
 # Ambiente de produção
 [env.production]
-name = "planac-erp-api"
+name = "trailsystem-erp-api"
 vars = { ENVIRONMENT = "production", NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br" }
 
 # =============================================
