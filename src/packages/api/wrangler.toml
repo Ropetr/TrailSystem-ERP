@@ -1,5 +1,5 @@
 # TRAILSYSTEM ERP - Wrangler Configuration
-# Atualizado: 02/01/2026 - Rebranding Planac -> TrailSystem
+# Atualizado: 02/01/2026 - Rebranding completo Planac -> TrailSystem (KV, R2, D1)
 name = "trailsystem-erp-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
@@ -44,19 +44,19 @@ id = "f9991a8379d74873a8030e42dad416bd"
 # =============================================
 [[r2_buckets]]
 binding = "STORAGE"
-bucket_name = "planac-erp-storage"
+bucket_name = "trailsystem-storage"
 
 [[r2_buckets]]
 binding = "CERTIFICADOS_BUCKET"
-bucket_name = "planac-erp-certificados"
+bucket_name = "trailsystem-certificates"
 
 [[r2_buckets]]
 binding = "IMAGES"
-bucket_name = "planac-images"
+bucket_name = "trailsystem-images"
 
 [[r2_buckets]]
 binding = "CMS_MEDIA"
-bucket_name = "planac-cms-media"
+bucket_name = "trailsystem-cms-media"
 
 # =============================================
 # SCHEDULED JOBS (CRON)
