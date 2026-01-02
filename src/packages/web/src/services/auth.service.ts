@@ -17,13 +17,14 @@ const getAuthUrl = () => {
     const hostname = window.location.hostname;
     
     // Produção (app.trailsystem.com.br) - usa API de produção
+    // TODO: Atualizar para trailsystem-erp-api quando Worker for criado
     if (hostname === "app.trailsystem.com.br") {
-      return "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
+      return "https://trailsystem-erp-api.planacacabamentos.workers.dev/api/auth";
     }
     
     // Preview (Cloudflare Pages) - usa API de produção
     if (hostname.includes("pages.dev")) {
-      return "https://planac-erp-api.planacacabamentos.workers.dev/api/auth";
+      return "https://trailsystem-erp-api.planacacabamentos.workers.dev/api/auth";
     }
   }
   
