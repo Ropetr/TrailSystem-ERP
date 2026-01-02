@@ -1,5 +1,5 @@
 # TRAILSYSTEM ERP - Wrangler Configuration
-# Atualizado: 02/01/2026 - Rebranding completo Planac -> TrailSystem (KV, R2, D1)
+# Atualizado: 02/01/2026 - Rebranding completo Planac -> TrailSystem (KV, R2, D1 migrados)
 name = "trailsystem-erp-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
@@ -16,13 +16,13 @@ NUVEM_FISCAL_URL = "https://api.nuvemfiscal.com.br"
 # =============================================
 [[d1_databases]]
 binding = "DB"
-database_name = "Planac-erp-database"
-database_id = "12f9a7d5-fe09-4b09-bf72-59bae24d65b2"
+database_name = "trailsystem-erp-database"
+database_id = "ca804682-2a6e-4fae-b8a6-12fa923f1560"
 
 [[d1_databases]]
 binding = "DB_IBPT"
-database_name = "planac-erp-ibpt"
-database_id = "556b7a7a-0ddd-43b7-8b64-f4ea3ebd9966"
+database_name = "trailsystem-erp-ibpt"
+database_id = "f407e97c-e319-4687-962d-976a8c2babf5"
 
 # =============================================
 # KV NAMESPACES (IDs CORRIGIDOS)
