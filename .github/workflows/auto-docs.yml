@@ -1,0 +1,202 @@
+# Auto Docs - Atualizacao automatica de documentacao
+name: Auto Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+      - 'src/api/**'
+      - 'src/packages/api/**'
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Forcar atualizacao completa da documentacao'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate-docs:
+    name: Generate Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: src
+        run: npm ci
+
+      - name: Generate API Routes Documentation
+        run: |
+          echo "# API Routes Documentation" > docs/API_ROUTES.md
+          echo "" >> docs/API_ROUTES.md
+          echo "Documentacao gerada automaticamente em $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> docs/API_ROUTES.md
+          echo "" >> docs/API_ROUTES.md
+          
+          # Documentar rotas da API principal (src/api)
+          echo "## API Principal (Cloudflare Workers)" >> docs/API_ROUTES.md
+          echo "" >> docs/API_ROUTES.md
+          
+          if [ -d "src/api/src/routes" ]; then
+            echo "### Arquivos de Rotas:" >> docs/API_ROUTES.md
+            echo "" >> docs/API_ROUTES.md
+            for file in src/api/src/routes/*.ts; do
+              if [ -f "$file" ]; then
+                filename=$(basename "$file" .ts)
+                echo "#### $filename" >> docs/API_ROUTES.md
+                echo '```typescript' >> docs/API_ROUTES.md
+                # Extrair definicoes de rotas (GET, POST, PUT, DELETE, PATCH)
+                grep -E "(\.get|\.post|\.put|\.delete|\.patch)\s*\(" "$file" | head -20 || echo "// Nenhuma rota encontrada"
+                echo '```' >> docs/API_ROUTES.md
+                echo "" >> docs/API_ROUTES.md
+              fi
+            done
+          fi
+          
+          # Documentar rotas do pacote API (src/packages/api)
+          echo "## API Package Routes" >> docs/API_ROUTES.md
+          echo "" >> docs/API_ROUTES.md
+          
+          if [ -d "src/packages/api/src/routes" ]; then
+            echo "### Arquivos de Rotas:" >> docs/API_ROUTES.md
+            echo "" >> docs/API_ROUTES.md
+            for file in src/packages/api/src/routes/*.ts; do
+              if [ -f "$file" ]; then
+                filename=$(basename "$file" .ts)
+                echo "#### $filename" >> docs/API_ROUTES.md
+                echo '```typescript' >> docs/API_ROUTES.md
+                grep -E "(\.get|\.post|\.put|\.delete|\.patch)\s*\(" "$file" | head -20 || echo "// Nenhuma rota encontrada"
+                echo '```' >> docs/API_ROUTES.md
+                echo "" >> docs/API_ROUTES.md
+              fi
+            done
+          fi
+
+      - name: Generate Types Documentation
+        run: |
+          echo "# Types Documentation" > docs/TYPES.md
+          echo "" >> docs/TYPES.md
+          echo "Documentacao gerada automaticamente em $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> docs/TYPES.md
+          echo "" >> docs/TYPES.md
+          
+          # Documentar tipos compartilhados
+          echo "## Shared Types (@planac/shared)" >> docs/TYPES.md
+          echo "" >> docs/TYPES.md
+          
+          if [ -f "src/packages/shared/src/index.ts" ]; then
+            echo "### Interfaces e Types:" >> docs/TYPES.md
+            echo '```typescript' >> docs/TYPES.md
+            grep -E "^export (interface|type)" src/packages/shared/src/index.ts || echo "// Nenhum tipo encontrado"
+            echo '```' >> docs/TYPES.md
+            echo "" >> docs/TYPES.md
+            
+            echo "### Schemas de Validacao (Zod):" >> docs/TYPES.md
+            echo '```typescript' >> docs/TYPES.md
+            grep -E "^export const.*Schema" src/packages/shared/src/index.ts || echo "// Nenhum schema encontrado"
+            echo '```' >> docs/TYPES.md
+            echo "" >> docs/TYPES.md
+            
+            echo "### Funcoes Utilitarias:" >> docs/TYPES.md
+            echo '```typescript' >> docs/TYPES.md
+            grep -E "^export function" src/packages/shared/src/index.ts || echo "// Nenhuma funcao encontrada"
+            echo '```' >> docs/TYPES.md
+          fi
+          
+          # Documentar tipos do Web
+          echo "" >> docs/TYPES.md
+          echo "## Web Types" >> docs/TYPES.md
+          echo "" >> docs/TYPES.md
+          
+          if [ -f "src/packages/web/src/types/index.ts" ]; then
+            echo "### Interfaces:" >> docs/TYPES.md
+            echo '```typescript' >> docs/TYPES.md
+            grep -E "^export (interface|type)" src/packages/web/src/types/index.ts || echo "// Nenhum tipo encontrado"
+            echo '```' >> docs/TYPES.md
+          fi
+
+      - name: Generate Project Structure
+        run: |
+          echo "# Project Structure" > docs/STRUCTURE.md
+          echo "" >> docs/STRUCTURE.md
+          echo "Documentacao gerada automaticamente em $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> docs/STRUCTURE.md
+          echo "" >> docs/STRUCTURE.md
+          
+          echo "## Estrutura de Diretorios" >> docs/STRUCTURE.md
+          echo '```' >> docs/STRUCTURE.md
+          echo "src/" >> docs/STRUCTURE.md
+          echo "├── api/                    # API Principal (Cloudflare Workers)" >> docs/STRUCTURE.md
+          echo "│   ├── migrations/         # Migrations D1" >> docs/STRUCTURE.md
+          echo "│   └── src/" >> docs/STRUCTURE.md
+          echo "│       ├── routes/         # Rotas da API" >> docs/STRUCTURE.md
+          echo "│       ├── services/       # Servicos e integrações" >> docs/STRUCTURE.md
+          echo "│       └── types/          # Tipos da API" >> docs/STRUCTURE.md
+          echo "├── packages/" >> docs/STRUCTURE.md
+          echo "│   ├── api/                # Package API" >> docs/STRUCTURE.md
+          echo "│   ├── shared/             # Tipos e utils compartilhados" >> docs/STRUCTURE.md
+          echo "│   ├── web/                # Frontend React" >> docs/STRUCTURE.md
+          echo "│   └── landing/            # Landing Page" >> docs/STRUCTURE.md
+          echo "└── wrangler.toml           # Config Cloudflare Workers" >> docs/STRUCTURE.md
+          echo '```' >> docs/STRUCTURE.md
+          echo "" >> docs/STRUCTURE.md
+          
+          # Contar arquivos
+          echo "## Estatisticas" >> docs/STRUCTURE.md
+          echo "" >> docs/STRUCTURE.md
+          echo "| Metrica | Valor |" >> docs/STRUCTURE.md
+          echo "|---------|-------|" >> docs/STRUCTURE.md
+          echo "| Arquivos TypeScript | $(find src -name "*.ts" -o -name "*.tsx" 2>/dev/null | wc -l) |" >> docs/STRUCTURE.md
+          echo "| Migrations | $(ls src/api/migrations/*.sql 2>/dev/null | wc -l) |" >> docs/STRUCTURE.md
+          echo "| Rotas API | $(ls src/api/src/routes/*.ts 2>/dev/null | wc -l) |" >> docs/STRUCTURE.md
+          echo "| Paginas Web | $(find src/packages/web/src/pages -name "*.tsx" 2>/dev/null | wc -l) |" >> docs/STRUCTURE.md
+          echo "| Componentes | $(find src/packages/web/src/components -name "*.tsx" 2>/dev/null | wc -l) |" >> docs/STRUCTURE.md
+
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          git add docs/
+          if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit Documentation
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git commit -m "docs: Atualizacao automatica de documentacao [skip ci]"
+          git push
+
+      - name: Documentation Summary
+        if: always()
+        run: |
+          echo "## Documentation Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Arquivos Gerados/Atualizados:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`docs/API_ROUTES.md\` - Documentacao das rotas da API" >> $GITHUB_STEP_SUMMARY
+          echo "- \`docs/TYPES.md\` - Documentacao dos tipos TypeScript" >> $GITHUB_STEP_SUMMARY
+          echo "- \`docs/STRUCTURE.md\` - Estrutura do projeto" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check_changes.outputs.has_changes }}" == "true" ]; then
+            echo "Documentacao atualizada e commitada com sucesso!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Nenhuma alteracao na documentacao necessaria." >> $GITHUB_STEP_SUMMARY
+          fi
