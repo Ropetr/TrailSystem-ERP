@@ -1,0 +1,209 @@
+# Smoke Test - Verificacao pos-deploy
+name: Smoke Test
+
+on:
+  # Roda apos deploy da API
+  workflow_run:
+    workflows: ["Deploy API to Cloudflare Workers"]
+    types:
+      - completed
+    branches: [main]
+  
+  # Roda apos deploy do frontend
+  workflow_run:
+    workflows: ["Deploy Frontend to Cloudflare Pages"]
+    types:
+      - completed
+    branches: [main]
+  
+  # Permite execucao manual
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente para testar'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - preview
+
+jobs:
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    # Só roda se o deploy foi bem-sucedido
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Aguardar propagacao do deploy
+        run: |
+          echo "Aguardando 30 segundos para propagacao do deploy..."
+          sleep 30
+
+      - name: Testar API - Health Check
+        id: api_health
+        continue-on-error: true
+        run: |
+          echo "Testando API..."
+          
+          API_URL="https://planac-erp-api.ropetr.workers.dev"
+          
+          # Teste 1: API responde
+          echo "1. Verificando se API responde..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL" --max-time 30)
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 500 ]; then
+            echo "API respondeu com HTTP $HTTP_CODE"
+          else
+            echo "ERRO: API retornou HTTP $HTTP_CODE"
+            exit 1
+          fi
+          
+          # Teste 2: Endpoint de health (se existir)
+          echo "2. Verificando endpoint /health..."
+          HEALTH_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/health" --max-time 10 || echo "000")
+          echo "Health endpoint: HTTP $HEALTH_CODE"
+          
+          # Teste 3: Endpoint /api responde
+          echo "3. Verificando endpoint /api..."
+          API_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/api" --max-time 10 || echo "000")
+          echo "API endpoint: HTTP $API_CODE"
+          
+          echo "api_status=success" >> $GITHUB_OUTPUT
+
+      - name: Testar Frontend - Carregamento
+        id: frontend_health
+        continue-on-error: true
+        run: |
+          echo "Testando Frontend..."
+          
+          FRONTEND_URL="https://app.trailsystem.com.br"
+          
+          # Teste 1: Frontend responde
+          echo "1. Verificando se frontend responde..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL" --max-time 30)
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "Frontend respondeu com HTTP $HTTP_CODE"
+          else
+            echo "AVISO: Frontend retornou HTTP $HTTP_CODE"
+          fi
+          
+          # Teste 2: Verificar se HTML contem elementos esperados
+          echo "2. Verificando conteudo HTML..."
+          HTML=$(curl -s "$FRONTEND_URL" --max-time 30)
+          
+          if echo "$HTML" | grep -q "<div id=\"root\""; then
+            echo "React root element encontrado"
+          else
+            echo "AVISO: React root element nao encontrado"
+          fi
+          
+          # Teste 3: Verificar se assets carregam
+          echo "3. Verificando assets..."
+          if echo "$HTML" | grep -q "\.js\""; then
+            echo "JavaScript bundles encontrados"
+          fi
+          
+          echo "frontend_status=success" >> $GITHUB_OUTPUT
+
+      - name: Testar Cloudflare Pages Preview
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'preview'
+        run: |
+          echo "Testando ambiente de preview..."
+          
+          # URL de preview do Cloudflare Pages
+          PREVIEW_URL="https://trailsystem-erp.pages.dev"
+          
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$PREVIEW_URL" --max-time 30)
+          echo "Preview URL respondeu com HTTP $HTTP_CODE"
+
+      - name: Gerar Relatorio
+        if: always()
+        run: |
+          echo "## Smoke Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Data:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Resultados" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.api_health.outcome }}" == "success" ]; then
+            echo "| API | Passou |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| API | FALHOU |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.frontend_health.outcome }}" == "success" ]; then
+            echo "| Frontend | Passou |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Frontend | FALHOU |" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### URLs Testadas" >> $GITHUB_STEP_SUMMARY
+          echo "- API: https://planac-erp-api.ropetr.workers.dev" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: https://app.trailsystem.com.br" >> $GITHUB_STEP_SUMMARY
+
+      - name: Criar Issue se falhou
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'smoke-test-failure'
+            });
+            
+            const issueBody = '## Smoke Test Falhou!\n\n' +
+              '**Commit:** `' + context.sha.substring(0, 7) + '`\n' +
+              '**Data:** ' + new Date().toISOString() + '\n\n' +
+              '### O que verificar:\n' +
+              '1. API esta respondendo em https://planac-erp-api.ropetr.workers.dev\n' +
+              '2. Frontend esta carregando em https://app.trailsystem.com.br\n' +
+              '3. Verificar logs do Cloudflare Workers\n\n' +
+              '---\n*Issue automatica do Smoke Test*';
+
+            if (existingIssues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '[Smoke Test] Deploy pode estar com problemas',
+                body: issueBody,
+                labels: ['smoke-test-failure', 'bug', 'automated']
+              });
+            }
+
+      - name: Fechar Issue se passou
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'smoke-test-failure'
+            });
+            
+            for (const issue of existingIssues.data) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: 'Smoke test passou! Issue fechada automaticamente.\n\nCommit: `' + context.sha.substring(0, 7) + '`'
+              });
+            }
